@@ -1,0 +1,22 @@
+---
+description: 
+globs: *.tsx,*.astro
+alwaysApply: false
+---
+## Frontend
+
+### General Guidelines
+
+- Use Astro components (.astro) for static content and layout
+- Implement framework components in Angular only when interactivity is needed
+
+### Guidelines for Styling
+
+#### Tailwind + PrimeNG / PrimeUI
+
+- Use Tailwind utilities (flex, grid, gap-*, p-*, m-*, w-*, etc.) to compose layouts around PrimeNG components instead of writing raw CSS
+- Use PrimeNG components as the primary UI building blocks and avoid recreating them with plain HTML + Tailwind unless strictly necessary
+- Use PrimeUI / tailwindcss-primeui tokens (e.g. bg-surface-*, text-surface-*, border-surface-*, text-primary) to keep custom elements visually consistent with the active Prime theme
+- Use the @layer directive (e.g. @layer base) and @apply for cross-cutting base styles like body, a, and headings, only with valid Tailwind / tailwindcss-primeui utilities
+- Treat the selected PrimeUI theme as the single source of truth for colors, radii, and shadows, and avoid introducing a parallel Tailwind-only color system that diverges from Prime
+- Prefer Prime’s theming options and CSS variables for deep visual customization of PrimeNG components, using Tailwind mainly for spacing, alignment, and container backgrounds around them

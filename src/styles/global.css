@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+@import "primeicons/primeicons.css";
+
+@layer base {
+  body {
+    @apply bg-surface-0 text-surface-900;
+  }
+
+  a {
+    @apply text-primary;
+  }
+}

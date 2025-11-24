@@ -1,0 +1,68 @@
+# Aplikacja - Spin Flow (MVP)
+
+### Główny problem
+Zapamiętanie całego przebiegu meczu tenisa stołowego jest trudne. Równie problematyczne jest rozpoznanie powodów wygranej lub porażki zawodnika. Dzięki aplikacji webowej możesz zapisać przebieg meczu, a z pomocą AI wykonać podsumowanie meczu oraz zalecenia, które oceniany zawodnik powinien poprawić w swojej grze.
+
+### Najmniejszy zestaw funkcjonalności
+- Prosty system kont użytkowników do powiązania konta użytkownika z meczami
+- Strona startowa z przedstawieniem najważniejszych funkcjonalności oraz oknem logowania
+- Lista wszystkich meczy utworzonych tylko przez użytkownika, które mogą być w statusie "W toku" lub "Zakończony"
+- Możliwość filtrowania według zawodnika, rywala
+- Usuwanie pojedynczego meczu z poziomu listy
+- Dodanie nowego meczu, w tym wpisanie danych początkowych o meczu i wystartowanie meczu
+- Możliwość podania danych początkowych meczu: "nazwa zawodnika ocenianego", "nazwa rywala", "maksymalna ilość setów", "czy jest złoty set", "kto pierwszy serwuje"
+- Możliwość wystartowania meczu, które automatycznie zakłada i startuje pierwszego seta z informacją, kto serwuje pierwszy w pierwszym secie
+- Na edycji meczu o dowolnym statusie wyświetlanie danych zawodnika i rywala oraz wyniku zakończonych setów w meczu
+- Na edycji meczu "W toku" wyświetlanie numeru bieżącego seta (np. Set 1), wyniku zapisanych punktów w bieżącym secie oraz informacji, kto serwuje następny punkt w bieżącym secie
+- Na liście meczy orz edycji meczu "Zakończony" wyświetlanie dzień i godzina wystartowania meczu
+- Na edycji meczu o dowolnym statusie wyświetlanie wyniku punktowego w każdym secie, czyli "tabelka setów"
+- Na edycji meczu "W toku" możliwość wybrania jednego lub wielu tagów dla rozegranego punktu, np. błąd odbioru, błąd serwisu, błąd przy siatce, nieprzygotowany atak, zła praca nóg, świnka, za daleko od stołu
+- Na edycji meczu "W toku" możliwość zapisania rozegranego punktu ocenianemu zawodnikowi lub rywalowi, z tagami lub bez tagów, z informacją kto serwował dany punkt
+- Po zapisaniu punktu należy zaktualizować stan meczu 
+- Przez stan meczu rozumie się: wynik punktowy w bieżącym secie, wynik w "tabelce setów" oraz informację, kto serwuje następny punkt w bieżącym secie, według "zasady serwowania"
+- Zasada serwowania zakłada, że zawodnicy serwują sety na zmianę (serwujący pierwszy set jest losowany przez sędziego i podawany w danych początkowych o meczu)
+- Zasada serwowania zakłada, że serwuje się 2 razy, potem 2 razy przeciwnik
+- Zasada serwowania zakłada, że przy wyniku 10:10 serwujemy na zmianę po 1 raz
+- Zasada serwowania zakłada, że jeśli jest złoty set to w ostatnim secie serwuje się po 1 raz
+- Na edycji meczu "W toku" możliwość cofnięcia ostatnio zapisanego punktu
+- Wycofanie punktu powoduje usunięcie na stałe danych o punkcie (w tym tagów punktu) oraz zaktualizować stan meczu
+- Na edycji meczu "W toku" możliwość zakańczania seta przy każdym nie remisowym wyniku punktowym bieżącego seta i automatyczne startowanie nowego seta z informacją, kto serwuje pierwszy w tym secie wyliczoną wg. "zasady serwowania"
+- Podczas zakańczania seta powinna być możliwość zapisania uwag trenera do seta
+- Na edycji meczu "W toku" możliwość zakańczania meczu przy każdym nie remisowym wyniku punktowym bieżącego seta i nie remisowym wyniku setów uwzględniając sety zakończone oraz bieżący niezakończony set
+- Podczas zakańczania meczu powinna być możliwość zapisania uwag trenera do całego meczu
+- Podczas zakańczania meczu integracja z AI umożliwiająca wykonanie podsumowania meczu (5-7 zdań) oraz wygenerowanie zaleceń do poprawy (5-7 zdań), biorące pod uwagę zapisane sety, zapisane punkty wraz z tagami, informację o tym, kto serwował i kto wygrał dany punkt, uwagi trenera do setów i całego meczu.
+- Dla zakończonego meczu wyświetlanie uwag trenera do każdego seta, uwaga trenera do meczu, opis przebiegu spotkania (AI), zalecenia do poprawy (AI)
+- Przerwanie rejestracji setów i punktów w meczu bez zakończenia meczu i powrót do listy meczy
+- Edycja meczu "W toku", czyli kontynuacja rejestracji setów i punktów w miejscu gdzie była przerwana
+- Edycja meczu "Zakończony" z możliwością zmiany wybranych danych meczu, ale bez możliwości zmiany danych o setach i punktach
+- Podczas zapisywania danych w aplikacji powinien być wyświetlony loader "Przetwarzanie", który blokuje UI na czas zapisywania
+- UI aplikacji webowej powinna być dostosowany do różnych rozmiarów ekranu: smartfon, tablet, desktop
+- Szczególnie istotne jest, aby rozmiar elementów UI dla smartfon był wygodny w obłudze
+- Dla zakończonego meczu użytkownik powinien mieć możliwość udostępnienia meczu "do podglądu" dowolnej niezalogowanej osobie
+- Udostępnienie powinno być możliwe poprzez wygenerowanie publicznego url z opcją "Kopiuj". Użytkownik może skopiować link z aplikacji do pamięci komputera lub urządzenia.
+- Na udostępnionym meczu powinny być widoczne te same informacje, co w edycji meczu "Zakończony", ale bez możliwości edycji żadnych danych
+- Udostępniony link powinien działać dożywotnio, dopóki użytkownik, który założył mecz nie usunie meczu
+
+
+### Co NIE wchodzi w zakres MVP
+- Konta zawodników i rywali per aplikacja lub per konto użytkownika
+- Lista zawodników i rywali per aplikacja lub per konto użytkownika
+- Zapisywania meczy niewystartowanych, np. "W przygotowaniu" lub "Zaplanowane"
+- Dodanie meczu bez danych początkowych o meczu
+- Grupowe usuwanie wielu meczy na raz
+- Poprawianie lub usuwania danych o punktach w zakończonych setach
+- Poprawianie lub usuwanie danych o setach i punktach w zakończonych meczach
+- Cofanie się do zakończonego seta w celu dodania kolejnych punktów
+- Własny zestaw tagów punktów per konto użytkownika
+- Obsługa poprawności wyników w odniesieniu do ogólnych przepisów tenisa stołowego innych niż opisane w tym dokumencie, np. można zakończyć set przy dowolnym niezerowym wyniku punktowym, czyli nie musi być 11 zdobytych punktów lub 2 punktów przewagi
+- Automatyczne zamykania seta przez aplikację
+- Automatyczne zamykanie meczu przez aplikację
+- Archiwizacja meczy
+- Modyfikacja danych dotyczących setów i punktów dla zakończonych meczy
+- Anulowanie meczy lub setów
+- Obsługa multimediów (np. zdjęć lub nagrań z meczy)
+- Funkcje społecznościowe
+- Udostępnianie linku do meczu za pomocą serwisów społecznościowych
+
+### Kryteria sukcesu
+- 50% użytkowników zakańcza 2 lub więcej meczy na miesiąc

@@ -1,0 +1,27 @@
+---
+description: 
+globs: *.component.ts,*.directive.ts,*.pipe.ts,*.service.ts,*.guard.ts
+alwaysApply: false
+---
+### Guidelines for ANGULAR
+
+#### ANGULAR_CODING_STANDARDS
+
+- Use standalone components, directives, and pipes instead of NgModules
+- Implement signals for state management instead of traditional RxJS-based approaches
+- Use the new inject function instead of constructor injection
+- Implement control flow with @if, @for, and @switch instead of *ngIf, *ngFor, etc.
+- Leverage functional guards and resolvers instead of class-based ones
+- Implement deferrable views to delay rendering of non-essential components until they're needed
+- Implement OnPush change detection strategy for improved performance
+- Use TypeScript decorators with explicit visibility modifiers (public, private)
+- Leverage Angular CLI for schematics and code generation
+- Apply immutability principles and pure functions wherever possible, especially within services and state management, to ensure predictable outcomes and simplified debugging.
+- Favor component composition over inheritance to enhance modularity, enabling reusability and easy maintenance.
+- Use descriptive variable names like `isUserLoggedIn`, `userPermissions`, and `fetchData()` to communicate intent clearly.
+- Enforce kebab-case naming for files (e.g., `user-profile.component.ts`) and match Angular's conventions for file suffixes (e.g., `.component.ts`, `.service.ts`, etc.).
+- Define data models using interfaces for explicit types and maintain strict typing to avoid `any`.
+- Utilize trackBy functions with `ngFor` to optimize list rendering.
+- Prevent XSS by relying on Angular's built-in sanitization and avoiding `innerHTML`.
+- Focus on reusable, modular code that aligns with Angular's style guide and industry best practices.
+- Refer to Angular's official documentation for components, services to ensure best practices and maintain code quality and maintainability.

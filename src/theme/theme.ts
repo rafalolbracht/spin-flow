@@ -1,0 +1,1 @@
+import "@primeuix/themes/aura";

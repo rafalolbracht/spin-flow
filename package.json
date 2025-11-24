@@ -1,0 +1,64 @@
+{
+  "name": "spin-flow",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev --open --port 4300",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@analogjs/astro-angular": "^2.1.0",
+    "@angular/animations": "^20.3.13",
+    "@angular/build": "^20.3.11",
+    "@angular/common": "^20.3.13",
+    "@angular/compiler": "^20.3.13",
+    "@angular/compiler-cli": "^20.3.13",
+    "@angular/core": "^20.3.13",
+    "@angular/language-service": "^20.3.13",
+    "@angular/platform-browser": "^20.3.13",
+    "@angular/platform-server": "^20.3.13",
+    "@astrojs/cloudflare": "^12.6.11",
+    "@astrojs/sitemap": "^3.6.0",
+    "@primeuix/themes": "^1.2.5",
+    "@tailwindcss/vite": "^4.1.17",
+    "astro": "^5.16.0",
+    "primeicons": "^7.0.0",
+    "primeng": "^20.3.0",
+    "rxjs": "^7.8.2",
+    "tailwindcss": "^4.1.17",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular-eslint/builder": "^21.0.1",
+    "@angular-eslint/eslint-plugin": "^21.0.1",
+    "@angular-eslint/eslint-plugin-template": "^21.0.1",
+    "@angular-eslint/template-parser": "^21.0.1",
+    "@eslint/compat": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^1.5.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-astro": "^0.14.1",
+    "tailwindcss-primeui": "^0.6.1",
+    "typescript-eslint": "^8.47.0"
+  },
+  "lint-staged": {
+    "*.{ts,js,astro}": [
+      "eslint --fix"
+    ],
+    "*.{json,css,md,mjs}": [
+      "prettier --write"
+    ]
+  }
+}
