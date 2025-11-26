@@ -26,6 +26,7 @@
     "@astrojs/cloudflare": "^12.6.11",
     "@astrojs/sitemap": "^3.6.0",
     "@primeuix/themes": "^1.2.5",
+    "@supabase/supabase-js": "^2.84.0",
     "@tailwindcss/vite": "^4.1.17",
     "astro": "^5.16.0",
     "primeicons": "^7.0.0",
