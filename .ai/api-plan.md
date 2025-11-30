@@ -923,11 +923,6 @@ Authorization: Bearer {supabase_jwt_token}
 
 Retrieve all available tags (global, shared across all users).
 
-**Query Parameters:**
-
-- `is_system` (boolean, optional) - Filter by system tags
-- `sort` (string, optional, default: `order_in_list`) - Sort field
-
 **Request Headers:**
 (Authentication optional - tags are public)
 
@@ -960,10 +955,6 @@ Retrieve all available tags (global, shared across all users).
   ]
 }
 ```
-
-**Error Responses:**
-
-- `400 Bad Request` - Invalid query parameters
 
 ---
 
