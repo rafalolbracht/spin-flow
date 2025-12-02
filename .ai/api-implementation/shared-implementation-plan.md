@@ -866,14 +866,29 @@ export async function getMatchById(
 2. **Parsowanie include:**
    - Split `include` po przecinku
    - Utworzenie tablicy: `['sets', 'points', ...]`
+   - Trim whitespace dla każdego elementu
 
 3. **Warunkowe ładowanie relacji:**
-   - Jeśli include zawiera 'ai_report': załaduj z `matches_ai_reports`
-   - Jeśli include zawiera 'sets': wywołaj `getSetsByMatchId`
-   - Jeśli mecz in_progress: załaduj current_set (ostatni nieukończony set)
+   - **Jeśli include zawiera 'ai_report':**
+     - Załaduj z `matches_ai_reports` dla tego match_id
+   - **Jeśli include zawiera 'sets', 'points' lub 'tags':**
+     - Określ czy ładować punkty: `includePoints = include zawiera 'points' lub 'tags'`
+     - Wywołaj `getSetsByMatchId(supabase, userId, matchId, includePoints)`
+     - **WAŻNE:** funkcja `getSetsByMatchId` automatycznie optymalizuje N+1 dla punktów
+   - **Jeśli mecz in_progress:**
+     - Załaduj current_set (ostatni nieukończony set)
+     - Query: `supabase.from('sets').select('*').eq('match_id', matchId).eq('user_id', userId).eq('is_finished', false).order('sequence_in_match', { ascending: false }).limit(1).single()`
+     - Określ current_server na podstawie liczby punktów w current_set
 
 4. **Mapowanie i zwrócenie:**
    - `mapMatchToMatchDetailDto(match, currentSet, sets, aiReport)`
+
+**Uwagi dot. wydajności:**
+
+- **Problem N+1 jest automatycznie rozwiązany** w `getSetsByMatchId`
+- Przykład: mecz z 5 setami i `include=points`:
+  - Bez optymalizacji: 1 (match) + 1 (sets) + 5 (points per set) = 7 queries
+  - Z optymalizacją: 1 (match) + 1 (sets) + 1 (all points) = 3 queries
 
 **Używane przez:**
 
@@ -929,7 +944,7 @@ export async function updateMatch(
 
 #### 5.5. `finishMatch`
 
-Zakończenie meczu.
+Zakończenie meczu z walidacją wyników i opcjonalnym triggerowaniem AI.
 
 **Sygnatura:**
 
@@ -939,29 +954,93 @@ export async function finishMatch(
   userId: string,
   matchId: number,
   command: FinishMatchCommandDto
-): Promise<FinishMatchDto | null>;
+): Promise<FinishMatchDto>;
 ```
 
 **Implementacja:**
 
-1. **Sprawdzenie istnienia i statusu:**
-   - Pobranie meczu
-   - Jeśli null: return null
-   - Jeśli status === 'finished': throw ApiError (already finished)
+1. **Pobranie meczu:**
+   - Query: `SELECT * FROM matches WHERE id = {matchId} AND user_id = {userId}`
+   - Jeśli null: throw `NotFoundError('Match not found')`
+   - Jeśli status === 'finished': throw `ApiError('VALIDATION_ERROR', 'Match is already finished', 422)`
 
-2. **Sprawdzenie wszystkich setów:**
-   - Pobranie wszystkich setów
-   - Sprawdzenie czy wszystkie są zakończone
-   - Obliczenie sets_won_player i sets_won_opponent
+2. **Pobranie bieżącego seta:**
+   - Query: `SELECT * FROM sets WHERE match_id = {matchId} AND is_finished = false ORDER BY sequence_in_match DESC LIMIT 1`
+   - Jeśli brak: throw `ApiError('VALIDATION_ERROR', 'No current set found', 422)`
+   - Walidacja że wynik nie jest remisowy: `set_score_player !== set_score_opponent`
+   - Jeśli remis: throw `ApiError('VALIDATION_ERROR', 'Cannot finish match: current set score is tied', 422)`
 
-3. **UPDATE match:**
-   - Ustawienie status: 'finished'
-   - Ustawienie ended_at: now()
-   - Ustawienie sets_won_player i sets_won_opponent
-   - Ustawienie coach_notes (jeśli podane)
+3. **Określenie zwycięzcy bieżącego seta:**
+   - Wywołanie helper function: `const winner = determineSetWinner(currentSet)`
+   - Porównanie `set_score_player` vs `set_score_opponent`
 
-4. **Zwrócenie:**
-   - `FinishMatchDto`
+4. **Zakończenie bieżącego seta:**
+   - UPDATE sets:
+     ```typescript
+     {
+       is_finished: true,
+       winner: winner,
+       finished_at: now()
+     }
+     ```
+
+5. **Obliczenie wyniku meczowego:**
+   - Query: `SELECT winner, COUNT(*) as count FROM sets WHERE match_id = {matchId} AND is_finished = true GROUP BY winner`
+   - Mapowanie wyników na sets_won_player i sets_won_opponent
+   - Walidacja że wynik nie jest remisowy: `sets_won_player !== sets_won_opponent`
+   - Jeśli remis: throw `ApiError('VALIDATION_ERROR', 'Cannot finish match: overall score is tied', 422)`
+
+6. **Aktualizacja meczu:**
+   - UPDATE matches:
+     ```typescript
+     {
+       status: 'finished',
+       ended_at: now(),
+       sets_won_player: calculatedSetsWonPlayer,
+       sets_won_opponent: calculatedSetsWonOpponent,
+       coach_notes: command.coach_notes || match.coach_notes
+     }
+     ```
+
+7. **Obsługa AI report (jeśli generate_ai_summary === true):**
+   - Import `createAiReportRecord` i `generateAiReport` z `ai.service.ts`
+   - Wywołanie `await createAiReportRecord(supabase, matchId, userId)` - tworzy rekord z ai_status='pending'
+   - Wywołanie asynchroniczne: `Promise.resolve().then(() => generateAiReport(supabase, matchId))` (fire-and-forget)
+   - ai_report_status do response: 'pending'
+
+8. **Analytics event:**
+   - Import `trackEvent` z `analytics.service.ts`
+   - Wywołanie `trackEvent(supabase, userId, 'match_finished', matchId)` (fire-and-forget, bez await)
+
+9. **Przygotowanie response:**
+   - Mapowanie na `FinishMatchDto`:
+     ```typescript
+     {
+       id: match.id,
+       status: 'finished',
+       sets_won_player: calculatedSetsWonPlayer,
+       sets_won_opponent: calculatedSetsWonOpponent,
+       ended_at: updatedMatch.ended_at,
+       ai_report_status: match.generate_ai_summary ? 'pending' : null
+     }
+     ```
+
+10. **Zwrócenie:**
+    - `FinishMatchDto`
+
+**Helper function (prywatna):**
+
+```typescript
+function determineSetWinner(set: Set): SideEnum {
+  return set.set_score_player > set.set_score_opponent ? "player" : "opponent";
+}
+```
+
+**Error handling:**
+
+- `NotFoundError` - mecz nie istnieje
+- `ApiError` z statusem 422 - walidacja biznesowa nie przeszła
+- `DatabaseError` - błąd operacji bazodanowych
 
 **Używane przez:**
 
@@ -971,7 +1050,7 @@ export async function finishMatch(
 
 #### 5.6. `deleteMatch`
 
-Usunięcie meczu.
+Usunięcie meczu z kaskadowym usuwaniem powiązanych danych.
 
 **Sygnatura:**
 
@@ -981,17 +1060,82 @@ export async function deleteMatch(supabase: SupabaseClient, userId: string, matc
 
 **Implementacja:**
 
-1. **Sprawdzenie istnienia:**
-   - Pobranie meczu
-   - Jeśli null: return false
+**Uwaga:** Kaskadowe usuwanie jest obsługiwane przez logikę backendową (nie przez DB cascades), zgodnie ze schematem bazy danych gdzie FK nie mają kaskad.
 
-2. **DELETE:**
-   - `supabase.from('matches').delete().eq('id', matchId).eq('user_id', userId)`
+1. **Weryfikacja istnienia i właściciela:**
+   - Query: `SELECT * FROM matches WHERE id = {matchId} AND user_id = {userId}`
+   - Jeśli null: return false (endpoint obsłuży jako 404)
+   - Zapisanie rekordu match do zmiennej (dla logowania)
+
+2. **Pobranie ID setów:**
+   - Query: `SELECT id FROM sets WHERE match_id = {matchId} AND user_id = {userId}`
    - Obsługa błędu: throw DatabaseError
-   - **UWAGA:** Kaskadowe usunięcie setów/punktów powinno być skonfigurowane w DB
+   - Zapisanie tablicy `setIds: number[]`
+   - Jeśli pusta tablica: przejść do kroku 5 (brak setów)
 
-3. **Zwrócenie:**
-   - true (sukces)
+3. **Pobranie ID punktów:**
+   - Query: `SELECT id FROM points WHERE set_id IN ({setIds}) AND user_id = {userId}`
+   - Obsługa błędu: throw DatabaseError
+   - Zapisanie tablicy `pointIds: number[]`
+   - Jeśli pusta tablica: przejść do kroku 5 (brak punktów)
+
+4. **Usunięcie point_tags:**
+   - Query: `DELETE FROM point_tags WHERE point_id IN ({pointIds}) AND user_id = {userId}`
+   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-blocking)
+   - Bulk delete - jedno zapytanie dla wszystkich tagów
+
+5. **Usunięcie points:**
+   - Query: `DELETE FROM points WHERE set_id IN ({setIds}) AND user_id = {userId}`
+   - Obsługa błędu: throw DatabaseError
+   - Bulk delete - jedno zapytanie dla wszystkich punktów
+
+6. **Usunięcie sets:**
+   - Query: `DELETE FROM sets WHERE match_id = {matchId} AND user_id = {userId}`
+   - Obsługa błędu: throw DatabaseError
+
+7. **Usunięcie matches_ai_reports:**
+   - Query: `DELETE FROM matches_ai_reports WHERE match_id = {matchId} AND user_id = {userId}`
+   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-blocking, może nie istnieć)
+
+8. **Usunięcie matches_public_share:**
+   - Query: `DELETE FROM matches_public_share WHERE match_id = {matchId} AND user_id = {userId}`
+   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-blocking, może nie istnieć)
+
+9. **Rozłączenie analytics_events:**
+   - Query: `UPDATE analytics_events SET match_id = NULL WHERE match_id = {matchId}`
+   - **Bez warunku user_id** (analytics może mieć innego właściciela lub service role)
+   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-critical)
+
+10. **Usunięcie matches:**
+    - Query: `DELETE FROM matches WHERE id = {matchId} AND user_id = {userId}`
+    - Obsługa błędu: throw DatabaseError
+
+11. **Zwrócenie sukcesu:**
+    - return true
+
+**Error handling:**
+
+- Try-catch owijający całą logikę
+- Catch: `logError()` + throw DatabaseError
+- Specjalna obsługa NotFoundError (gdy match nie istnieje)
+
+**Optymalizacja:**
+
+- Bulk DELETE z `WHERE IN (...)` zamiast pętli
+- Minimalizacja round-trips: maksymalnie 10 zapytań niezależnie od wielkości danych
+- Unikanie N+1 problem
+
+**Kolejność usuwania:**
+
+Usuwanie w odwrotnej kolejności zależności (child → parent):
+
+1. point_tags (zależą od points)
+2. points (zależą od sets)
+3. sets (zależą od matches)
+4. matches_ai_reports (powiązane z matches)
+5. matches_public_share (powiązane z matches)
+6. analytics_events (UPDATE, nie DELETE)
+7. matches (główny rekord)
 
 **Używane przez:**
 
@@ -1186,11 +1330,26 @@ export async function getSetsByMatchId(
    - `supabase.from('sets').select('*').eq('match_id', matchId).eq('user_id', userId).order('sequence_in_match', { ascending: true })`
    - Obsługa błędu: throw DatabaseError
 
-2. **Warunkowe ładowanie punktów:**
-   - Jeśli includePoints: dla każdego seta wywołaj `getPointsBySetId`
+2. **Warunkowe ładowanie punktów (z optymalizacją N+1):**
+   - Jeśli includePoints === false: pomiń ten krok
+   - Jeśli includePoints === true:
+     - **WAŻNE - Optymalizacja N+1:**
+       - Zamiast pętli z `getPointsBySetId` dla każdego seta (N queries)
+       - Użyj jednego query z `WHERE set_id IN (...)` (1 query)
+       - Wywołaj funkcję pomocniczą `getPointsBySetIds(supabase, userId, setIds)`
+       - Grupuj punkty po set_id i przypisz do odpowiednich setów
+     - **Problem N+1:**
+       - Przykład: mecz ma 5 setów → 1 query dla setów + 5 queries dla punktów = 6 queries
+       - Z optymalizacją: 1 query dla setów + 1 query dla wszystkich punktów = 2 queries
+     - **Implementacja:**
+       ```typescript
+       const setIds = sets.map((s) => s.id);
+       const allPointsGrouped = await getPointsBySetIds(supabase, userId, setIds);
+       // allPointsGrouped jest obiektem: { [setId: number]: PointWithTagsDto[] }
+       ```
 
 3. **Mapowanie:**
-   - `sets.map(set => mapSetToSetDetailDto(set, points))`
+   - `sets.map(set => mapSetToSetDetailDto(set, allPointsGrouped[set.id] || []))`
 
 4. **Zwrócenie:**
    - `SetDetailDto[]`
@@ -1273,9 +1432,77 @@ export async function finishSet(
 
 ---
 
-### Funkcje pomocnicze
+### Funkcje pomocnicze (prywatne)
 
-#### 6.5. `mapSetToCurrentSetDto`
+#### 6.5. `getPointsBySetIds`
+
+Pobranie punktów dla wielu setów jednym query (optymalizacja N+1).
+
+**Sygnatura:**
+
+```typescript
+async function getPointsBySetIds(
+  supabase: SupabaseClient,
+  userId: string,
+  setIds: number[]
+): Promise<Record<number, PointWithTagsDto[]>>;
+```
+
+**Implementacja:**
+
+1. **Walidacja:**
+   - Jeśli setIds jest puste: zwróć pusty obiekt `{}`
+
+2. **SELECT z JOIN:**
+   - Query:
+     ```typescript
+     supabase
+       .from("points")
+       .select(
+         `
+         *,
+         point_tags(tag:tags(name))
+       `
+       )
+       .in("set_id", setIds)
+       .eq("user_id", userId)
+       .order("sequence_in_set", { ascending: true });
+     ```
+   - **UWAGA:** To jeden query zamiast N queries
+   - Obsługa błędu: throw DatabaseError
+
+3. **Grupowanie po set_id:**
+   - Iteracja przez wszystkie punkty
+   - Utworzenie struktury: `{ [setId: number]: PointWithTagsDto[] }`
+   - Dla każdego punktu:
+     - Ekstrakcja tagów z `point_tags.tag.name`
+     - Utworzenie `PointWithTagsDto` z tablicą `tags: string[]`
+     - Dodanie do odpowiedniego `setId` w wyniku
+
+4. **Zwrócenie:**
+   - `Record<number, PointWithTagsDto[]>` - obiekt z punktami zgrupowanymi po set_id
+
+**Przykład struktury zwracanej:**
+
+```typescript
+{
+  123: [
+    { id: 1, set_id: 123, ..., tags: ['forehand_winner', 'cross_court'] },
+    { id: 2, set_id: 123, ..., tags: ['backhand_error'] }
+  ],
+  124: [
+    { id: 3, set_id: 124, ..., tags: ['serve_ace'] }
+  ]
+}
+```
+
+**Używane przez:**
+
+- `getSetsByMatchId` (gdy includePoints=true)
+
+---
+
+#### 6.6. `mapSetToCurrentSetDto`
 
 ```typescript
 function mapSetToCurrentSetDto(set: Set, currentServer: SideEnum): CurrentSetDto {
@@ -1293,7 +1520,7 @@ function mapSetToCurrentSetDto(set: Set, currentServer: SideEnum): CurrentSetDto
 
 ---
 
-#### 6.6. `mapSetToSetDetailDto`
+#### 6.7. `mapSetToSetDetailDto`
 
 ```typescript
 function mapSetToSetDetailDto(set: Set, points?: PointWithTagsDto[]): SetDetailDto {
@@ -1391,7 +1618,123 @@ import { logWarning } from "../utils/logger";
 
 ---
 
-## 8. Match Schemas
+## 8. AI Service
+
+**Lokalizacja:** `src/lib/services/ai.service.ts`
+
+### Cel
+
+Obsługa generacji raportów AI dla zakończonych meczów. Asynchroniczne generowanie podsumowań i rekomendacji treningowych przy użyciu OpenRouter API.
+
+### Metody do implementacji
+
+#### 8.1. `createAiReportRecord`
+
+Utworzenie rekordu AI report ze statusem 'pending'.
+
+**Sygnatura:**
+
+```typescript
+export async function createAiReportRecord(supabase: SupabaseClient, matchId: number, userId: string): Promise<void>;
+```
+
+**Implementacja:**
+
+1. **Przygotowanie danych:**
+
+   ```typescript
+   const reportInsert: MatchAiReportInsert = {
+     match_id: matchId,
+     user_id: userId,
+     ai_status: "pending",
+     ai_summary: null,
+     ai_recommendations: null,
+     ai_error: null,
+     ai_generated_at: null,
+   };
+   ```
+
+2. **INSERT:**
+   - `supabase.from('matches_ai_reports').insert(reportInsert)`
+   - Obsługa błędu: throw DatabaseError('Failed to create AI report record')
+
+**Używane przez:**
+
+- `match.service.ts` (finishMatch)
+
+---
+
+#### 8.2. `generateAiReport`
+
+Asynchroniczne generowanie raportu AI (fire-and-forget).
+
+**Sygnatura:**
+
+```typescript
+export async function generateAiReport(supabase: SupabaseClient, matchId: number): Promise<void>;
+```
+
+**Implementacja:**
+
+1. **Pobranie danych meczu:**
+   - Query: Pobranie meczu ze wszystkimi setami i punktami (include=sets,points,tags)
+   - Przygotowanie kontekstu dla AI
+
+2. **Wywołanie OpenRouter API:**
+   - Endpoint: zgodnie z dokumentacją OpenRouter
+   - Prompt: Wygenerowanie podsumowania meczu i rekomendacji treningowych
+   - Model: Do określenia w konfiguracji
+
+3. **Aktualizacja rekordu - SUCCESS:**
+   - UPDATE matches_ai_reports:
+     ```typescript
+     {
+       ai_status: 'success',
+       ai_summary: generatedSummary,
+       ai_recommendations: generatedRecommendations,
+       ai_generated_at: now()
+     }
+     ```
+
+4. **Aktualizacja rekordu - ERROR:**
+   - UPDATE matches_ai_reports:
+     ```typescript
+     {
+       ai_status: 'error',
+       ai_error: error.message,
+       ai_generated_at: now()
+     }
+     ```
+
+5. **Error handling:**
+   - Try-catch wewnątrz funkcji
+   - Logowanie błędów: `logError('AI Service', error, { matchId })`
+   - NIE propagować błędów (fire-and-forget)
+
+**Uwagi:**
+
+- Funkcja jest wywoływana asynchronicznie (fire-and-forget)
+- Błędy nie blokują głównego przepływu
+- Szczegóły integracji z OpenRouter będą w osobnym planie implementacji
+
+**Używane przez:**
+
+- `match.service.ts` (finishMatch)
+
+---
+
+### Importy
+
+```typescript
+import type { SupabaseClient } from "../../db/supabase.client";
+import type { MatchAiReportInsert, MatchAiReportUpdate } from "../../types";
+import { DatabaseError } from "../utils/api-errors";
+import { logError, logInfo } from "../utils/logger";
+```
+
+---
+
+## 9. Match Schemas
 
 **Lokalizacja:** `src/lib/schemas/match.schemas.ts`
 
@@ -1401,7 +1744,7 @@ Centralizacja schematów walidacji Zod dla endpointów Match.
 
 ### Schematy do implementacji
 
-#### 8.1. `createMatchCommandSchema`
+#### 9.1. `createMatchCommandSchema`
 
 Walidacja body dla POST /api/matches.
 
@@ -1420,7 +1763,7 @@ export type ValidatedCreateMatchCommand = z.infer<typeof createMatchCommandSchem
 
 ---
 
-#### 8.2. `matchListQuerySchema`
+#### 9.2. `matchListQuerySchema`
 
 Walidacja query params dla GET /api/matches.
 
@@ -1442,7 +1785,7 @@ export type ValidatedMatchListQuery = z.infer<typeof matchListQuerySchema>;
 
 ---
 
-#### 8.3. `updateMatchCommandSchema`
+#### 9.3. `updateMatchCommandSchema`
 
 Walidacja body dla PATCH /api/matches/{id}.
 
@@ -1458,7 +1801,7 @@ export type ValidatedUpdateMatchCommand = z.infer<typeof updateMatchCommandSchem
 
 ---
 
-#### 8.4. `finishMatchCommandSchema`
+#### 9.4. `finishMatchCommandSchema`
 
 Walidacja body dla POST /api/matches/{id}/finish.
 
@@ -1472,7 +1815,7 @@ export type ValidatedFinishMatchCommand = z.infer<typeof finishMatchCommandSchem
 
 ---
 
-#### 8.5. `includeQuerySchema`
+#### 9.5. `includeQuerySchema`
 
 Walidacja query param "include" dla GET /api/matches/{id}.
 
@@ -1498,7 +1841,7 @@ import { SIDE_VALUES, MATCH_STATUS_VALUES } from "../../types";
 
 ---
 
-## 9. Common Schemas
+## 10. Common Schemas
 
 **Lokalizacja:** `src/lib/schemas/common.schemas.ts`
 
@@ -1508,7 +1851,7 @@ Schematy walidacji używane przez wiele różnych endpointów.
 
 ### Schematy do implementacji
 
-#### 9.1. `idParamSchema`
+#### 10.1. `idParamSchema`
 
 Walidacja path parameter {id}.
 
@@ -1531,7 +1874,7 @@ export type ValidatedIdParam = z.infer<typeof idParamSchema>;
 
 ---
 
-#### 9.2. `tokenParamSchema`
+#### 10.2. `tokenParamSchema`
 
 Walidacja path parameter {token} (SHA-256 hex).
 
@@ -1560,7 +1903,7 @@ import { z } from "zod";
 
 ---
 
-## 10. Etapy implementacji
+## 11. Etapy implementacji
 
 ### Faza 1: Utilities (Priorytet KRYTYCZNY)
 
@@ -1668,6 +2011,12 @@ import { z } from "zod";
    - Implementacja trackEvent
    - Eksport funkcji publicznych
 
+5. **ai.service.ts**
+   - Implementacja createAiReportRecord
+   - Implementacja generateAiReport (asynchroniczne, fire-and-forget)
+   - Implementacja helper functions dla OpenRouter API
+   - Eksport funkcji publicznych
+
 **Weryfikacja:**
 
 - TypeScript kompiluje się bez błędów
@@ -1695,7 +2044,7 @@ import { z } from "zod";
 
 ---
 
-## 11. Checklist przed zakończeniem implementacji
+## 12. Checklist przed zakończeniem implementacji
 
 ### Utilities
 
@@ -1715,6 +2064,7 @@ import { z } from "zod";
 - [ ] `set.service.ts` utworzony
 - [ ] `match.service.ts` utworzony
 - [ ] `analytics.service.ts` utworzony (opcjonalnie)
+- [ ] `ai.service.ts` utworzony
 - [ ] Wszystkie funkcje publiczne eksportowane
 
 ### Ogólne
@@ -1727,7 +2077,7 @@ import { z } from "zod";
 
 ---
 
-## 12. Uwagi końcowe
+## 13. Uwagi końcowe
 
 ### Zależności między komponentami
 
@@ -1739,6 +2089,8 @@ zod-helpers.ts (zodErrorToValidationDetails)
 match.service.ts
   ↓ używa
 set.service.ts (createFirstSet, getSetsByMatchId)
+ai.service.ts (createAiReportRecord, generateAiReport)
+analytics.service.ts (trackEvent)
 
 Wszystkie services
   ↓ używają
@@ -1753,7 +2105,9 @@ logger.ts (logError, logWarning)
 3. Następnie: api-response.ts
 4. Następnie: schemas (niezależne)
 5. Następnie: set.service.ts (używany przez match.service.ts)
-6. Na końcu: match.service.ts
+6. Następnie: analytics.service.ts (używany przez match.service.ts)
+7. Następnie: ai.service.ts (używany przez match.service.ts)
+8. Na końcu: match.service.ts
 
 ### Po ukończeniu implementacji shared components
 
