@@ -1,90 +1,47 @@
-# API Endpoint Implementation Plan: DELETE /api/sets/{setId}/points/last
+# API Implementation: DELETE /api/sets/{setId}/points/last
 
-## 1. Przegląd punktu końcowego
+## Przegląd
 
-Endpoint do cofnięcia ostatniego zdobytego punktu w secie. Usuwa punkt i jego powiązania z tagami, przelicza wynik seta i określa aktualnego serwera na podstawie usuwanego punktu.
+**Endpoint:** `/api/sets/{setId}/points/last`  
+**Metoda:** DELETE  
+**Cel:** Cofnięcie ostatniego zdobytego punktu w secie  
+**Prerender:** `false`
 
-**Główne funkcje:**
+**Operacje:**
 
-- Weryfikacja uprawnień i stanu meczu/seta
-- Znalezienie i usunięcie ostatniego punktu z jego tagami
-- Aktualizacja wyniku seta
-- Zwrócenie zaktualizowanego stanu seta z nowym current_server
-
-**Kluczowe założenia biznesowe:**
-
-- Można cofnąć punkt tylko w meczu będącym w trakcie (status = 'in_progress')
-- Nie można cofnąć punktu w zakończonym secie
-- Set musi mieć co najmniej jeden punkt do cofnięcia
-- Serwer po cofnięciu = served_by z usuwanego punktu (nie wymaga ponownego obliczania)
+- Usuwa ostatni punkt i jego tagi
+- Aktualizuje wynik seta
+- Zwraca nowy current_server
 
 ---
 
-## 2. Szczegóły żądania
-
-### Metoda HTTP
-
-DELETE
-
-### Struktura URL
-
-```
-DELETE /api/sets/{setId}/points/last
-```
+## Request
 
 ### Path Parameters
 
-- `setId` (integer, required) - ID seta, w którym cofamy ostatni punkt
+- `setId` (integer, required) - ID seta
 
-### Request Headers
+**Schemat:** `idParamSchema` (shared-plan: Common Schemas)
 
-```
-Authorization: Bearer {supabase_jwt_token}
-```
-
-### Query Parameters
-
-Brak
-
-### Request Body
+### Body
 
 Brak
 
 ---
 
-## 3. Wykorzystywane typy
+## Response
 
-### Typy z types.ts
+### 200 OK
 
-**Response DTOs:**
-
-- `UndoPointDto` - struktura zawierająca ID usuniętego punktu i stan seta
-- `SetStateDto` - stan seta po operacji
-- `UndoPointResponse = SingleItemResponseDto<UndoPointDto>` - finalna odpowiedź API
-
-**Schema Validation:**
-
-- `idParamSchema` z common.schemas.ts - walidacja path parametru setId
-
----
-
-## 4. Szczegóły odpowiedzi
-
-### Sukces (200 OK)
-
-**Content-Type:** `application/json`
-
-**Body:**
-
-```json
+```typescript
 {
-  "data": {
-    "deleted_point_id": 1003,
-    "set_state": {
-      "id": 456,
-      "set_score_player": 7,
-      "set_score_opponent": 5,
-      "current_server": "player"
+  data: {
+    deleted_point_id: number,
+    set_state: {
+      id: number,
+      set_score_player: number,
+      set_score_opponent: number,
+      current_server: SideEnum  // 'player' | 'opponent'
     }
   }
 }
@@ -92,277 +49,114 @@ Brak
 
 ### Błędy
 
-#### 401 Unauthorized
-
-Brak lub nieprawidłowy JWT token (obsługa przez middleware).
-
-#### 404 Not Found
-
-Set nie znaleziony lub brak dostępu.
-
-#### 422 Unprocessable Entity
-
-**Możliwe komunikaty:**
-
-- "Cannot undo point: match is already finished"
-- "Cannot undo point: set is already finished"
-- "Cannot undo point: set has no points"
-
-#### 500 Internal Server Error
-
-Nieoczekiwany błąd serwera lub bazy danych.
+- **404** - Set nie istnieje lub brak dostępu
+- **422** - Walidacja biznesowa:
+  - "Cannot undo point: match is already finished"
+  - "Cannot undo point: set is already finished"
+  - "Cannot undo point: set has no points"
+- **500** - Błąd serwera
 
 ---
 
-## 5. Przepływ danych
+## Implementacja
 
-### Krok 1: Walidacja żądania
+### Plik: `src/pages/api/sets/[setId]/points/last.ts`
 
-1. Middleware weryfikuje JWT token i wyciąga userId
-2. Handler waliduje path parameter `setId` za pomocą `idParamSchema`
+```typescript
+export const prerender = false;
 
-### Krok 2: Wywołanie Service
+export async function DELETE(context: APIContext) {
+  // 1. Supabase client + userId
+  const supabase = supabaseClient;
+  const userId = DEFAULT_USER_ID;
 
-Handler wywołuje `undoLastPoint(supabase, userId, setId)` z point.service.ts (logika zaimplementowana zgodnie z shared-implementation-plan.md).
+  // 2. Walidacja setId
+  const paramResult = idParamSchema.safeParse({ id: context.params.setId });
+  if (!paramResult.success) {
+    return createValidationErrorResponse(paramResult.error);
+  }
 
-### Krok 3: Formatowanie odpowiedzi
+  const setId = paramResult.data.id;
 
-Handler opakowuje rezultat w `createSuccessResponse(undoPointDto, 200)` i zwraca Response.
+  // 3. Cofnięcie punktu
+  try {
+    const result = await undoLastPoint(supabase, userId, setId);
 
-### Obsługa błędów
-
-Wykorzystanie funkcji z api-response.ts:
-
-- `ApiError` → `createErrorResponse`
-- `NotFoundError` → `createNotFoundResponse`
-- `DatabaseError` → `createInternalErrorResponse`
-- Nieznane błędy → `createInternalErrorResponse` + logowanie
-
----
-
-## 6. Względy bezpieczeństwa
-
-### Uwierzytelnianie
-
-JWT token weryfikowany przez middleware Astro zgodnie z shared-implementation-plan.md.
-
-### Autoryzacja
-
-Weryfikacja ownership na poziomie bazy danych - wszystkie queries zawierają warunek `user_id = userId`. Brak dostępu do seta zwracany jako 404 (information disclosure prevention).
-
-### Walidacja danych wejściowych
-
-Path parameter `setId` walidowany przez `idParamSchema` (liczba całkowita dodatnia).
-
-### Zapobieganie race conditions
-
-Operacje DELETE i UPDATE są atomowe w PostgreSQL. W przypadku równoczesnych wywołań undo, każdy request usuwa faktycznie ostatni punkt w momencie wykonania (MAX sequence_in_set).
-
----
-
-## 7. Obsługa błędów
-
-### Walidacja parametrów (422)
-
-Nieprawidłowy format setId (np. string zamiast liczby) zwraca szczegółowy błąd walidacji zgodnie z shared-implementation-plan.md.
-
-### Autoryzacja (401)
-
-Brak tokenu JWT obsługiwany przez middleware.
-
-### Not Found (404)
-
-Set nie istnieje lub user nie jest właścicielem - oba scenariusze zwracają 404.
-
-### Walidacja biznesowa (422)
-
-- Match jest zakończony
-- Set jest zakończony
-- Brak punktów w secie
-
-### Database Errors (500)
-
-Błędy komunikacji z bazą danych logowane i zwracane jako ogólny błąd serwera.
-
----
-
-## 8. Rozważania dotyczące wydajności
-
-### Database Queries
-
-Maksymalnie 6 queries zgodnie z implementacją w shared-implementation-plan.md:
-
-1. SELECT set (weryfikacja ownership)
-2. SELECT match (weryfikacja statusu)
-3. SELECT last point (ORDER BY sequence_in_set DESC LIMIT 1)
-4. DELETE point_tags
-5. DELETE point
-6. UPDATE set (zmniejszenie wyniku)
-
-### Response Time Target
-
-Cel: < 200ms dla 95 percentile (typowo 50-100ms).
-
----
-
-## 9. Etapy implementacji
-
-### Krok 1: Rozszerzenie Point Service
-
-**Lokalizacja:** `src/lib/services/point.service.ts`
-
-Dodanie funkcji `undoLastPoint` zgodnie ze specyfikacją w shared-implementation-plan.md.
-
-### Krok 2: Utworzenie Astro Endpoint
-
-**Lokalizacja:** `src/pages/api/sets/[setId]/points/last.ts`
-
-1. Konfiguracja endpointa:
-
-   ```typescript
-   export const prerender = false;
-   ```
-
-2. Implementacja handler funkcji `DELETE`:
-   - Import dependencies (services, schemas, utils)
-   - Wyciągnięcie userId z `context.locals.user`
-   - Check autoryzacji (401 jeśli brak user)
-   - Walidacja path param `setId` przez `idParamSchema`
-   - Try-catch block
-
-3. Try block:
-   - Wywołanie `undoLastPoint(supabase, userId, setId)`
-   - Zwrot `createSuccessResponse(result, 200)`
-
-4. Catch block zgodnie z shared-implementation-plan.md:
-   - `ApiError` → `createErrorResponse`
-   - `NotFoundError` → `createNotFoundResponse`
-   - `DatabaseError` → logowanie + `createInternalErrorResponse`
-   - Inne błędy → logowanie + `createInternalErrorResponse`
-
-### Krok 3: Integracja z Shared Components
-
-Wykorzystanie komponentów z shared-implementation-plan.md:
-
-- Response utilities z api-response.ts
-- Error classes z api-errors.ts
-- Schema `idParamSchema` z common.schemas.ts
-- Funkcja `getSetById` z set.service.ts
-- Logger z logger.ts
-
-### Krok 4: Weryfikacja typu odpowiedzi
-
-Upewnić się że handler zwraca `UndoPointResponse` zgodnie z types.ts.
-
-### Krok 5: Linting i Type Checking
-
-1. TypeScript compiler: `npx tsc --noEmit`
-2. Linter: `npm run lint`
-3. Poprawić wszystkie błędy i warningi
-
-### Krok 6: Code Review Checklist
-
-- [ ] Kod zgodny z coding guidelines
-- [ ] Error handling kompletny
-- [ ] Używa shared components
-- [ ] Wszystkie queries zawierają warunek `user_id`
-- [ ] Response format zgodny z types.ts
-- [ ] TypeScript kompiluje się bez błędów
-- [ ] Linter nie zgłasza błędów
-- [ ] Logowanie błędów zaimplementowane
-- [ ] Endpoint handler używa `export const prerender = false`
-- [ ] Używa `context.locals.supabase` zamiast importu klienta
-
----
-
-## 10. Zależności
-
-### Services
-
-- point.service.ts - rozszerzenie o `undoLastPoint` (szczegóły w shared-implementation-plan.md)
-- set.service.ts - wykorzystanie `getSetById`
-
-### Utilities
-
-- api-response.ts - formatowanie odpowiedzi
-- api-errors.ts - klasy błędów
-- logger.ts - logowanie błędów
-
-### Schemas
-
-- common.schemas.ts - walidacja setId
-
-### Types
-
-- types.ts - wszystkie typy DTO i response types
-
-### Middleware
-
-- src/middleware/index.ts - już zaimplementowany
-
----
-
-## 11. Przykładowy flow request → response
-
-### Request
-
-```http
-DELETE /api/sets/456/points/last HTTP/1.1
-Host: localhost:4321
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-### Processing
-
-1. Middleware weryfikuje JWT → wyciąga userId
-2. Handler waliduje setId (456) → OK
-3. Service wykonuje logikę zgodnie z shared-implementation-plan.md:
-   - Weryfikuje set i mecz
-   - Znajduje ostatni punkt (MAX sequence_in_set)
-   - Zapisuje served_by jako currentServerAfterUndo
-   - Usuwa point_tags
-   - Usuwa punkt
-   - Aktualizuje wynik seta
-4. Handler opakowuje: `createSuccessResponse(undoPointDto, 200)`
-
-### Response
-
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "data": {
-    "deleted_point_id": 1003,
-    "set_state": {
-      "id": 456,
-      "set_score_player": 7,
-      "set_score_opponent": 5,
-      "current_server": "player"
+    if (!result) {
+      return createNotFoundResponse("Set not found");
     }
+
+    return createSuccessResponse(result);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return createNotFoundResponse("Set not found");
+    }
+    if (error instanceof ApiError) {
+      return createErrorResponse(error.code, error.message, error.statusCode);
+    }
+    if (error instanceof DatabaseError) {
+      logError("DELETE /api/sets/{setId}/points/last", error, { userId, setId });
+      return createInternalErrorResponse();
+    }
+    throw error;
   }
 }
 ```
 
+### Kluczowe kroki:
+
+1. **Import clienta:** `supabaseClient, DEFAULT_USER_ID` z `src/db/supabase.client`
+2. **Walidacja setId:** `idParamSchema` na `context.params.setId`
+3. **Service:** `undoLastPoint(supabase, userId, setId)`
+4. **Response:** `createSuccessResponse(result)`
+
 ---
 
-## 12. Uwagi dodatkowe
+## Logika biznesowa
+
+### Walidacja stanu
+
+Service weryfikuje:
+
+- Mecz w statusie 'in_progress'
+- Set nie jest zakończony (`is_finished = false`)
+- Set ma co najmniej 1 punkt
+
+### Algorytm usuwania
+
+1. Znajdź ostatni punkt: `ORDER BY sequence_in_set DESC LIMIT 1`
+2. Zapisz `served_by` jako `current_server` (dla response)
+3. DELETE point_tags
+4. DELETE point
+5. UPDATE set (decrement score column)
 
 ### Current server logic
 
-`current_server` w response to serwer, który będzie serwował następny punkt. Po usunięciu punktu jest to `served_by` z usuwanego punktu (nie wymaga ponownego obliczania zgodnie z regułami tenisa stołowego).
+**Ważne:** `current_server` po undo = `served_by` z usuwanego punktu
 
-### Różnice vs POST point
+- Nie wymaga ponownego obliczania
+- Prostsze i wydajniejsze niż rekurencja
 
-POST point oblicza served_by na podstawie całej historii punktów, DELETE point wykorzystuje zapisany served_by z usuwanego punktu (prostsze i wydajniejsze).
+### Database queries
 
-### Transakcje
+Maksymalnie 6 queries:
 
-Endpoint nie wymaga explicit transaction - pojedyncze operacje DELETE i UPDATE są atomowe w PostgreSQL.
+1. SELECT set (weryfikacja ownership)
+2. SELECT match (weryfikacja statusu)
+3. SELECT last point
+4. DELETE point_tags
+5. DELETE point
+6. UPDATE set
 
 ---
 
-**Autor planu:** AI Assistant  
-**Data utworzenia:** 2025-12-07  
-**Wersja:** 1.1  
-**Endpoint:** DELETE /api/sets/{setId}/points/last
+## Zależności
+
+**Services:** `point.service.undoLastPoint`  
+**Schemas:** `idParamSchema`  
+**Utils:** `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Errors:** `NotFoundError`, `ApiError`, `DatabaseError`
+
+---
+
+**Wersja:** 3.0 (Optimized)

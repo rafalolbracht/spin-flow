@@ -1,231 +1,148 @@
-# API Endpoint Implementation Plan: GET /api/public/matches/{token}
+# API Implementation: GET /api/public/matches/{token}
 
-## 1. Przegląd punktu końcowego
+## Przegląd
 
-Endpoint służy do publicznego udostępniania szczegółowych danych meczu bez wymagania uwierzytelnienia. Użytkownicy (zawodnicy, rodzice, kibice) mogą przeglądać kompletne informacje o meczu, w tym wszystkie sety, punkty, tagi oraz raport AI. Dostęp jest kontrolowany poprzez unikalny token.
+**Endpoint:** `/api/public/matches/{token}`  
+**Metoda:** GET  
+**Cel:** Publiczne udostępnianie szczegółowych danych meczu bez uwierzytelnienia  
+**Prerender:** `false`  
+**Autoryzacja:** Publiczny (dostęp przez unikalny token)
 
-**Kluczowe cechy:**
+---
 
-- Brak wymaganego uwierzytelnienia (publiczny dostęp)
-- Kontrola dostępu przez unikalny token (43 znaki base64url)
-- Zwraca kompletne dane meczu (mecz + sety + punkty + tagi + raport AI)
-- Tagi zwracane jako array stringów (nazwy tagów)
-- Nie ujawnia wrażliwych danych (np. user_id)
+## Request
 
-## 2. Szczegóły żądania
+### Path Parameters
 
-**Metoda HTTP:** GET
+- `token` (string, required) - Publiczny token (43 znaki base64url)
 
-**Struktura URL:** `/api/public/matches/{token}`
+**Schemat:** `tokenParamSchema` (shared-plan: Common Schemas)
 
-**Path Parameters:**
+---
 
-- `token` (string, required) - Publiczny token udostępniania meczu (43 znaki base64url)
+## Response
 
-**Query Parameters:** Brak
+### 200 OK
 
-**Request Headers:** Brak wymaganych (brak uwierzytelnienia)
+```typescript
+{
+  data: {
+    match: PublicMatchDto,      // Bez user_id, first_server_first_set, generate_ai_summary, created_at
+    sets: PublicSetDto[],        // Bez match_id, user_id, is_finished, created_at + zagnieżdżone points
+    ai_report: PublicAIReportDto | null  // Tylko ai_status, ai_summary, ai_recommendations
+  }
+}
+```
 
-**Request Body:** Brak (metoda GET)
+### Błędy
 
-## 3. Wykorzystywane typy
+- **404** - Token nieprawidłowy lub mecz nie istnieje (ten sam komunikat dla obu)
+- **500** - Błąd serwera
 
-**Response DTOs z `src/types.ts`:**
+**Uwaga:** Identyczna odpowiedź 404 dla "token invalid" i "match deleted" (zapobieganie enumeracji)
 
-- `PublicMatchResponseDto` - główna struktura odpowiedzi (ApiResponse)
-- `PublicMatchDto` - dane meczu bez wrażliwych informacji
-- `PublicSetDto` - dane seta z zagnieżdżonymi punktami
-- `PublicPointDto` - dane punktu z tagami jako string[]
-- `PublicAIReportDto` - raport AI (jeśli dostępny)
-- `PublicMatchDataDto` - kontener dla match + sets + ai_report
+---
 
-**Pola wykluczane z publicznych DTOs:**
+## Implementacja
 
-- `user_id` (właściciel meczu)
-- `first_server_first_set` (szczegół implementacyjny)
-- `generate_ai_summary` (szczegół implementacyjny)
-- `created_at` timestamps (ujawniają czas utworzenia rekordu)
+### Plik: `src/pages/api/public/matches/[token].ts`
 
-**Command Models:** Brak (endpoint read-only)
+```typescript
+export const prerender = false;
 
-## 4. Szczegóły odpowiedzi
+export async function GET(context: APIContext) {
+  // 1. Supabase client (bez userId - endpoint publiczny)
+  const supabase = supabaseClient;
 
-**Success Response (200 OK):**
+  // 2. Walidacja tokenu (path param)
+  const tokenResult = tokenParamSchema.safeParse({ token: context.params.token });
+  if (!tokenResult.success) {
+    return createNotFoundResponse("Shared match not found");
+  }
 
-Struktura zgodna ze specyfikacją API zawierająca:
+  // 3. Pobranie danych meczu
+  try {
+    const matchData = await getPublicMatchByToken(supabase, tokenResult.data.token);
 
-- `match` - dane meczu
-- `sets[]` - array setów z zagnieżdżonymi punktami
-- `ai_report` - raport AI z polami: ai_status, ai_summary, ai_recommendations
+    if (!matchData) {
+      return createNotFoundResponse("Shared match not found");
+    }
 
-Response wykorzystuje helper `createSuccessResponse` z shared components.
+    return createSuccessResponse(matchData);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return createNotFoundResponse("Shared match not found");
+    }
+    // Log tylko błędy 500, nie 404
+    logError("GET /api/public/matches/{token}", error, { token: token.substring(0, 8) + "..." });
+    return createInternalErrorResponse();
+  }
+}
+```
 
-**Kody statusu:**
+### Kluczowe kroki:
 
-- `200 OK` - Pomyślne pobranie danych meczu
-- `404 Not Found` - Token nieprawidłowy, mecz nie istnieje lub został usunięty
-- `500 Internal Server Error` - Nieoczekiwany błąd serwera
+1. **Import clienta:** `supabaseClient` z `src/db/supabase.client`
+2. **Walidacja tokenu:** `tokenParamSchema` na `context.params.token`
+3. **Service:** `getPublicMatchByToken(supabase, token)`
+4. **Response:** `createSuccessResponse(matchData)`
 
-## 5. Przepływ danych
+---
 
-**Główny przepływ:**
+## Logika biznesowa
 
-1. **Walidacja tokenu** - sprawdzenie formatu (43 znaki base64url)
-2. **Wywołanie serwisu** - użycie `PublicMatchService.getPublicMatchByToken()` z shared components
-3. **Zwrócenie odpowiedzi** - użycie `createSuccessResponse()` dla kodu 200
+### Token plaintext
 
-**Szczegóły logiki biznesowej w `PublicMatchService` (shared components):**
+- Token zapisany i wyszukiwany jako plaintext (bez hashowania)
+- 256 bitów entropii = niemożliwy brute force
+- Model bezpieczeństwa: dane meczu publiczne dla posiadacza tokenu
 
-- Weryfikacja istnienia tokenu w bazie (plaintext)
-- Pobieranie kompletnych danych meczu z optymalizacją (nested select)
-- Transformacja danych na publiczne DTOs
+### Optymalizacja pobierania danych
 
-## 6. Względy bezpieczeństwa
+Service używa nested select (4 queries max zamiast N+1):
 
-**Uwierzytelnienie:** Endpoint jest publiczny - brak wymaganego uwierzytelnienia
+```typescript
+// W public-match.service.ts
+supabase
+  .from("sets")
+  .select(
+    `
+  *,
+  points(
+    *,
+    point_tags(tags(name))
+  )
+`
+  )
+  .eq("match_id", matchId);
+```
 
-**Ochrona danych:**
+### Wykluczenie wrażliwych danych
 
-- Publiczne DTOs wykluczają wrażliwe pola (szczegóły w `PublicMatchService`)
-- Token przechowywany jako plaintext w bazie (43 znaki base64url)
-- 256 bitów entropii chroni przed brute force
-- Jednolite komunikaty błędów 404 zapobiegają enumeracji tokenów
+Publiczne DTOs nie zawierają:
 
-**Walidacja tokenu:**
+- `user_id`
+- `first_server_first_set`
+- `generate_ai_summary`
+- `created_at` timestamps (niektóre)
 
-- Format: 43 znaki base64url `[A-Za-z0-9_-]{43}`
-- Walidacja przez `tokenParamSchema` z shared components
-- Bezpośrednie wyszukiwanie w bazie (bez hashowania)
+### Jednolite komunikaty błędów
 
-## 7. Obsługa błędów
+"Shared match not found" dla:
 
-**Wykorzystanie shared components:**
+- Token nieprawidłowy format
+- Token nie istnieje w bazie
+- Mecz został usunięty
 
-- `NotFoundError` - dla błędów 404
-- `createErrorResponse` - dla formatowania błędów
-- `logError` - dla logowania błędów serwera (tylko 500)
+---
 
-**Scenariusze błędów:**
+## Zależności
 
-### 7.1. Token nieprawidłowy lub mecz usunięty (404)
+**Services:** `public-match.service.getPublicMatchByToken`  
+**Schemas:** `tokenParamSchema`  
+**Utils:** `createSuccessResponse`, `createNotFoundResponse`, `createInternalErrorResponse`, `logError`  
+**Errors:** `NotFoundError`
 
-Identyczna odpowiedź dla obu przypadków (zapobieganie enumeracji):
+---
 
-- Message: "Shared match not found"
-- Code: "SHARED_MATCH_NOT_FOUND"
-- Logowanie: Brak (normalny przypadek biznesowy)
-
-### 7.2. Błąd serwera (500)
-
-- Message: "Internal server error"
-- Code: "INTERNAL_SERVER_ERROR"
-- Logowanie: TAK - kontekst zawiera endpoint i skróconą wersję tokenu
-
-**Logowanie błędów:**
-Wykorzystanie `logError` utility tylko dla błędów 500, z kontekstem:
-
-- endpoint: 'GET /api/public/matches/{token}'
-- token: pierwsze 8 znaków + '...' (dla bezpieczeństwa)
-
-## 8. Rozważania dotyczące wydajności
-
-**Optymalizacje w `PublicMatchService`:**
-
-- Nested select Supabase zamiast N+1 queries
-- Maksymalnie 4 queries niezależnie od wielkości meczu
-- Sortowanie na poziomie bazy danych
-
-## 9. Etapy wdrożenia
-
-### 9.1. Utworzenie typów DTO
-
-**Plik:** `src/types.ts`
-
-Zdefiniować publiczne DTOs dla response (jeśli jeszcze nie istnieją):
-
-- `PublicMatchDto` - pola z tabeli `matches` minus wrażliwe pola
-- `PublicSetDto` - pola z tabeli `sets` minus wrażliwe pola, plus zagnieżdżone `points`
-- `PublicPointDto` - pola z tabeli `points` minus wrażliwe pola, plus `tags: string[]`
-- `PublicAIReportDto` - pola: ai_status, ai_summary, ai_recommendations
-- `PublicMatchDataDto` - kontener: match, sets, ai_report
-- `PublicMatchResponseDto` - typ `ApiResponse<PublicMatchDataDto>`
-
-### 9.2. Implementacja PublicMatchService (jeśli nie istnieje)
-
-**Uwaga:** Szczegóły w shared-implementation-plan.md
-
-**Plik:** `src/lib/services/public-match.service.ts`
-
-Service implementuje:
-
-- `getPublicMatchByToken()` - główna funkcja pobierająca dane
-- Funkcje pomocnicze do mapowania na publiczne DTOs
-
-Service wykorzystuje:
-
-- `NotFoundError` z api-errors
-- Nested select Supabase dla optymalizacji wydajności
-- Transformacja usuwająca wrażliwe pola
-- Bezpośrednie wyszukiwanie tokenu (plaintext, bez hashowania)
-
-### 9.3. Utworzenie Astro API route
-
-**Plik:** `src/pages/api/public/matches/[token].ts`
-
-**Struktura handlera GET:**
-
-1. **Prerender:** Dodać `export const prerender = false`
-
-2. **Walidacja tokenu:**
-   - Pobranie tokenu z `context.params.token`
-   - Walidacja za pomocą `tokenParamSchema` (43 znaki base64url)
-   - Rzucenie `NotFoundError` jeśli nieprawidłowy format
-
-3. **Pobranie danych:**
-   - Pobranie Supabase client z `context.locals.supabase`
-   - Wywołanie `PublicMatchService.getPublicMatchByToken(supabase, token)`
-
-4. **Zwrócenie odpowiedzi:**
-   - Użycie `createSuccessResponse(matchData, 200)`
-
-5. **Obsługa błędów:**
-   - Catch `NotFoundError` → return odpowiedź 404
-   - Catch inne błędy → logowanie + return odpowiedź 500
-   - Użycie `createErrorResponse()` dla wszystkich błędów
-
-**Best practices:**
-
-- Użycie `context.locals.supabase` zgodnie z regułami Astro
-- Try-catch dla globalnej obsługi błędów
-- Early returns dla przypadków błędów (guard clauses)
-- Logowanie tylko błędów 500, nie 404
-
-### 9.4. Weryfikacja implementacji
-
-**Sprawdzenia:**
-
-1. TypeScript kompiluje się bez błędów
-2. Linter nie zgłasza błędów (error handling, early returns)
-3. Struktura response zgodna ze specyfikacją API
-4. Brak wrażliwych pól (user_id, created_at) w response
-5. Sortowanie setów i punktów prawidłowe
-6. Tagi zwracane jako array stringów
-
-## 10. Uwagi końcowe
-
-**Zależności:**
-
-- Endpoint zakłada, że token został utworzony przez `POST /api/matches/{matchId}/share`
-- Token zapisywany i wyszukiwany jako plaintext (43 znaki base64url)
-
-**Model bezpieczeństwa:**
-
-- 256 bitów entropii zapewnia odporność na brute force
-- Zgodny z praktykami branżowymi (Google Drive, Dropbox, GitHub Gists)
-- Dane meczu są publiczne dla posiadacza tokenu
-
-**Zgodność:**
-
-- Endpoint realizuje wymaganie publicznego udostępniania wyników meczów
-- Zgodny z modelem danych (tabela matches_public_share)
-- Zgodny z zasadami bezpieczeństwa (brak user_id w response)
+**Wersja:** 3.0 (Optimized)
