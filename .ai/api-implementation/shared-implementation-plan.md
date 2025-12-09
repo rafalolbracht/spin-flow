@@ -2,330 +2,192 @@
 
 ## Przegląd
 
-Ten dokument opisuje plan implementacji wspólnych komponentów używanych przez wszystkie endpointy API w aplikacji Spin Flow. Komponenty te zapewniają:
+Ten dokument opisuje plan implementacji wspólnych komponentów dla API w aplikacji Spin Flow:
 
 - Spójne formatowanie odpowiedzi API
 - Jednolite zarządzanie błędami
 - Reużywalne funkcje walidacji
-- Logikę biznesową dla encji (Match, Set, Analytics)
+- Logikę biznesową dla encji (Match, Set, Point, Analytics)
 - Schematy walidacji Zod
 
-**UWAGA:** Middleware (`src/middleware/index.ts`) jest już zaimplementowany i nie jest objęty tym planem.
+**UWAGA:** Middleware (`src/middleware/index.ts`) jest już zaimplementowany.
+
+**⚠️ ZAŁOŻENIA DEVELOPMENTOWE:**
+
+- Autentykacja jest **tymczasowo wyłączona** - używamy `DEFAULT_USER_ID`
+- Wszystkie endpointy działają bez JWT token
+- RLS w Supabase weryfikuje `DEFAULT_USER_ID` (`"00000000-0000-0000-0000-000000000000"`)
+- **Dane testowe w bazie muszą mieć** `user_id = DEFAULT_USER_ID`
+- Pełna autentykacja zostanie dodana w późniejszych krokach projektu
 
 ---
 
-## Lista komponentów wspólnych
+## 1. Uniwersalne Wzorce i Konwencje
 
-### 🔴 Priorytet KRYTYCZNY (przed implementacją jakiegokolwiek endpointa)
+### 1.1 Supabase Client i Autentykacja (Development Mode)
 
-1. **API Response Utilities** (`src/lib/utils/api-response.ts`)
-   - Formatowanie wszystkich typów odpowiedzi API
-   - Używane przez: WSZYSTKIE endpointy
+**⚠️ TYMCZASOWE ROZWIĄZANIE - Development bez autentykacji:**
 
-2. **API Error Utilities** (`src/lib/utils/api-errors.ts`)
-   - Stałe, typy i klasy błędów
-   - Używane przez: WSZYSTKIE endpointy
-
-3. **Zod Helper Utilities** (`src/lib/utils/zod-helpers.ts`)
-   - Funkcje pomocnicze dla walidacji
-   - Używane przez: WSZYSTKIE endpointy z query params lub body
-
-### 🟡 Priorytet WYSOKI (dla endpointów Match)
-
-4. **Match Service** (`src/lib/services/match.service.ts`)
-   - Logika biznesowa dla operacji na meczach
-   - Używane przez: Wszystkie endpointy Match
-
-5. **Set Service** (`src/lib/services/set.service.ts`)
-   - Logika biznesowa dla operacji na setach
-   - Używane przez: POST /api/matches, endpointy Set
-
-6. **Match Schemas** (`src/lib/schemas/match.schemas.ts`)
-   - Schematy walidacji Zod dla endpointów Match
-   - Używane przez: Wszystkie endpointy Match
-
-7. **Common Schemas** (`src/lib/schemas/common.schemas.ts`)
-   - Wspólne schematy walidacji (ID, token, include)
-   - Używane przez: Wiele endpointów
-
-### 🟢 Priorytet ŚREDNI (nice to have)
-
-8. **Logger Utility** (`src/lib/utils/logger.ts`)
-   - Strukturalne logowanie błędów i zdarzeń
-   - Używane przez: WSZYSTKIE endpointy (opcjonalnie)
-
-9. **Analytics Service** (`src/lib/services/analytics.service.ts`)
-   - Tracking zdarzeń użytkownika
-   - Używane przez: POST /api/matches, POST /api/matches/{id}/finish
-
----
-
-## 1. API Response Utilities
-
-**Lokalizacja:** `src/lib/utils/api-response.ts`
-
-### Cel
-
-Zapewnienie spójnego formatowania odpowiedzi API dla wszystkich endpointów. Eliminacja duplikacji kodu związanego z tworzeniem obiektów Response.
-
-### Funkcje do implementacji
-
-#### 1.1. `createJsonResponse`
-
-Podstawowa funkcja pomocnicza (prywatna).
-
-**Sygnatura:**
+**W Astro API routes:**
 
 ```typescript
-function createJsonResponse(body: unknown, status: number): Response;
+import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client";
+
+export async function GET(context: APIContext) {
+  const supabase = supabaseClient; // ✅ Import z src/db/supabase.client.ts
+  const userId = DEFAULT_USER_ID; // ✅ Tymczasowe - zastąpi context.locals.userId
+
+  // Wywołaj service
+  const result = await someService(supabase, userId, ...);
+  // ...
+}
 ```
 
-**Implementacja:**
-
-- Serializacja body do JSON
-- Utworzenie Response z odpowiednimi nagłówkami
-- Headers: `Content-Type: application/json`
-- Obsługa błędów serializacji JSON
-
----
-
-#### 1.2. `createSuccessResponse`
-
-Formatowanie odpowiedzi dla single item (data wrapper).
-
-**Sygnatura:**
+**W services:**
 
 ```typescript
-export function createSuccessResponse<T>(data: T, status: number = 200): Response;
+import type { SupabaseClient } from "../../db/supabase.client";
+
+export async function someService(
+  supabase: SupabaseClient, // przekazywany z endpoint
+  userId: string // DEFAULT_USER_ID w development
+  // ...
+) {
+  // RLS w Supabase używa userId (DEFAULT_USER_ID w development)
+  const { data } = await supabase.from("matches").select("*").eq("user_id", userId); // ✅ Weryfikacja ownership
+}
 ```
 
-**Implementacja:**
+**WAŻNE - Importy:**
 
-- Owinięcie data w `SingleItemResponseDto<T>`
-- Struktura: `{ data: T }`
-- Wywołanie `createJsonResponse({ data }, status)`
-- Domyślny status: 200
+- ✅ `import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client"`
+- ❌ NIE importuj z `@supabase/supabase-js` ani `node_modules`
+- ✅ Zawsze używaj klienta z `src/db/supabase.client.ts`
 
-**Używane przez:**
+**DEFAULT_USER_ID:**
 
-- POST /api/matches (201)
-- GET /api/matches/{id} (200)
-- PATCH /api/matches/{id} (200)
-- POST /api/matches/{id}/finish (200)
-- Wszystkie endpointy zwracające single item
+- UUID: `"00000000-0000-0000-0000-000000000000"`
+- Używany w development zamiast prawdziwego userId z JWT
+- RLS w Supabase weryfikuje ten ID
+- TODO: Zastąpić prawdziwą autentykacją (middleware + JWT)
 
----
-
-#### 1.3. `createListResponse`
-
-Formatowanie odpowiedzi dla prostej listy (bez paginacji).
-
-**Sygnatura:**
+**Przyszłość (po implementacji autentykacji):**
 
 ```typescript
-export function createListResponse<T>(data: T[], status: number = 200): Response;
+// Będzie (w routes):
+const supabase = context.locals.supabase; // z middleware
+const userId = context.locals.userId; // z JWT token
+
+// Services pozostają bez zmian - przyjmują userId jako parametr
 ```
 
-**Implementacja:**
-
-- Owinięcie data w `ListResponseDto<T>`
-- Struktura: `{ data: T[] }`
-- Wywołanie `createJsonResponse({ data }, status)`
-- Domyślny status: 200
-
-**Używane przez:**
-
-- GET /api/tags (200)
-- GET /api/dictionary/labels (200)
-- GET /api/matches/{matchId}/sets (200)
-- GET /api/sets/{setId}/points (200)
-
----
-
-#### 1.4. `createPaginatedResponse`
-
-Formatowanie odpowiedzi dla listy z paginacją.
-
-**Sygnatura:**
+**Przykład pełnego endpoint (development):**
 
 ```typescript
-export function createPaginatedResponse<T>(data: T[], total: number, status: number = 200): Response;
+// src/pages/api/matches/index.ts
+import { supabaseClient, DEFAULT_USER_ID } from "../../../db/supabase.client";
+import { getMatchesPaginated } from "../../../lib/services/match.service";
+import { createPaginatedResponse } from "../../../lib/utils/api-response";
+
+export async function GET(context: APIContext) {
+  const supabase = supabaseClient;
+  const userId = DEFAULT_USER_ID;
+
+  // Parse query params (później)
+  const query = { page: 1, limit: 20 };
+
+  // Wywołaj service
+  const result = await getMatchesPaginated(supabase, userId, query);
+
+  // Zwróć response
+  return createPaginatedResponse(result.data, result.pagination.total);
+}
 ```
 
-**Implementacja:**
+### 1.2 Error Handling
 
-- Owinięcie data w `PaginatedResponseDto<T>`
-- Struktura: `{ data: T[], pagination: { total: number } }`
-- Wywołanie `createJsonResponse({ data, pagination: { total } }, status)`
-- Domyślny status: 200
-
-**Używane przez:**
-
-- GET /api/matches (200)
-
----
-
-#### 1.5. `createErrorResponse`
-
-Formatowanie odpowiedzi błędu.
-
-**Sygnatura:**
+**Wzorzec dla wszystkich services:**
 
 ```typescript
-export function createErrorResponse(
-  code: string,
-  message: string,
-  status: number,
-  details?: ValidationErrorDetail[]
-): Response;
+// NotFoundError: return null (endpoint obsługuje jako 404)
+if (!resource) return null;
+
+// ValidationError: throw ApiError(422)
+if (businessRuleViolated) {
+  throw new ApiError("VALIDATION_ERROR", "Message", 422);
+}
+
+// DatabaseError: throw (propaguj wyżej)
+if (dbError) {
+  throw new DatabaseError("Failed to ...");
+}
 ```
 
-**Implementacja:**
+**Information Disclosure Prevention:**
 
-- Utworzenie `ErrorResponseDto`
-- Struktura: `{ error: { code, message, details? } }`
-- Wywołanie `createJsonResponse({ error: { code, message, details } }, status)`
+- Return null dla both "not found" i "access denied"
+- Zawsze ten sam komunikat błędu dla różnych scenariuszy
+- Przykład: "Match not found" dla "nie istnieje" i "brak dostępu"
 
-**Używane przez:**
+### 1.3 Autoryzacja i Ownership
 
-- Wszystkie endpointy (error handling)
-
----
-
-#### 1.6. `createValidationErrorResponse`
-
-Formatowanie odpowiedzi błędu walidacji Zod.
-
-**Sygnatura:**
+**Wzorzec weryfikacji (z DEFAULT_USER_ID w development):**
 
 ```typescript
-export function createValidationErrorResponse(zodError: ZodError): Response;
+// Zawsze weryfikuj user_id w query (userId = DEFAULT_USER_ID w development)
+const { data: match } = await supabase
+  .from("matches")
+  .select("*")
+  .eq("id", matchId)
+  .eq("user_id", userId) // ✅ RLS weryfikacja
+  .single();
+
+// Return null zamiast throw dla access denied
+if (!match) return null; // nie ujawniaj czy to not found czy no access
 ```
 
-**Implementacja:**
+**UWAGA Development:**
 
-- Import funkcji `zodErrorToValidationDetails` z `zod-helpers.ts`
-- Konwersja ZodError na ValidationErrorDetail[]
-- Wywołanie `createErrorResponse('VALIDATION_ERROR', 'Validation failed', 422, details)`
+- W development `userId = DEFAULT_USER_ID` dla wszystkich requestów
+- Wszystkie dane w bazie powinny mieć `user_id = DEFAULT_USER_ID`
+- RLS weryfikuje poprawnie, ale wszystko należy do jednego "użytkownika"
+- Po dodaniu autentykacji: `userId` będzie z JWT tokena
 
-**Używane przez:**
+### 1.4 Mapowanie DTO
 
-- Wszystkie endpointy z walidacją Zod
+**Konwencje:**
 
----
+- Nazewnictwo: `mapXToYDto(source, ...additionalData): YDto`
+- Zawsze usuwaj `user_id` z rezultatów
+- Grupuj mapping functions na końcu każdego serwisu
 
-#### 1.7. `createUnauthorizedResponse`
+### 1.5 Optymalizacje Wydajności
 
-Shortcut dla błędu 401.
-
-**Sygnatura:**
+**N+1 Prevention:**
 
 ```typescript
-export function createUnauthorizedResponse(message: string = "Missing or invalid authentication token"): Response;
+// ❌ Źle: pętla
+for (const set of sets) {
+  const points = await getPointsBySetId(set.id); // N queries
+}
+
+// ✅ Dobrze: bulk query
+const allPoints = await getPointsBySetIds(setIds); // 1 query
 ```
 
-**Implementacja:**
+**Inne optymalizacje:**
 
-- Wywołanie `createErrorResponse('UNAUTHORIZED', message, 401)`
-
-**Używane przez:**
-
-- Wszystkie endpointy (auth check)
+- Nested selects Supabase dla relacji
+- Bulk operations dla DELETE/UPDATE z `WHERE IN`
+- Maksymalizacja wykorzystania single query
 
 ---
 
-#### 1.8. `createNotFoundResponse`
+## 2. Utilities (Priorytet KRYTYCZNY)
 
-Shortcut dla błędu 404.
+### 2.1 API Errors (`src/lib/utils/api-errors.ts`)
 
-**Sygnatura:**
-
-```typescript
-export function createNotFoundResponse(message: string = "Resource not found"): Response;
-```
-
-**Implementacja:**
-
-- Wywołanie `createErrorResponse('NOT_FOUND', message, 404)`
-
-**Używane przez:**
-
-- GET /api/matches/{id}
-- PATCH /api/matches/{id}
-- DELETE /api/matches/{id}
-- Wszystkie endpointy z path param {id}
-
----
-
-#### 1.9. `createInternalErrorResponse`
-
-Shortcut dla błędu 500.
-
-**Sygnatura:**
-
-```typescript
-export function createInternalErrorResponse(message: string = "An unexpected error occurred"): Response;
-```
-
-**Implementacja:**
-
-- Wywołanie `createErrorResponse('INTERNAL_ERROR', message, 500)`
-
-**Używane przez:**
-
-- Wszystkie endpointy (catch-all error handler)
-
----
-
-#### 1.10. `createNoContentResponse`
-
-Odpowiedź 204 bez body.
-
-**Sygnatura:**
-
-```typescript
-export function createNoContentResponse(): Response;
-```
-
-**Implementacja:**
-
-- Utworzenie Response bez body
-- Status: 204
-
-**Używane przez:**
-
-- DELETE /api/matches/{id}
-- POST /api/analytics/events
-
----
-
-### Importy
-
-```typescript
-import { z } from "zod";
-import type {
-  SingleItemResponseDto,
-  ListResponseDto,
-  PaginatedResponseDto,
-  ErrorResponseDto,
-  ValidationErrorDetail,
-} from "../../types";
-import { zodErrorToValidationDetails } from "./zod-helpers";
-```
-
----
-
-## 2. API Error Utilities
-
-**Lokalizacja:** `src/lib/utils/api-errors.ts`
-
-### Cel
-
-Centralizacja definicji błędów, kodów i komunikatów. Zapewnienie type safety dla error handling.
-
-### Komponenty do implementacji
-
-#### 2.1. Stałe - Error Codes
+**Stałe:**
 
 ```typescript
 export const ERROR_CODES = {
@@ -335,39 +197,21 @@ export const ERROR_CODES = {
   FORBIDDEN: "FORBIDDEN",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   DATABASE_ERROR: "DATABASE_ERROR",
-  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
   BAD_REQUEST: "BAD_REQUEST",
-  METHOD_NOT_ALLOWED: "METHOD_NOT_ALLOWED",
 } as const;
 
-export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
-```
-
----
-
-#### 2.2. Stałe - Error Messages
-
-```typescript
 export const ERROR_MESSAGES = {
   UNAUTHORIZED: "Missing or invalid authentication token",
   INTERNAL_ERROR: "An unexpected error occurred",
   NOT_FOUND: "Resource not found",
-  FORBIDDEN: "Access forbidden",
   DATABASE_ERROR: "Database operation failed",
-  SERVICE_UNAVAILABLE: "Service temporarily unavailable",
-  INVALID_JSON: "Invalid JSON in request body",
   VALIDATION_FAILED: "Validation failed",
   MATCH_NOT_FOUND: "Match not found",
   SET_NOT_FOUND: "Set not found",
-  POINT_NOT_FOUND: "Point not found",
 } as const;
 ```
 
----
-
-#### 2.3. Klasa - ApiError
-
-Bazowa klasa błędów API.
+**Klasy:**
 
 ```typescript
 export class ApiError extends Error {
@@ -377,197 +221,91 @@ export class ApiError extends Error {
     public statusCode: number,
     public details?: ValidationErrorDetail[]
   ) {
-    super(message);
-    this.name = "ApiError";
-
-    // Maintain proper stack trace for where error was thrown
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ApiError);
-    }
+    /* ... */
   }
 }
-```
 
-**Używane przez:**
-
-- Services (throw new ApiError)
-- Endpoint handlers (catch ApiError)
-
----
-
-#### 2.4. Klasa - DatabaseError
-
-Błąd operacji bazodanowych.
-
-```typescript
 export class DatabaseError extends ApiError {
-  constructor(message: string = ERROR_MESSAGES.DATABASE_ERROR) {
+  constructor(message = ERROR_MESSAGES.DATABASE_ERROR) {
     super(ERROR_CODES.DATABASE_ERROR, message, 500);
-    this.name = "DatabaseError";
   }
 }
-```
 
-**Używane przez:**
+export class NotFoundError extends ApiError {
+  constructor(message = ERROR_MESSAGES.NOT_FOUND) {
+    super(ERROR_CODES.NOT_FOUND, message, 404);
+  }
+}
 
-- Services (catch database errors)
-
----
-
-#### 2.5. Klasa - ValidationError
-
-Błąd walidacji.
-
-```typescript
 export class ValidationError extends ApiError {
   constructor(details: ValidationErrorDetail[]) {
     super(ERROR_CODES.VALIDATION_ERROR, ERROR_MESSAGES.VALIDATION_FAILED, 422, details);
-    this.name = "ValidationError";
   }
 }
 ```
 
-**Używane przez:**
-
-- Endpoint handlers (throw ValidationError)
+**Import z:** `../../types` (ValidationErrorDetail)
 
 ---
 
-#### 2.6. Klasa - NotFoundError
+### 2.2 API Response (`src/lib/utils/api-response.ts`)
 
-Błąd nie znaleziono zasobu.
+**Funkcje:**
 
 ```typescript
-export class NotFoundError extends ApiError {
-  constructor(message: string = ERROR_MESSAGES.NOT_FOUND) {
-    super(ERROR_CODES.NOT_FOUND, message, 404);
-    this.name = "NotFoundError";
-  }
-}
+// Single item
+export function createSuccessResponse<T>(data: T, status = 200): Response;
+
+// Lista bez paginacji
+export function createListResponse<T>(data: T[], status = 200): Response;
+
+// Lista z paginacją
+export function createPaginatedResponse<T>(data: T[], total: number, status = 200): Response;
+
+// Błędy
+export function createErrorResponse(
+  code: string,
+  message: string,
+  status: number,
+  details?: ValidationErrorDetail[]
+): Response;
+export function createValidationErrorResponse(zodError: ZodError): Response;
+
+// Shortcuts
+export function createUnauthorizedResponse(message?: string): Response;
+export function createNotFoundResponse(message?: string): Response;
+export function createInternalErrorResponse(message?: string): Response;
+export function createNoContentResponse(): Response; // 204
 ```
 
-**Używane przez:**
+**Implementacja:**
 
-- Services (throw NotFoundError gdy zasób nie istnieje)
+- Prywatna `createJsonResponse(body, status)` jako baza
+- `createValidationErrorResponse` używa `zodErrorToValidationDetails` z zod-helpers
+- Wszystkie używają struktur: `{ data }`, `{ data, pagination }`, `{ error }`
 
----
-
-### Importy
-
-```typescript
-import type { ValidationErrorDetail } from "../../types";
-```
+**Importy z:** `../../types`, `./zod-helpers` (zodErrorToValidationDetails)
 
 ---
 
-## 3. Zod Helper Utilities
+### 2.3 Zod Helpers (`src/lib/utils/zod-helpers.ts`)
 
-**Lokalizacja:** `src/lib/utils/zod-helpers.ts`
-
-### Cel
-
-Reużywalne funkcje pomocnicze dla walidacji Zod. Redukcja boilerplate code w endpointach.
-
-### Funkcje do implementacji
-
-#### 3.1. `searchParamsToObject`
-
-Konwersja URLSearchParams do obiektu.
-
-**Sygnatura:**
+**Funkcje:**
 
 ```typescript
+// URLSearchParams -> Object
 export function searchParamsToObject(searchParams: URLSearchParams): Record<string, string>;
-```
 
-**Implementacja:**
-
-- Iteracja przez searchParams
-- Utworzenie obiektu z kluczami i wartościami
-- Zwrócenie płaskiego obiektu
-
-**Przykład:**
-
-```typescript
-// Input: ?page=1&limit=20&status=in_progress
-// Output: { page: '1', limit: '20', status: 'in_progress' }
-```
-
-**Używane przez:**
-
-- GET /api/matches
-- Wszystkie endpointy z query params
-
----
-
-#### 3.2. `zodErrorToValidationDetails`
-
-Konwersja ZodError na ValidationErrorDetail[].
-
-**Sygnatura:**
-
-```typescript
+// ZodError -> ValidationErrorDetail[]
 export function zodErrorToValidationDetails(error: z.ZodError): ValidationErrorDetail[];
-```
 
-**Implementacja:**
-
-- Iteracja przez `error.errors`
-- Mapowanie każdego błędu na `ValidationErrorDetail`
-- Ekstrakcja `field` z `error.path.join('.')`
-- Ekstrakcja `message` z `error.message`
-- Zwrócenie tablicy ValidationErrorDetail[]
-
-**Przykład:**
-
-```typescript
-// Input: ZodError z błędami na polach 'page' i 'limit'
-// Output: [
-//   { field: 'page', message: 'Number must be greater than or equal to 1' },
-//   { field: 'limit', message: 'Number must be less than or equal to 100' }
-// ]
-```
-
-**Używane przez:**
-
-- `api-response.ts` (createValidationErrorResponse)
-- Wszystkie endpointy
-
----
-
-#### 3.3. `parseQueryParams`
-
-Parsowanie i walidacja query parameters.
-
-**Sygnatura:**
-
-```typescript
+// Parse query params
 export function parseQueryParams<T>(
   searchParams: URLSearchParams,
   schema: z.ZodSchema<T>
 ): { success: true; data: T } | { success: false; error: z.ZodError };
-```
 
-**Implementacja:**
-
-- Wywołanie `searchParamsToObject(searchParams)`
-- Wywołanie `schema.safeParse(paramsObject)`
-- Zwrócenie rezultatu (success/error)
-
-**Używane przez:**
-
-- GET /api/matches
-- Wszystkie endpointy z query params
-
----
-
-#### 3.4. `parseRequestBody`
-
-Parsowanie i walidacja request body.
-
-**Sygnatura:**
-
-```typescript
+// Parse request body
 export async function parseRequestBody<T>(
   request: Request,
   schema: z.ZodSchema<T>
@@ -576,693 +314,178 @@ export async function parseRequestBody<T>(
 
 **Implementacja:**
 
-- Try-catch dla `await request.json()`
-- W przypadku błędu JSON: zwróć `{ success: false, error: new Error('Invalid JSON') }`
-- Wywołanie `schema.safeParse(body)`
-- Zwrócenie rezultatu (success/error)
+- `zodErrorToValidationDetails`: mapuj `error.errors` na `{ field: path.join('.'), message }`
+- `parseRequestBody`: try-catch dla `request.json()`, zwróć error dla invalid JSON
 
-**Używane przez:**
-
-- POST /api/matches
-- PATCH /api/matches/{id}
-- Wszystkie endpointy z body
+**Importy z:** `zod`, `../../types` (ValidationErrorDetail)
 
 ---
 
-### Importy
+### 2.4 Logger (`src/lib/utils/logger.ts`) - OPCJONALNIE
+
+**Funkcje:**
 
 ```typescript
-import { z } from "zod";
-import type { ValidationErrorDetail } from "../../types";
-```
-
----
-
-## 4. Logger Utility
-
-**Lokalizacja:** `src/lib/utils/logger.ts`
-
-### Cel
-
-Strukturalne logowanie błędów, ostrzeżeń i informacji. Spójny format logów w całej aplikacji.
-
-### Funkcje do implementacji
-
-#### 4.1. `logError`
-
-Logowanie błędów.
-
-**Sygnatura:**
-
-```typescript
-export function logError(
-  endpoint: string,
-  error: Error,
-  context?: {
-    userId?: string;
-    params?: Record<string, any>;
-    body?: Record<string, any>;
-  }
-): void;
-```
-
-**Implementacja:**
-
-- Wypisanie strukturalnego logu
-- Format: `[{endpoint}] Error: {error.message}`
-- Jeśli context.userId: wypisz User ID
-- Jeśli context.params: wypisz Query/Path params
-- Jeśli context.body: wypisz Request body (bez wrażliwych danych)
-- Wypisz timestamp
-- Wypisz stack trace
-
-**Przykład:**
-
-```
-[GET /api/matches] Error: Database connection timeout
-  User ID: uuid-123-456
-  Query params: { page: 1, limit: 20, status: "in_progress" }
-  Timestamp: 2024-01-15T14:30:00Z
-  Stack: [stack trace]
-```
-
-**Używane przez:**
-
-- Wszystkie endpointy (catch block)
-- Wszystkie services
-
----
-
-#### 4.2. `logWarning`
-
-Logowanie ostrzeżeń.
-
-**Sygnatura:**
-
-```typescript
+export function logError(endpoint: string, error: Error, context?: Record<string, any>): void;
 export function logWarning(endpoint: string, message: string, context?: Record<string, any>): void;
-```
-
-**Implementacja:**
-
-- Wypisanie strukturalnego logu
-- Format: `[{endpoint}] Warning: {message}`
-- Jeśli context: wypisz jako JSON
-
-**Używane przez:**
-
-- Services (np. analytics failure - non-critical)
-
----
-
-#### 4.3. `logInfo`
-
-Logowanie informacji.
-
-**Sygnatura:**
-
-```typescript
 export function logInfo(endpoint: string, message: string, context?: Record<string, any>): void;
 ```
 
-**Implementacja:**
-
-- Wypisanie strukturalnego logu
-- Format: `[{endpoint}] Info: {message}`
-- Jeśli context: wypisz jako JSON
-
-**Używane przez:**
-
-- Services (np. successful operations - do debugowania)
+**Implementacja:** Użyj `console.error/warn/log` z formatowaniem `[endpoint] Level: message`
 
 ---
 
-### Uwagi implementacyjne
+## 3. Schemas (Priorytet WYSOKI)
 
-- Na początku używać `console.error`, `console.warn`, `console.log`
-- W przyszłości można zintegrować z systemem logowania (np. Sentry, DataDog)
-- Nie logować wrażliwych danych (tokeny, hasła)
-- Możliwość dodania poziomów logowania (DEBUG, INFO, WARN, ERROR)
-
----
-
-## 5. Match Service
-
-**Lokalizacja:** `src/lib/services/match.service.ts`
-
-### Cel
-
-Centralizacja logiki biznesowej związanej z meczami. Separacja od warstwy API.
-
-### Metody do implementacji
-
-#### 5.1. `getMatchesPaginated`
-
-Pobranie spaginowanej listy meczów użytkownika.
-
-**Sygnatura:**
+### 3.1 Common (`src/lib/schemas/common.schemas.ts`)
 
 ```typescript
-export async function getMatchesPaginated(
-  supabase: SupabaseClient,
-  userId: string,
-  query: ValidatedMatchListQuery
-): Promise<{ data: MatchListItemDto[]; pagination: { total: number } }>;
-```
-
-**Parametry:**
-
-- `supabase` - Supabase client z context.locals
-- `userId` - ID użytkownika z JWT token
-- `query` - Zwalidowane query parameters (page, limit, filters, sort)
-
-**Implementacja:**
-
-1. **Parsowanie sortowania:**
-   - Wywołanie `parseSortParam(query.sort)`
-   - Ekstrakcja `column` i `ascending`
-
-2. **Obliczenie offset:**
-   - `offset = (query.page - 1) * query.limit`
-
-3. **COUNT query:**
-   - Wywołanie `buildFilteredQuery(supabase, userId, query)`
-   - Wykonanie `.select('*', { count: 'exact', head: true })`
-   - Obsługa błędu: throw DatabaseError
-   - Zapisanie `count`
-
-4. **SELECT query:**
-   - Wywołanie `buildFilteredQuery(supabase, userId, query)` (nowy builder!)
-   - Zastosowanie sortowania: `.order(column, { ascending })`
-   - Zastosowanie paginacji: `.range(offset, offset + query.limit - 1)`
-   - Wykonanie `.select('*')`
-   - Obsługa błędu: throw DatabaseError
-
-5. **Mapowanie rezultatów:**
-   - Usunięcie `user_id` z każdego rekordu: `data.map(({ user_id, ...match }) => match)`
-
-6. **Zwrócenie:**
-   - `{ data: mappedData, pagination: { total: count } }`
-
-**Używane przez:**
-
-- GET /api/matches
-
----
-
-#### 5.2. `createMatch`
-
-Utworzenie nowego meczu z pierwszym setem.
-
-**Sygnatura:**
-
-```typescript
-export async function createMatch(
-  supabase: SupabaseClient,
-  userId: string,
-  command: CreateMatchCommandDto
-): Promise<CreateMatchDto>;
-```
-
-**Parametry:**
-
-- `supabase` - Supabase client z context.locals
-- `userId` - ID użytkownika z JWT token
-- `command` - Zwalidowane dane z request body
-
-**Implementacja:**
-
-1. **Przygotowanie danych match:**
-
-   ```typescript
-   const matchInsert: MatchInsert = {
-     user_id: userId,
-     player_name: command.player_name,
-     opponent_name: command.opponent_name,
-     max_sets: command.max_sets,
-     golden_set_enabled: command.golden_set_enabled,
-     first_server_first_set: command.first_server_first_set,
-     generate_ai_summary: command.generate_ai_summary,
-     sets_won_player: 0,
-     sets_won_opponent: 0,
-     status: "in_progress",
-     coach_notes: null,
-     started_at: now(), // lub undefined - DB ustawi
-     ended_at: null,
-   };
-   ```
-
-2. **INSERT match:**
-   - Wykonanie `supabase.from('matches').insert(matchInsert).select().single()`
-   - Obsługa błędu: throw DatabaseError('Failed to create match')
-   - Zapisanie `match`
-
-3. **Utworzenie pierwszego seta:**
-   - Import `createFirstSet` z set.service
-   - Wywołanie `await createFirstSet(supabase, match.id, userId, command.first_server_first_set, false)`
-   - Obsługa błędu: throw DatabaseError('Failed to create first set')
-   - Zapisanie `currentSet`
-
-4. **Konstrukcja response DTO:**
-   - Wywołanie `mapMatchToCreateMatchDto(match, currentSet)`
-
-5. **Zwrócenie:**
-   - `CreateMatchDto`
-
-**Używane przez:**
-
-- POST /api/matches
-
----
-
-#### 5.3. `getMatchById`
-
-Pobranie pojedynczego meczu po ID.
-
-**Sygnatura:**
-
-```typescript
-export async function getMatchById(
-  supabase: SupabaseClient,
-  userId: string,
-  matchId: number,
-  include?: string
-): Promise<MatchDetailDto | null>;
-```
-
-**Parametry:**
-
-- `supabase` - Supabase client
-- `userId` - ID użytkownika
-- `matchId` - ID meczu
-- `include` - Opcjonalne: "sets", "points", "tags", "ai_report" (comma-separated)
-
-**Implementacja:**
-
-1. **SELECT match:**
-   - `supabase.from('matches').select('*').eq('id', matchId).eq('user_id', userId).single()`
-   - Obsługa błędu: return null (not found)
-
-2. **Parsowanie include:**
-   - Split `include` po przecinku
-   - Utworzenie tablicy: `['sets', 'points', ...]`
-   - Trim whitespace dla każdego elementu
-
-3. **Warunkowe ładowanie relacji:**
-   - **Jeśli include zawiera 'ai_report':**
-     - Załaduj z `matches_ai_reports` dla tego match_id
-   - **Jeśli include zawiera 'sets', 'points' lub 'tags':**
-     - Określ czy ładować punkty: `includePoints = include zawiera 'points' lub 'tags'`
-     - Wywołaj `getSetsByMatchId(supabase, userId, matchId, includePoints)`
-     - **WAŻNE:** funkcja `getSetsByMatchId` automatycznie optymalizuje N+1 dla punktów
-   - **Jeśli mecz in_progress:**
-     - Załaduj current_set (ostatni nieukończony set)
-     - Query: `supabase.from('sets').select('*').eq('match_id', matchId).eq('user_id', userId).eq('is_finished', false).order('sequence_in_match', { ascending: false }).limit(1).single()`
-     - Określ current_server na podstawie liczby punktów w current_set
-
-4. **Mapowanie i zwrócenie:**
-   - `mapMatchToMatchDetailDto(match, currentSet, sets, aiReport)`
-
-**Uwagi dot. wydajności:**
-
-- **Problem N+1 jest automatycznie rozwiązany** w `getSetsByMatchId`
-- Przykład: mecz z 5 setami i `include=points`:
-  - Bez optymalizacji: 1 (match) + 1 (sets) + 5 (points per set) = 7 queries
-  - Z optymalizacją: 1 (match) + 1 (sets) + 1 (all points) = 3 queries
-
-**Używane przez:**
-
-- GET /api/matches/{id}
-
----
-
-#### 5.4. `updateMatch`
-
-Aktualizacja metadanych meczu.
-
-**Sygnatura:**
-
-```typescript
-export async function updateMatch(
-  supabase: SupabaseClient,
-  userId: string,
-  matchId: number,
-  command: UpdateMatchCommandDto
-): Promise<UpdateMatchDto | null>;
-```
-
-**Parametry:**
-
-- `supabase` - Supabase client
-- `userId` - ID użytkownika
-- `matchId` - ID meczu
-- `command` - Zwalidowane dane do aktualizacji
-
-**Implementacja:**
-
-1. **Sprawdzenie istnienia:**
-   - Wywołanie `getMatchById(supabase, userId, matchId)` (bez include)
-   - Jeśli null: return null (not found)
-
-2. **Przygotowanie update data:**
-   - Tylko pola z `command` (player_name?, opponent_name?, coach_notes?)
-   - Dodanie `updated_at: now()`
-
-3. **UPDATE:**
-   - `supabase.from('matches').update(updateData).eq('id', matchId).eq('user_id', userId).select().single()`
-   - Obsługa błędu: throw DatabaseError
-
-4. **Mapowanie i zwrócenie:**
-   - Ekstrakcja pól dla `UpdateMatchDto`
-   - `{ id, player_name, opponent_name, coach_notes, updated_at }`
-
-**Używane przez:**
-
-- PATCH /api/matches/{id}
-
----
-
-#### 5.5. `finishMatch`
-
-Zakończenie meczu z walidacją wyników i opcjonalnym triggerowaniem AI.
-
-**Sygnatura:**
-
-```typescript
-export async function finishMatch(
-  supabase: SupabaseClient,
-  userId: string,
-  matchId: number,
-  command: FinishMatchCommandDto
-): Promise<FinishMatchDto>;
-```
-
-**Implementacja:**
-
-1. **Pobranie meczu:**
-   - Query: `SELECT * FROM matches WHERE id = {matchId} AND user_id = {userId}`
-   - Jeśli null: throw `NotFoundError('Match not found')`
-   - Jeśli status === 'finished': throw `ApiError('VALIDATION_ERROR', 'Match is already finished', 422)`
-
-2. **Pobranie bieżącego seta:**
-   - Query: `SELECT * FROM sets WHERE match_id = {matchId} AND is_finished = false ORDER BY sequence_in_match DESC LIMIT 1`
-   - Jeśli brak: throw `ApiError('VALIDATION_ERROR', 'No current set found', 422)`
-   - Walidacja że wynik nie jest remisowy: `set_score_player !== set_score_opponent`
-   - Jeśli remis: throw `ApiError('VALIDATION_ERROR', 'Cannot finish match: current set score is tied', 422)`
-
-3. **Określenie zwycięzcy bieżącego seta:**
-   - Wywołanie helper function: `const winner = determineSetWinner(currentSet)`
-   - Porównanie `set_score_player` vs `set_score_opponent`
-
-4. **Zakończenie bieżącego seta:**
-   - UPDATE sets:
-     ```typescript
-     {
-       is_finished: true,
-       winner: winner,
-       finished_at: now()
-     }
-     ```
-
-5. **Obliczenie wyniku meczowego:**
-   - Query: `SELECT winner, COUNT(*) as count FROM sets WHERE match_id = {matchId} AND is_finished = true GROUP BY winner`
-   - Mapowanie wyników na sets_won_player i sets_won_opponent
-   - Walidacja że wynik nie jest remisowy: `sets_won_player !== sets_won_opponent`
-   - Jeśli remis: throw `ApiError('VALIDATION_ERROR', 'Cannot finish match: overall score is tied', 422)`
-
-6. **Aktualizacja meczu:**
-   - UPDATE matches:
-     ```typescript
-     {
-       status: 'finished',
-       ended_at: now(),
-       sets_won_player: calculatedSetsWonPlayer,
-       sets_won_opponent: calculatedSetsWonOpponent,
-       coach_notes: command.coach_notes || match.coach_notes
-     }
-     ```
-
-7. **Obsługa AI report (jeśli generate_ai_summary === true):**
-   - Import `createAiReportRecord` i `generateAiReport` z `ai.service.ts`
-   - Wywołanie `await createAiReportRecord(supabase, matchId, userId)` - tworzy rekord z ai_status='pending'
-   - Wywołanie asynchroniczne: `Promise.resolve().then(() => generateAiReport(supabase, matchId))` (fire-and-forget)
-   - ai_report_status do response: 'pending'
-
-8. **Analytics event:**
-   - Import `trackEvent` z `analytics.service.ts`
-   - Wywołanie `trackEvent(supabase, userId, 'match_finished', matchId)` (fire-and-forget, bez await)
-
-9. **Przygotowanie response:**
-   - Mapowanie na `FinishMatchDto`:
-     ```typescript
-     {
-       id: match.id,
-       status: 'finished',
-       sets_won_player: calculatedSetsWonPlayer,
-       sets_won_opponent: calculatedSetsWonOpponent,
-       ended_at: updatedMatch.ended_at,
-       ai_report_status: match.generate_ai_summary ? 'pending' : null
-     }
-     ```
-
-10. **Zwrócenie:**
-    - `FinishMatchDto`
-
-**Helper function (prywatna):**
-
-```typescript
-function determineSetWinner(set: Set): SideEnum {
-  return set.set_score_player > set.set_score_opponent ? "player" : "opponent";
-}
-```
-
-**Error handling:**
-
-- `NotFoundError` - mecz nie istnieje
-- `ApiError` z statusem 422 - walidacja biznesowa nie przeszła
-- `DatabaseError` - błąd operacji bazodanowych
-
-**Używane przez:**
-
-- POST /api/matches/{id}/finish
-
----
-
-#### 5.6. `deleteMatch`
-
-Usunięcie meczu z kaskadowym usuwaniem powiązanych danych.
-
-**Sygnatura:**
-
-```typescript
-export async function deleteMatch(supabase: SupabaseClient, userId: string, matchId: number): Promise<boolean>;
-```
-
-**Implementacja:**
-
-**Uwaga:** Kaskadowe usuwanie jest obsługiwane przez logikę backendową (nie przez DB cascades), zgodnie ze schematem bazy danych gdzie FK nie mają kaskad.
-
-1. **Weryfikacja istnienia i właściciela:**
-   - Query: `SELECT * FROM matches WHERE id = {matchId} AND user_id = {userId}`
-   - Jeśli null: return false (endpoint obsłuży jako 404)
-   - Zapisanie rekordu match do zmiennej (dla logowania)
-
-2. **Pobranie ID setów:**
-   - Query: `SELECT id FROM sets WHERE match_id = {matchId} AND user_id = {userId}`
-   - Obsługa błędu: throw DatabaseError
-   - Zapisanie tablicy `setIds: number[]`
-   - Jeśli pusta tablica: przejść do kroku 5 (brak setów)
-
-3. **Pobranie ID punktów:**
-   - Query: `SELECT id FROM points WHERE set_id IN ({setIds}) AND user_id = {userId}`
-   - Obsługa błędu: throw DatabaseError
-   - Zapisanie tablicy `pointIds: number[]`
-   - Jeśli pusta tablica: przejść do kroku 5 (brak punktów)
-
-4. **Usunięcie point_tags:**
-   - Query: `DELETE FROM point_tags WHERE point_id IN ({pointIds}) AND user_id = {userId}`
-   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-blocking)
-   - Bulk delete - jedno zapytanie dla wszystkich tagów
-
-5. **Usunięcie points:**
-   - Query: `DELETE FROM points WHERE set_id IN ({setIds}) AND user_id = {userId}`
-   - Obsługa błędu: throw DatabaseError
-   - Bulk delete - jedno zapytanie dla wszystkich punktów
-
-6. **Usunięcie sets:**
-   - Query: `DELETE FROM sets WHERE match_id = {matchId} AND user_id = {userId}`
-   - Obsługa błędu: throw DatabaseError
-
-7. **Usunięcie matches_ai_reports:**
-   - Query: `DELETE FROM matches_ai_reports WHERE match_id = {matchId} AND user_id = {userId}`
-   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-blocking, może nie istnieć)
-
-8. **Usunięcie matches_public_share:**
-   - Query: `DELETE FROM matches_public_share WHERE match_id = {matchId} AND user_id = {userId}`
-   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-blocking, może nie istnieć)
-
-9. **Rozłączenie analytics_events:**
-   - Query: `UPDATE analytics_events SET match_id = NULL WHERE match_id = {matchId}`
-   - **Bez warunku user_id** (analytics może mieć innego właściciela lub service role)
-   - Logowanie błędu jeśli zawiedzie, ale kontynuuj (non-critical)
-
-10. **Usunięcie matches:**
-    - Query: `DELETE FROM matches WHERE id = {matchId} AND user_id = {userId}`
-    - Obsługa błędu: throw DatabaseError
-
-11. **Zwrócenie sukcesu:**
-    - return true
-
-**Error handling:**
-
-- Try-catch owijający całą logikę
-- Catch: `logError()` + throw DatabaseError
-- Specjalna obsługa NotFoundError (gdy match nie istnieje)
-
-**Optymalizacja:**
-
-- Bulk DELETE z `WHERE IN (...)` zamiast pętli
-- Minimalizacja round-trips: maksymalnie 10 zapytań niezależnie od wielkości danych
-- Unikanie N+1 problem
-
-**Kolejność usuwania:**
-
-Usuwanie w odwrotnej kolejności zależności (child → parent):
-
-1. point_tags (zależą od points)
-2. points (zależą od sets)
-3. sets (zależą od matches)
-4. matches_ai_reports (powiązane z matches)
-5. matches_public_share (powiązane z matches)
-6. analytics_events (UPDATE, nie DELETE)
-7. matches (główny rekord)
-
-**Używane przez:**
-
-- DELETE /api/matches/{id}
-
----
-
-### Funkcje pomocnicze (prywatne)
-
-#### 5.7. `buildFilteredQuery`
-
-Budowanie query z filtrami (bez sortowania i paginacji).
-
-**Sygnatura:**
-
-```typescript
-function buildFilteredQuery(supabase: SupabaseClient, userId: string, query: ValidatedMatchListQuery);
-```
-
-**Implementacja:**
-
-- Start: `supabase.from('matches')`
-- Filtr user_id: `.eq('user_id', userId)`
-- Jeśli query.player_name: `.ilike('player_name', `%${query.player_name}%`)`
-- Jeśli query.opponent_name: `.ilike('opponent_name', `%${query.opponent_name}%`)`
-- Jeśli query.status: `.eq('status', query.status)`
-- Zwrócenie query builder (nie wykonanie!)
-
-**UWAGA:** Funkcja zwraca query builder, nie rezultat. Jest używana zarówno dla COUNT jak i SELECT.
-
----
-
-#### 5.8. `parseSortParam`
-
-Parsowanie parametru sort na kolumnę i kierunek.
-
-**Sygnatura:**
-
-```typescript
-function parseSortParam(sort: string): { column: string; ascending: boolean };
-```
-
-**Implementacja:**
-
-```typescript
-const ascending = !sort.startsWith("-");
-const column = ascending ? sort : sort.substring(1);
-return { column, ascending };
+// Path param {id}
+export const idParamSchema = z.object({
+  id: z.coerce.number().int().positive("ID must be a positive integer"),
+});
+
+// Path param {token} (43 znaki base64url)
+export const tokenParamSchema = z.object({
+  token: z
+    .string()
+    .length(43)
+    .regex(/^[A-Za-z0-9_-]{43}$/, "Invalid token format"),
+});
 ```
 
 ---
 
-#### 5.9. Funkcje mapowania
+### 3.2 Match (`src/lib/schemas/match.schemas.ts`)
 
 ```typescript
-function mapMatchToMatchListItemDto(match: Match): MatchListItemDto {
-  const { user_id, ...rest } = match;
-  return rest;
-}
+// POST /api/matches
+export const createMatchCommandSchema = z.object({
+  player_name: z.string().min(1).max(200),
+  opponent_name: z.string().min(1).max(200),
+  max_sets: z.number().int().min(1).max(7),
+  golden_set_enabled: z.boolean(),
+  first_server_first_set: z.enum(SIDE_VALUES),
+  generate_ai_summary: z.boolean(),
+});
 
-function mapMatchToMatchDetailDto(
-  match: Match,
-  currentSet?: CurrentSetDto | null,
-  sets?: SetDetailDto[],
-  aiReport?: AiReportDto | null
-): MatchDetailDto {
-  const { user_id, ...matchData } = match;
-  return {
-    ...matchData,
-    current_set: currentSet,
-    sets: sets,
-    ai_report: aiReport,
-  };
-}
+// GET /api/matches
+export const matchListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  player_name: z.string().trim().min(1).optional(),
+  opponent_name: z.string().trim().min(1).optional(),
+  status: z.enum(MATCH_STATUS_VALUES).optional(),
+  sort: z
+    .string()
+    .regex(/^-?(started_at|ended_at|created_at|player_name|opponent_name)$/)
+    .default("-started_at"),
+});
 
-function mapMatchToCreateMatchDto(match: Match, currentSet: CurrentSetDto): CreateMatchDto {
-  const { user_id, ...matchData } = match;
-  return {
-    ...matchData,
-    current_set: currentSet,
-  };
-}
+// PATCH /api/matches/{id}
+export const updateMatchCommandSchema = z.object({
+  player_name: z.string().min(1).max(200).optional(),
+  opponent_name: z.string().min(1).max(200).optional(),
+  coach_notes: z.string().nullable().optional(),
+});
+
+// POST /api/matches/{id}/finish
+export const finishMatchCommandSchema = z.object({
+  coach_notes: z.string().nullable().optional(),
+});
+
+// GET /api/matches/{id}?include=...
+export const includeQuerySchema = z.object({
+  include: z
+    .string()
+    .regex(/^(sets|points|tags|ai_report)(,(sets|points|tags|ai_report))*$/)
+    .optional(),
+});
+```
+
+**Importy z:** `../../types` (SIDE_VALUES, MATCH_STATUS_VALUES)
+
+---
+
+### 3.3 Set (`src/lib/schemas/set.schemas.ts`)
+
+```typescript
+// GET /api/matches/{matchId}/sets?include=...
+export const setsIncludeQuerySchema = z.object({
+  include: z
+    .string()
+    .regex(/^(points|tags)(,(points|tags))?$/)
+    .optional(),
+});
+
+// POST /api/sets/{id}/finish
+export const finishSetCommandSchema = z.object({
+  coach_notes: z.string().nullable().optional(),
+});
 ```
 
 ---
 
-### Importy
+### 3.4 Point (`src/lib/schemas/point.schemas.ts`)
 
 ```typescript
-import type { SupabaseClient } from "../../db/supabase.client";
-import type {
-  Match,
-  MatchInsert,
-  MatchListItemDto,
-  MatchDetailDto,
-  CreateMatchDto,
-  UpdateMatchDto,
-  FinishMatchDto,
-  CreateMatchCommandDto,
-  UpdateMatchCommandDto,
-  FinishMatchCommandDto,
-  CurrentSetDto,
-  SetDetailDto,
-  AiReportDto,
-} from "../../types";
-import { DatabaseError, NotFoundError, ApiError } from "../utils/api-errors";
-import { createFirstSet } from "./set.service";
-import { getSetsByMatchId } from "./set.service";
+// GET /api/sets/{setId}/points?include=tags (zawsze ładowane)
+export const pointsIncludeQuerySchema = z.object({
+  include: z.literal("tags").optional(),
+});
+
+// POST /api/sets/{setId}/points
+export const createPointCommandSchema = z.object({
+  scored_by: z.enum(SIDE_VALUES),
+  tag_ids: z.array(z.number().int().positive()).optional(),
+});
+```
+
+**Importy z:** `../../types` (SIDE_VALUES)
+
+---
+
+### 3.5 Dictionary (`src/lib/schemas/dictionary.schemas.ts`)
+
+```typescript
+// GET /api/dictionary/labels?domain=...
+export const dictionaryQuerySchema = z.object({
+  domain: z.string().trim().min(1).optional(),
+});
 ```
 
 ---
 
-## 6. Set Service
+### 3.6 Analytics (`src/lib/schemas/analytics.schemas.ts`)
 
-**Lokalizacja:** `src/lib/services/set.service.ts`
+```typescript
+// POST /api/analytics/events
+export const createAnalyticsEventCommandSchema = z
+  .object({
+    user_id: z.string().uuid(),
+    type: z.enum(ANALYTICS_EVENT_TYPE_VALUES),
+    match_id: z.number().int().positive().nullable().optional(),
+  })
+  .refine(
+    (data) => {
+      const requiresMatchId = ["match_created", "match_finished"].includes(data.type);
+      return !requiresMatchId || data.match_id;
+    },
+    { message: "match_id required for match events", path: ["match_id"] }
+  );
+```
 
-### Cel
+**Importy z:** `../../types` (ANALYTICS_EVENT_TYPE_VALUES)
 
-Logika biznesowa związana z setami.
+---
 
-### Metody do implementacji
+## 4. Services (Priorytet WYSOKI)
 
-#### 6.1. `createFirstSet`
+### 4.1 Set Service (`src/lib/services/set.service.ts`)
 
-Utworzenie pierwszego seta w meczu.
+#### Funkcje Publiczne
 
-**Sygnatura:**
+**`createFirstSet`**
 
 ```typescript
 export async function createFirstSet(
@@ -1270,128 +493,44 @@ export async function createFirstSet(
   matchId: number,
   userId: string,
   firstServer: SideEnum,
-  isGolden: boolean = false
+  isGolden = false
 ): Promise<CurrentSetDto>;
 ```
 
-**Implementacja:**
+- INSERT seta z `sequence_in_match: 1`, `is_finished: false`
+- Mapuj na CurrentSetDto z firstServer jako current_server
 
-1. **Przygotowanie danych:**
-
-   ```typescript
-   const setInsert: SetInsert = {
-     match_id: matchId,
-     user_id: userId,
-     sequence_in_match: 1,
-     is_golden: isGolden,
-     set_score_player: 0,
-     set_score_opponent: 0,
-     winner: null,
-     is_finished: false,
-     coach_notes: null,
-     finished_at: null,
-   };
-   ```
-
-2. **INSERT:**
-   - `supabase.from('sets').insert(setInsert).select().single()`
-   - Obsługa błędu: throw DatabaseError('Failed to create set')
-
-3. **Mapowanie:**
-   - `mapSetToCurrentSetDto(set, firstServer)`
-
-4. **Zwrócenie:**
-   - `CurrentSetDto`
-
-**Używane przez:**
-
-- `match.service.ts` (createMatch)
-
----
-
-#### 6.2. `getSetsByMatchId`
-
-Pobranie wszystkich setów dla meczu.
-
-**Sygnatura:**
+**`getSetsByMatchId`**
 
 ```typescript
 export async function getSetsByMatchId(
   supabase: SupabaseClient,
   userId: string,
   matchId: number,
-  includePoints: boolean = false
+  includePoints = false
 ): Promise<SetDetailDto[]>;
 ```
 
-**Implementacja:**
+- SELECT wszystkie sety dla meczu, sortuj po sequence_in_match
+- Jeśli includePoints: wywołaj `getPointsBySetIds(setIds)` (optymalizacja N+1)
+- Mapuj na SetDetailDto[]
 
-1. **SELECT:**
-   - `supabase.from('sets').select('*').eq('match_id', matchId).eq('user_id', userId).order('sequence_in_match', { ascending: true })`
-   - Obsługa błędu: throw DatabaseError
-
-2. **Warunkowe ładowanie punktów (z optymalizacją N+1):**
-   - Jeśli includePoints === false: pomiń ten krok
-   - Jeśli includePoints === true:
-     - **WAŻNE - Optymalizacja N+1:**
-       - Zamiast pętli z `getPointsBySetId` dla każdego seta (N queries)
-       - Użyj jednego query z `WHERE set_id IN (...)` (1 query)
-       - Wywołaj funkcję pomocniczą `getPointsBySetIds(supabase, userId, setIds)`
-       - Grupuj punkty po set_id i przypisz do odpowiednich setów
-     - **Problem N+1:**
-       - Przykład: mecz ma 5 setów → 1 query dla setów + 5 queries dla punktów = 6 queries
-       - Z optymalizacją: 1 query dla setów + 1 query dla wszystkich punktów = 2 queries
-     - **Implementacja:**
-       ```typescript
-       const setIds = sets.map((s) => s.id);
-       const allPointsGrouped = await getPointsBySetIds(supabase, userId, setIds);
-       // allPointsGrouped jest obiektem: { [setId: number]: PointWithTagsDto[] }
-       ```
-
-3. **Mapowanie:**
-   - `sets.map(set => mapSetToSetDetailDto(set, allPointsGrouped[set.id] || []))`
-
-4. **Zwrócenie:**
-   - `SetDetailDto[]`
-
-**Używane przez:**
-
-- `match.service.ts` (getMatchById z include=sets)
-- GET /api/matches/{matchId}/sets
-
----
-
-#### 6.3. `getSetById`
-
-Pobranie pojedynczego seta.
-
-**Sygnatura:**
+**`getSetById`**
 
 ```typescript
 export async function getSetById(
   supabase: SupabaseClient,
   userId: string,
   setId: number,
-  includePoints: boolean = false
+  includePoints = false
 ): Promise<SetDetailDto | null>;
 ```
 
-**Implementacja:**
+- SELECT set z weryfikacją user_id
+- Return null jeśli nie istnieje lub brak dostępu
+- Jeśli includePoints: użyj `getPointsBySetIds([setId])`
 
-- Podobna do getSetsByMatchId, ale dla pojedynczego ID
-- Return null jeśli nie znaleziono
-
-**Używane przez:**
-
-- GET /api/sets/{id}
-
----
-
-#### 6.4. `finishSet`
-
-Zakończenie seta i utworzenie następnego (jeśli potrzebny).
-
-**Sygnatura:**
+**`finishSet`**
 
 ```typescript
 export async function finishSet(
@@ -1402,43 +541,18 @@ export async function finishSet(
 ): Promise<FinishSetDto | null>;
 ```
 
-**Implementacja:**
+- Walidacja: set.is_finished === false, match.status === 'in_progress', wynik nie remisowy
+- Określ zwycięzcę: `set_score_player > set_score_opponent ? 'player' : 'opponent'`
+- UPDATE set: `is_finished: true, winner, finished_at`
+- UPDATE match: przelicz sets_won_player/opponent z COUNT GROUP BY winner
+- Sprawdź czy mecz się zakończył (ktoś wygrał > max_sets/2)
+- **Ważne:** Throw error jeśli to ostatni możliwy set (wymuszenie POST /finish)
+- Utwórz następny set: `sequence+1`, określ first server (alternating), is_golden (jeśli enabled i ostatni)
+- Return `{ finished_set, next_set }`
 
-1. **Pobranie seta:**
-   - Sprawdzenie istnienia
-   - Sprawdzenie czy nie jest już zakończony
+#### Funkcje Prywatne
 
-2. **Określenie zwycięzcy:**
-   - Porównanie set_score_player i set_score_opponent
-   - Walidacja (różnica >= 2, min 11 punktów)
-
-3. **UPDATE seta:**
-   - Ustawienie is_finished: true
-   - Ustawienie winner
-   - Ustawienie finished_at: now()
-   - Ustawienie coach_notes (jeśli podane)
-
-4. **Sprawdzenie czy potrzebny kolejny set:**
-   - Pobranie meczu
-   - Sprawdzenie sets_won
-   - Jeśli mecz nie zakończony: utworzenie następnego seta
-
-5. **Zwrócenie:**
-   - `{ finished_set: FinishedSetDto, next_set: CurrentSetDto }`
-
-**Używane przez:**
-
-- POST /api/sets/{id}/finish
-
----
-
-### Funkcje pomocnicze (prywatne)
-
-#### 6.5. `getPointsBySetIds`
-
-Pobranie punktów dla wielu setów jednym query (optymalizacja N+1).
-
-**Sygnatura:**
+**`getPointsBySetIds` (optymalizacja N+1)**
 
 ```typescript
 async function getPointsBySetIds(
@@ -1448,127 +562,273 @@ async function getPointsBySetIds(
 ): Promise<Record<number, PointWithTagsDto[]>>;
 ```
 
-**Implementacja:**
+- Single query z nested select:
 
-1. **Walidacja:**
-   - Jeśli setIds jest puste: zwróć pusty obiekt `{}`
+```sql
+SELECT *, point_tags(tag:tags(name))
+FROM points
+WHERE set_id IN (...)
+ORDER BY sequence_in_set ASC
+```
 
-2. **SELECT z JOIN:**
-   - Query:
-     ```typescript
-     supabase
-       .from("points")
-       .select(
-         `
-         *,
-         point_tags(tag:tags(name))
-       `
-       )
-       .in("set_id", setIds)
-       .eq("user_id", userId)
-       .order("sequence_in_set", { ascending: true });
-     ```
-   - **UWAGA:** To jeden query zamiast N queries
-   - Obsługa błędu: throw DatabaseError
+- Grupuj po set_id i zwróć Record<number, PointWithTagsDto[]>
 
-3. **Grupowanie po set_id:**
-   - Iteracja przez wszystkie punkty
-   - Utworzenie struktury: `{ [setId: number]: PointWithTagsDto[] }`
-   - Dla każdego punktu:
-     - Ekstrakcja tagów z `point_tags.tag.name`
-     - Utworzenie `PointWithTagsDto` z tablicą `tags: string[]`
-     - Dodanie do odpowiedniego `setId` w wyniku
-
-4. **Zwrócenie:**
-   - `Record<number, PointWithTagsDto[]>` - obiekt z punktami zgrupowanymi po set_id
-
-**Przykład struktury zwracanej:**
+**Mapping Functions:**
 
 ```typescript
-{
-  123: [
-    { id: 1, set_id: 123, ..., tags: ['forehand_winner', 'cross_court'] },
-    { id: 2, set_id: 123, ..., tags: ['backhand_error'] }
-  ],
-  124: [
-    { id: 3, set_id: 124, ..., tags: ['serve_ace'] }
-  ]
+function mapSetToCurrentSetDto(set: Set, currentServer: SideEnum): CurrentSetDto;
+function mapSetToSetDetailDto(set: Set, points?: PointWithTagsDto[]): SetDetailDto;
+function mapSetToFinishedSetDto(set: Set): FinishedSetDto;
+function determineSetWinner(set: Set): SideEnum;
+function determineNextServer(match: Match, nextSequence: number): SideEnum;
+```
+
+**Importy z:** `../../db/supabase.client`, `../../types`, `../utils/api-errors`
+
+---
+
+### 4.2 Point Service (`src/lib/services/point.service.ts`)
+
+#### Funkcje Publiczne
+
+**`getPointsBySetId`**
+
+```typescript
+export async function getPointsBySetId(
+  supabase: SupabaseClient,
+  userId: string,
+  setId: number
+): Promise<PointWithTagsDto[] | null>;
+```
+
+- Weryfikuj ownership seta, return null jeśli brak
+- Użyj `getPointsBySetIds([setId])` z set.service
+
+**`createPoint`**
+
+```typescript
+export async function createPoint(
+  supabase: SupabaseClient,
+  userId: string,
+  setId: number,
+  scoredBy: SideEnum,
+  tagIds: number[]
+): Promise<CreatePointDto>;
+```
+
+- Pobierz set i match (z getSetById)
+- Walidacja: match in_progress, set not finished, tagi istnieją
+- Oblicz sequence: MAX(sequence_in_set) + 1, COUNT total
+- Określ served_by: `calculateServedBy(match, set, totalPoints)`
+- INSERT point, INSERT point_tags (bulk)
+- UPDATE set: increment score column
+- Pobierz nazwy tagów
+- Return CreatePointDto z set_state (current_server dla następnego punktu)
+
+**`undoLastPoint`**
+
+```typescript
+export async function undoLastPoint(supabase: SupabaseClient, userId: string, setId: number): Promise<UndoPointDto>;
+```
+
+- Walidacja: match in_progress, set not finished
+- Znajdź ostatni punkt: ORDER BY sequence DESC LIMIT 1
+- Zapisz served_by (będzie current_server po undo)
+- DELETE point_tags, DELETE point
+- UPDATE set: decrement score column
+- Return `{ deleted_point_id, set_state: { current_server: served_by } }`
+
+#### Funkcje Prywatne - Logika Serwowania
+
+**Zasady serwowania w tenisie stołowym:**
+
+- **Normalny set do 10:10:** zmiana co 2 punkty
+- **Normalny set po 10:10 (deuce):** zmiana co 1 punkt
+- **Golden set:** zawsze zmiana co 1 punkt
+
+```typescript
+function calculateServedBy(match: Match, set: Set, totalPointsInSet: number): SideEnum {
+  const firstServer = determineFirstServerForSet(match, set.sequence_in_match);
+
+  if (set.is_golden) {
+    // Golden: zmiana co 1 punkt
+    return totalPointsInSet % 2 === 0 ? firstServer : opposite(firstServer);
+  }
+
+  if (set.set_score_player >= 10 && set.set_score_opponent >= 10) {
+    // Deuce: zmiana co 1 punkt
+    return totalPointsInSet % 2 === 0 ? firstServer : opposite(firstServer);
+  }
+
+  // Normalny: zmiana co 2 punkty
+  return Math.floor(totalPointsInSet / 2) % 2 === 0 ? firstServer : opposite(firstServer);
+}
+
+function determineFirstServerForSet(match: Match, sequenceInMatch: number): SideEnum {
+  // Nieparzyste sety (1,3,5): first_server_first_set
+  // Parzyste sety (2,4,6): opposite
+  return sequenceInMatch % 2 === 1 ? match.first_server_first_set : opposite(match.first_server_first_set);
+}
+
+function determineCurrentServer(match: Match, set: Set, totalPointsAfterInsert: number): SideEnum {
+  return calculateServedBy(match, set, totalPointsAfterInsert);
+}
+
+function opposite(side: SideEnum): SideEnum {
+  return side === "player" ? "opponent" : "player";
 }
 ```
 
-**Używane przez:**
-
-- `getSetsByMatchId` (gdy includePoints=true)
+**Importy z:** `../../db/supabase.client`, `../../types`, `./set.service` (getPointsBySetIds, getSetById), `../utils/api-errors`
 
 ---
 
-#### 6.6. `mapSetToCurrentSetDto`
+### 4.3 Match Service (`src/lib/services/match.service.ts`)
+
+#### Funkcje Publiczne
+
+**`getMatchesPaginated`**
 
 ```typescript
-function mapSetToCurrentSetDto(set: Set, currentServer: SideEnum): CurrentSetDto {
-  return {
-    id: set.id,
-    sequence_in_match: set.sequence_in_match,
-    is_golden: set.is_golden,
-    set_score_player: set.set_score_player,
-    set_score_opponent: set.set_score_opponent,
-    is_finished: set.is_finished,
-    current_server: currentServer,
-  };
+export async function getMatchesPaginated(
+  supabase: SupabaseClient,
+  userId: string,
+  query: ValidatedMatchListQuery
+): Promise<{ data: MatchListItemDto[]; pagination: { total: number } }>;
+```
+
+- Parse sort: `parseSortParam(query.sort)` → `{ column, ascending }`
+- COUNT: `buildFilteredQuery(...).select('*', { count: 'exact', head: true })`
+- SELECT: `buildFilteredQuery(...).order(...).range(offset, offset+limit-1).select('*')`
+- Mapuj: usuń user_id z każdego rekordu
+
+**`createMatch`**
+
+```typescript
+export async function createMatch(
+  supabase: SupabaseClient,
+  userId: string,
+  command: CreateMatchCommandDto
+): Promise<CreateMatchDto>;
+```
+
+- INSERT match: status='in*progress', sets_won*\*=0
+- Wywołaj `createFirstSet(supabase, matchId, userId, command.first_server_first_set, false)`
+- Return CreateMatchDto z current_set
+
+**`getMatchById`**
+
+```typescript
+export async function getMatchById(
+  supabase: SupabaseClient,
+  userId: string,
+  matchId: number,
+  include?: string
+): Promise<MatchDetailDto | null>;
+```
+
+- SELECT match z weryfikacją user_id, return null jeśli brak
+- Parse include: split(','), trim
+- Warunkowe ładowanie:
+  - 'ai_report': SELECT matches_ai_reports
+  - 'sets'/'points'/'tags': `getSetsByMatchId(includePoints = include zawiera 'points' lub 'tags')`
+  - current_set jeśli in_progress: ostatni nieukończony set + determine current_server
+- Return MatchDetailDto
+
+**`updateMatch`**
+
+```typescript
+export async function updateMatch(
+  supabase: SupabaseClient,
+  userId: string,
+  matchId: number,
+  command: UpdateMatchCommandDto
+): Promise<UpdateMatchDto | null>;
+```
+
+- Sprawdź istnienie: `getMatchById(...)`, return null jeśli brak
+- UPDATE: tylko podane pola + updated_at
+- Return UpdateMatchDto
+
+**`finishMatch`**
+
+```typescript
+export async function finishMatch(
+  supabase: SupabaseClient,
+  userId: string,
+  matchId: number,
+  command: FinishMatchCommandDto
+): Promise<FinishMatchDto>;
+```
+
+- Pobierz match i current set (nieukończony)
+- Walidacja: match.status !== 'finished', wynik seta nie remisowy
+- Określ zwycięzcę seta, UPDATE set: finished
+- Przelicz sets_won z COUNT GROUP BY winner
+- Walidacja: wynik meczu nie remisowy
+- UPDATE match: status='finished', ended*at, sets_won*\*, coach_notes
+- **AI Report (fire-and-forget):**
+  ```typescript
+  if (match.generate_ai_summary) {
+    await createAiReportRecord(supabase, matchId, userId);
+    Promise.resolve().then(() => generateAiReport(supabase, matchId)); // async
+  }
+  ```
+- **Analytics (fire-and-forget):**
+  ```typescript
+  trackEvent(supabase, userId, "match_finished", matchId); // no await
+  ```
+- Return FinishMatchDto z ai_report_status='pending' lub null
+
+**`deleteMatch`**
+
+```typescript
+export async function deleteMatch(supabase: SupabaseClient, userId: string, matchId: number): Promise<boolean>;
+```
+
+- Weryfikacja ownership, return false jeśli brak
+- **Kaskadowe usuwanie (10 queries max, bulk operations):**
+  1. SELECT setIds: `WHERE match_id=...`
+  2. SELECT pointIds: `WHERE set_id IN (...)`
+  3. DELETE point_tags: `WHERE point_id IN (...)` (non-blocking)
+  4. DELETE points: `WHERE set_id IN (...)`
+  5. DELETE sets: `WHERE match_id=...`
+  6. DELETE matches_ai_reports (non-blocking)
+  7. DELETE matches_public_share (non-blocking)
+  8. UPDATE analytics_events SET match_id=NULL (non-blocking, bez user_id filter)
+  9. DELETE matches
+- Return true
+
+#### Funkcje Prywatne
+
+```typescript
+function buildFilteredQuery(supabase, userId, query) {
+  let q = supabase.from("matches").eq("user_id", userId);
+  if (query.player_name) q = q.ilike("player_name", `%${query.player_name}%`);
+  if (query.opponent_name) q = q.ilike("opponent_name", `%${query.opponent_name}%`);
+  if (query.status) q = q.eq("status", query.status);
+  return q; // nie wykonuj, zwróć builder
 }
-```
 
----
-
-#### 6.7. `mapSetToSetDetailDto`
-
-```typescript
-function mapSetToSetDetailDto(set: Set, points?: PointWithTagsDto[]): SetDetailDto {
-  const { user_id, ...setData } = set;
-  return {
-    ...setData,
-    points: points,
-  };
+function parseSortParam(sort: string): { column: string; ascending: boolean } {
+  const ascending = !sort.startsWith("-");
+  const column = ascending ? sort : sort.substring(1);
+  return { column, ascending };
 }
+
+// Mapping functions
+function mapMatchToMatchListItemDto(match: Match): MatchListItemDto;
+function mapMatchToMatchDetailDto(match, currentSet?, sets?, aiReport?): MatchDetailDto;
+function mapMatchToCreateMatchDto(match, currentSet): CreateMatchDto;
 ```
+
+**Importy z:** `../../db/supabase.client`, `../../types`, `./set.service` (createFirstSet, getSetsByMatchId), `./ai.service`, `./analytics.service`, `../utils/api-errors`
 
 ---
 
-### Importy
+### 4.4 Analytics Service (`src/lib/services/analytics.service.ts`)
 
-```typescript
-import type { SupabaseClient } from "../../db/supabase.client";
-import type {
-  Set,
-  SetInsert,
-  SetDetailDto,
-  CurrentSetDto,
-  FinishSetDto,
-  FinishedSetDto,
-  FinishSetCommandDto,
-  SideEnum,
-  PointWithTagsDto,
-} from "../../types";
-import { DatabaseError, NotFoundError, ApiError } from "../utils/api-errors";
-```
-
----
-
-## 7. Analytics Service
-
-**Lokalizacja:** `src/lib/services/analytics.service.ts`
-
-### Cel
-
-Tracking zdarzeń użytkownika w celach analitycznych. Fire-and-forget approach.
-
-### Metody do implementacji
-
-#### 7.1. `trackEvent`
-
-Zapisanie zdarzenia analitycznego.
-
-**Sygnatura:**
+**`trackEvent` (fire-and-forget)**
 
 ```typescript
 export async function trackEvent(
@@ -1579,545 +839,485 @@ export async function trackEvent(
 ): Promise<void>;
 ```
 
-**Implementacja:**
+- INSERT analytics_events (bez await w wywołującym kodzie)
+- Try-catch wewnątrz, logWarning przy błędzie
+- NIE propaguj błędów
 
-1. **Przygotowanie danych:**
-
-   ```typescript
-   const eventInsert: AnalyticsEventInsert = {
-     user_id: userId,
-     type: type,
-     match_id: matchId || null,
-   };
-   ```
-
-2. **INSERT:**
-   - `supabase.from('analytics_events').insert(eventInsert)`
-   - **UWAGA:** Nie czekać na rezultat (.then() bez await)
-   - **UWAGA:** Nie rzucać błędów - tylko logować
-
-3. **Error handling:**
-   - Try-catch wewnątrz
-   - W przypadku błędu: `logWarning('Analytics', 'Failed to track event', { type, userId, matchId })`
-   - NIE propagować błędu
-
-**Używane przez:**
-
-- POST /api/matches (match_created)
-- POST /api/matches/{id}/finish (match_finished)
-
----
-
-### Importy
+**`createAnalyticsEvent` (internal API)**
 
 ```typescript
-import type { SupabaseClient } from "../../db/supabase.client";
-import type { AnalyticsEventInsert, AnalyticsEventTypeEnum } from "../../types";
-import { logWarning } from "../utils/logger";
+export async function createAnalyticsEvent(
+  supabase: SupabaseClient,
+  command: CreateAnalyticsEventCommandDto
+): Promise<AnalyticsEvent>;
 ```
+
+- INSERT analytics_events, RETURNING \*
+- Throw DatabaseError przy błędzie
+- Używane przez POST /api/analytics/events (z service role client jeśli internal endpoint)
+
+**Importy z:** `../../db/supabase.client`, `../../types`, `../utils/api-errors`, `../utils/logger`
 
 ---
 
-## 8. AI Service
+### 4.5 AI Service (`src/lib/services/ai.service.ts`)
 
-**Lokalizacja:** `src/lib/services/ai.service.ts`
-
-### Cel
-
-Obsługa generacji raportów AI dla zakończonych meczów. Asynchroniczne generowanie podsumowań i rekomendacji treningowych przy użyciu OpenRouter API.
-
-### Metody do implementacji
-
-#### 8.1. `createAiReportRecord`
-
-Utworzenie rekordu AI report ze statusem 'pending'.
-
-**Sygnatura:**
+**`createAiReportRecord`**
 
 ```typescript
 export async function createAiReportRecord(supabase: SupabaseClient, matchId: number, userId: string): Promise<void>;
 ```
 
-**Implementacja:**
+- INSERT matches_ai_reports: ai_status='pending', nulls dla reszty
+- Throw DatabaseError przy błędzie
 
-1. **Przygotowanie danych:**
-
-   ```typescript
-   const reportInsert: MatchAiReportInsert = {
-     match_id: matchId,
-     user_id: userId,
-     ai_status: "pending",
-     ai_summary: null,
-     ai_recommendations: null,
-     ai_error: null,
-     ai_generated_at: null,
-   };
-   ```
-
-2. **INSERT:**
-   - `supabase.from('matches_ai_reports').insert(reportInsert)`
-   - Obsługa błędu: throw DatabaseError('Failed to create AI report record')
-
-**Używane przez:**
-
-- `match.service.ts` (finishMatch)
-
----
-
-#### 8.2. `generateAiReport`
-
-Asynchroniczne generowanie raportu AI (fire-and-forget).
-
-**Sygnatura:**
+**`generateAiReport` (fire-and-forget)**
 
 ```typescript
 export async function generateAiReport(supabase: SupabaseClient, matchId: number): Promise<void>;
 ```
 
-**Implementacja:**
+- Pobierz mecz z setami, punktami, tagami (include=sets,points,tags)
+- Wywołaj OpenRouter API (szczegóły w osobnym planie)
+- **Success:** UPDATE ai_status='success', ai_summary, ai_recommendations, ai_generated_at
+- **Error:** UPDATE ai_status='error', ai_error, ai_generated_at
+- Try-catch wewnątrz, logError, NIE propaguj błędów
 
-1. **Pobranie danych meczu:**
-   - Query: Pobranie meczu ze wszystkimi setami i punktami (include=sets,points,tags)
-   - Przygotowanie kontekstu dla AI
+**`getAiReportByMatchId`**
 
-2. **Wywołanie OpenRouter API:**
-   - Endpoint: zgodnie z dokumentacją OpenRouter
-   - Prompt: Wygenerowanie podsumowania meczu i rekomendacji treningowych
-   - Model: Do określenia w konfiguracji
+```typescript
+export async function getAiReportByMatchId(
+  supabase: SupabaseClient,
+  userId: string,
+  matchId: number
+): Promise<AiReportDto | null>;
+```
 
-3. **Aktualizacja rekordu - SUCCESS:**
-   - UPDATE matches_ai_reports:
-     ```typescript
-     {
-       ai_status: 'success',
-       ai_summary: generatedSummary,
-       ai_recommendations: generatedRecommendations,
-       ai_generated_at: now()
-     }
-     ```
+- Weryfikuj ownership meczu, return null jeśli brak
+- Sprawdź match.generate_ai_summary === true, return null jeśli false
+- SELECT matches_ai_reports, return null jeśli brak
+- Mapuj: usuń user_id
 
-4. **Aktualizacja rekordu - ERROR:**
-   - UPDATE matches_ai_reports:
-     ```typescript
-     {
-       ai_status: 'error',
-       ai_error: error.message,
-       ai_generated_at: now()
-     }
-     ```
-
-5. **Error handling:**
-   - Try-catch wewnątrz funkcji
-   - Logowanie błędów: `logError('AI Service', error, { matchId })`
-   - NIE propagować błędów (fire-and-forget)
-
-**Uwagi:**
-
-- Funkcja jest wywoływana asynchronicznie (fire-and-forget)
-- Błędy nie blokują głównego przepływu
-- Szczegóły integracji z OpenRouter będą w osobnym planie implementacji
-
-**Używane przez:**
-
-- `match.service.ts` (finishMatch)
+**Importy z:** `../../db/supabase.client`, `../../types`, `../utils/api-errors`, `../utils/logger`
 
 ---
 
-### Importy
+### 4.6 Share Service (`src/lib/services/share.service.ts`)
+
+#### Główna Funkcja
+
+**`createOrGetPublicShare`**
 
 ```typescript
-import type { SupabaseClient } from "../../db/supabase.client";
-import type { MatchAiReportInsert, MatchAiReportUpdate } from "../../types";
-import { DatabaseError } from "../utils/api-errors";
-import { logError, logInfo } from "../utils/logger";
+export async function createOrGetPublicShare(
+  supabase: SupabaseClient,
+  userId: string,
+  matchId: number
+): Promise<{ dto: PublicShareDto; isNew: boolean }>;
+```
+
+- Weryfikuj ownership i status: `verifyMatchOwnershipAndStatus(...)` (must be finished)
+- Sprawdź istniejący link: `getExistingPublicShare(...)`
+- Jeśli istnieje: return `{ dto: mapToPublicShareDto(existing), isNew: false }`
+- Jeśli nie istnieje: `createPublicShare(...)`, return `{ dto: mapToPublicShareDto(new), isNew: true }`
+
+#### Funkcje Prywatne
+
+**Token Security:**
+
+```typescript
+function generateSecureToken(): string {
+  // crypto.randomBytes(32) -> base64url (43 znaki)
+  // 256 bitów entropii, URL-safe, bez padding
+  const bytes = crypto.randomBytes(32);
+  return bytes.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+```
+
+**WAŻNE - Token plaintext w DB:**
+
+- Token zapisywany bez hashowania (plaintext)
+- Uzasadnienie: 256 bitów entropii chroni przed brute force (~10^77 lat)
+- Model bezpieczeństwa: dane meczu są publiczne dla posiadacza tokenu
+- Idempotentność: zawsze ten sam URL dla tego samego meczu
+- Zgodne z praktykami: Google Drive, Dropbox, GitHub Gists
+
+```typescript
+async function verifyMatchOwnershipAndStatus(supabase, userId, matchId): Promise<void> {
+  // SELECT status WHERE id=... AND user_id=...
+  // Throw NotFoundError jeśli null
+  // Throw ApiError(422) jeśli status !== 'finished'
+}
+
+async function getExistingPublicShare(supabase, userId, matchId): Promise<MatchPublicShare | null> {
+  // SELECT * FROM matches_public_share WHERE match_id=... AND user_id=...
+}
+
+async function createPublicShare(supabase, userId, matchId): Promise<MatchPublicShare> {
+  const token = generateSecureToken();
+  // INSERT matches_public_share: { match_id, user_id, token }
+  // Return MatchPublicShare
+}
+
+function mapToPublicShareDto(record: MatchPublicShare): PublicShareDto {
+  const baseUrl = import.meta.env.PUBLIC_BASE_URL || "https://spinflow.app";
+  return {
+    id: record.id,
+    match_id: record.match_id,
+    public_url: `${baseUrl}/public/matches/${record.token}`,
+    token: record.token, // plaintext, ten sam zawsze
+    created_at: record.created_at,
+  };
+}
+```
+
+**Importy z:** `crypto`, `../../db/supabase.client`, `../../types`, `../utils/api-errors`
+
+---
+
+### 4.7 Public Match Service (`src/lib/services/public-match.service.ts`)
+
+**`getPublicMatchByToken`**
+
+```typescript
+export async function getPublicMatchByToken(supabase: SupabaseClient, token: string): Promise<PublicMatchDataDto>;
+```
+
+- **Token lookup:** SELECT match_id WHERE token=... (plaintext comparison)
+- Throw NotFoundError('Shared match not found') jeśli null
+- SELECT match WHERE id=..., throw ten sam error jeśli null (zapobieganie enumeracji)
+- **Optymalizacja - Nested select (4 queries max):**
+  ```typescript
+  supabase
+    .from("sets")
+    .select(
+      `
+    *,
+    points(
+      *,
+      point_tags(tags(name))
+    )
+  `
+    )
+    .eq("match_id", matchId)
+    .order("sequence_in_match", { ascending: true })
+    .order("sequence_in_set", { ascending: true, foreignTable: "points" });
+  ```
+- SELECT matches_ai_reports (może nie istnieć)
+- **Mapuj na publiczne DTOs (usuń wrażliwe dane):**
+  - Match: usuń user_id, first_server_first_set, generate_ai_summary, created_at
+  - Set: usuń match_id, user_id, is_finished, created_at
+  - Point: usuń set_id, user_id
+  - AI Report: tylko ai_status, ai_summary, ai_recommendations
+- Return PublicMatchDataDto
+
+**Mapping Functions:**
+
+```typescript
+function mapToPublicMatchDto(match: Match): PublicMatchDto;
+function mapToPublicSetDto(set: Set, points: PublicPointDto[]): PublicSetDto;
+function mapToPublicPointDto(point: Point, tagNames: string[]): PublicPointDto;
+function mapToPublicAIReportDto(report: MatchAiReport | null): PublicAIReportDto | null;
+```
+
+**Importy z:** `../../db/supabase.client`, `../../types`, `../utils/api-errors`
+
+---
+
+### 4.8 Dictionary Service (`src/lib/services/dictionary.service.ts`)
+
+**`getDictionaryLabels`**
+
+```typescript
+export async function getDictionaryLabels(supabase: SupabaseClient, domain?: string): Promise<DictionaryLabelDto[]>;
+```
+
+- SELECT dic_lookup_labels
+- Jeśli domain podany: `.eq('domain', domain)`
+- Sort: `.order('domain', { ascending: true }).order('order_in_list', { ascending: true })`
+- **Uwaga:** Brak weryfikacji user_id (publiczny endpoint)
+- Return DictionaryLabelDto[] (alias, bez transformacji)
+
+**Importy z:** `../../db/supabase.client`, `../../types`, `../utils/api-errors`
+
+---
+
+## 5. Supabase Clients - Wyjaśnienie
+
+### 5.1 Istniejące Rozwiązanie
+
+**Plik:** `src/db/supabase.client.ts`
+
+**✅ Już dodane:**
+
+```typescript
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../db/database.types.ts";
+
+const supabaseUrl = import.meta.env.SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+
+export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+export type SupabaseClient = typeof supabaseClient;
+
+// TODO: Temporary - replace with real authentication
+export const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
+```
+
+**Development Mode:**
+
+- Używamy `supabaseClient` i `DEFAULT_USER_ID` bezpośrednio w routes
+- Pomijamy `context.locals` (będzie po dodaniu autentykacji)
+
+### 5.2 Service Role Client (opcjonalnie)
+
+**Kiedy potrzebny:** Tylko dla internal/admin endpoints bez uwierzytelnienia użytkownika
+
+**Jeśli będzie potrzebny, dodaj do `src/db/supabase.client.ts`:**
+
+```typescript
+export function createSupabaseServiceClient(): ReturnType<typeof createClient<Database>> {
+  return createClient<Database>(import.meta.env.SUPABASE_URL, import.meta.env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+```
+
+**Różnice:**
+
+- **supabaseClient** (development) - anon key + DEFAULT_USER_ID → obecnie używane we wszystkich endpointach
+- **context.locals.supabase** (przyszłość) - z RLS, z session użytkownika → po dodaniu autentykacji
+- **createSupabaseServiceClient()** (opcjonalnie) - bypasses RLS → TYLKO w internal endpoints
+
+**Potencjalnie używane przez:** POST /api/analytics/events (jeśli będzie internal endpoint)
+
+**DEVELOPMENT MODE:**
+
+```typescript
+// Obecnie w routes:
+import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client";
+const supabase = supabaseClient;
+const userId = DEFAULT_USER_ID;
+
+// Przyszłość (po autentykacji):
+const supabase = context.locals.supabase;
+const userId = context.locals.userId;
 ```
 
 ---
 
-## 9. Match Schemas
+## 6. Kolejność Implementacji
 
-**Lokalizacja:** `src/lib/schemas/match.schemas.ts`
+### Faza 0: Przygotowanie Danych Testowych (15 min)
 
-### Cel
+**⚠️ Przed rozpoczęciem implementacji:**
 
-Centralizacja schematów walidacji Zod dla endpointów Match.
+1. **Upewnij się że DEFAULT_USER_ID jest w bazie:**
+   - Sprawdź czy tabele mają kolumnę `user_id` typu UUID
+   - Dodaj testowe dane z `user_id = '00000000-0000-0000-0000-000000000000'`
+   - Lub zmodyfikuj istniejące dane testowe
 
-### Schematy do implementacji
+2. **Przykładowy INSERT testowego meczu:**
 
-#### 9.1. `createMatchCommandSchema`
-
-Walidacja body dla POST /api/matches.
-
-```typescript
-export const createMatchCommandSchema = z.object({
-  player_name: z.string().min(1, "Player name is required").max(200, "Player name too long"),
-  opponent_name: z.string().min(1, "Opponent name is required").max(200, "Opponent name too long"),
-  max_sets: z.number().int("Must be an integer").min(1, "Must be at least 1").max(7, "Cannot exceed 7"),
-  golden_set_enabled: z.boolean(),
-  first_server_first_set: z.enum(SIDE_VALUES, { errorMap: () => ({ message: 'Must be "player" or "opponent"' }) }),
-  generate_ai_summary: z.boolean(),
-});
-
-export type ValidatedCreateMatchCommand = z.infer<typeof createMatchCommandSchema>;
+```sql
+INSERT INTO matches (
+  id, user_id, player_name, opponent_name,
+  max_sets, golden_set_enabled, first_server_first_set,
+  generate_ai_summary, status, sets_won_player, sets_won_opponent
+) VALUES (
+  1, '00000000-0000-0000-0000-000000000000',
+  'Player Test', 'Opponent Test',
+  5, false, 'player',
+  false, 'in_progress', 0, 0
+);
 ```
 
+3. **Weryfikacja RLS:**
+   - Sprawdź czy RLS policies weryfikują `user_id`
+   - Polityki powinny działać z `DEFAULT_USER_ID`
+
+### Faza 1: Utilities (2-3h) - KRYTYCZNA
+
+1. **api-errors.ts** (najpierw - używane przez wszystko)
+   - Stałe ERROR_CODES, ERROR_MESSAGES
+   - Klasy: ApiError, DatabaseError, ValidationError, NotFoundError
+
+2. **zod-helpers.ts** (używane przez api-response)
+   - 4 funkcje: searchParamsToObject, zodErrorToValidationDetails, parseQueryParams, parseRequestBody
+
+3. **api-response.ts**
+   - 10 funkcji: createSuccessResponse, createListResponse, createPaginatedResponse, createErrorResponse, createValidationErrorResponse, shortcuts
+
+4. **logger.ts** (opcjonalnie)
+   - 3 funkcje: logError, logWarning, logInfo
+
+✅ **Weryfikacja:** `npx tsc --noEmit`, importy działają
+
 ---
 
-#### 9.2. `matchListQuerySchema`
+### Faza 2: Schemas (1-2h)
 
-Walidacja query params dla GET /api/matches.
+Kolejność dowolna (niezależne):
 
-```typescript
-export const matchListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1, "Page must be at least 1").default(1),
-  limit: z.coerce.number().int().min(1).max(100, "Limit cannot exceed 100").default(20),
-  player_name: z.string().trim().min(1).optional(),
-  opponent_name: z.string().trim().min(1).optional(),
-  status: z.enum(MATCH_STATUS_VALUES).optional(),
-  sort: z
-    .string()
-    .regex(/^-?(started_at|ended_at|created_at|player_name|opponent_name)$/, "Invalid sort field")
-    .default("-started_at"),
-});
+1. common.schemas.ts (2 schematy)
+2. match.schemas.ts (5 schematów)
+3. set.schemas.ts (2 schematy)
+4. point.schemas.ts (2 schematy)
+5. dictionary.schemas.ts (1 schemat)
+6. analytics.schemas.ts (1 schemat)
 
-export type ValidatedMatchListQuery = z.infer<typeof matchListQuerySchema>;
+✅ **Weryfikacja:** TypeScript OK, eksporty działają
+
+---
+
+### Faza 3: Services (4-6h) - UWAGA NA KOLEJNOŚĆ
+
+**Zależności:**
+
+```
+set.service.ts (baza dla innych)
+  ↓ używane przez
+point.service.ts (używa getPointsBySetIds, getSetById)
+  ↓
+match.service.ts (używa createFirstSet, getSetsByMatchId)
+  ↓ używa
+analytics.service.ts + ai.service.ts
 ```
 
----
+**Kolejność implementacji:**
 
-#### 9.3. `updateMatchCommandSchema`
+1. **set.service.ts** (najpierw - używany przez point i match)
+   - 4 public: createFirstSet, getSetsByMatchId, getSetById, finishSet
+   - Helpers: getPointsBySetIds, mapping functions
 
-Walidacja body dla PATCH /api/matches/{id}.
+2. **point.service.ts** (używa set.service)
+   - 3 public: getPointsBySetId, createPoint, undoLastPoint
+   - Helpers: calculateServedBy, determineCurrentServer, opposite, determineFirstServerForSet
 
-```typescript
-export const updateMatchCommandSchema = z.object({
-  player_name: z.string().min(1).max(200).optional(),
-  opponent_name: z.string().min(1).max(200).optional(),
-  coach_notes: z.string().nullable().optional(),
-});
+3. **analytics.service.ts** (używany przez match.service)
+   - 2 public: trackEvent, createAnalyticsEvent
 
-export type ValidatedUpdateMatchCommand = z.infer<typeof updateMatchCommandSchema>;
-```
+4. **ai.service.ts** (używany przez match.service)
+   - 3 public: createAiReportRecord, generateAiReport, getAiReportByMatchId
 
----
+5. **match.service.ts** (używa set, analytics, ai)
+   - 6 public: getMatchesPaginated, createMatch, getMatchById, updateMatch, finishMatch, deleteMatch
+   - Helpers: buildFilteredQuery, parseSortParam, mapping functions
 
-#### 9.4. `finishMatchCommandSchema`
+6. **share.service.ts** (niezależny)
+   - 1 public: createOrGetPublicShare
+   - Helpers: generateSecureToken, verify, get, create, map
 
-Walidacja body dla POST /api/matches/{id}/finish.
+7. **public-match.service.ts** (niezależny)
+   - 1 public: getPublicMatchByToken
+   - Helpers: mapping functions
 
-```typescript
-export const finishMatchCommandSchema = z.object({
-  coach_notes: z.string().nullable().optional(),
-});
+8. **dictionary.service.ts** (niezależny)
+   - 1 public: getDictionaryLabels
 
-export type ValidatedFinishMatchCommand = z.infer<typeof finishMatchCommandSchema>;
-```
+9. **Supabase Service Client** (opcjonalnie)
+   - Dodaj createSupabaseServiceClient do src/db/supabase.client.ts (tylko jeśli będzie internal endpoint)
 
----
-
-#### 9.5. `includeQuerySchema`
-
-Walidacja query param "include" dla GET /api/matches/{id}.
-
-```typescript
-export const includeQuerySchema = z.object({
-  include: z
-    .string()
-    .regex(/^(sets|points|tags|ai_report)(,(sets|points|tags|ai_report))*$/, "Invalid include format")
-    .optional(),
-});
-
-export type ValidatedIncludeQuery = z.infer<typeof includeQuerySchema>;
-```
+✅ **Weryfikacja:** `npm run lint`, wszystkie importy OK
 
 ---
 
-### Importy
+### Faza 4: Review (1-2h)
 
-```typescript
-import { z } from "zod";
-import { SIDE_VALUES, MATCH_STATUS_VALUES } from "../../types";
-```
-
----
-
-## 10. Common Schemas
-
-**Lokalizacja:** `src/lib/schemas/common.schemas.ts`
-
-### Cel
-
-Schematy walidacji używane przez wiele różnych endpointów.
-
-### Schematy do implementacji
-
-#### 10.1. `idParamSchema`
-
-Walidacja path parameter {id}.
-
-```typescript
-export const idParamSchema = z.object({
-  id: z.coerce.number().int().positive("ID must be a positive integer"),
-});
-
-export type ValidatedIdParam = z.infer<typeof idParamSchema>;
-```
-
-**Używane przez:**
-
-- GET /api/matches/{id}
-- PATCH /api/matches/{id}
-- DELETE /api/matches/{id}
-- GET /api/sets/{id}
-- POST /api/sets/{id}/finish
-- Wszystkie endpointy z {id}
+1. Code review: zgodność z guidelines, error handling, typowanie
+2. Refactoring: nazwy, optymalizacje
+3. Dokumentacja: JSDoc dla funkcji publicznych (opcjonalnie)
 
 ---
 
-#### 10.2. `tokenParamSchema`
+## 7. Checklist Implementacji
 
-Walidacja path parameter {token} (SHA-256 hex).
+### ✅ Utilities
 
-```typescript
-export const tokenParamSchema = z.object({
-  token: z
-    .string()
-    .length(64, "Invalid token format")
-    .regex(/^[a-f0-9]{64}$/, "Token must be 64 hex characters"),
-});
+- [ ] api-errors.ts: stałe + 4 klasy
+- [ ] zod-helpers.ts: 4 funkcje
+- [ ] api-response.ts: 10 funkcji
+- [ ] logger.ts: 3 funkcje (opcjonalnie)
 
-export type ValidatedTokenParam = z.infer<typeof tokenParamSchema>;
-```
+### ✅ Schemas
 
-**Używane przez:**
+- [ ] common.schemas.ts: idParamSchema, tokenParamSchema
+- [ ] match.schemas.ts: 5 schematów
+- [ ] set.schemas.ts: 2 schematy
+- [ ] point.schemas.ts: 2 schematy
+- [ ] dictionary.schemas.ts: 1 schemat
+- [ ] analytics.schemas.ts: 1 schemat
 
-- GET /api/public/matches/{token}
+### ✅ Services
 
----
+- [ ] set.service.ts: 4 public + helpers (getPointsBySetIds!)
+- [ ] point.service.ts: 3 public + helpers (calculateServedBy!)
+- [ ] match.service.ts: 6 public + helpers
+- [ ] analytics.service.ts: 2 public
+- [ ] ai.service.ts: 3 public
+- [ ] share.service.ts: 1 public + helpers (generateSecureToken!)
+- [ ] public-match.service.ts: 1 public + helpers
+- [ ] dictionary.service.ts: 1 public
 
-### Importy
+### ✅ Supabase Client
 
-```typescript
-import { z } from "zod";
-```
+- [x] ~~Dodaj `export type SupabaseClient = typeof supabaseClient` do src/db/supabase.client.ts~~ (✅ Dodane)
+- [x] ~~Dodaj `export const DEFAULT_USER_ID` do src/db/supabase.client.ts~~ (✅ Dodane)
+- [ ] createSupabaseServiceClient w src/db/supabase.client.ts (opcjonalnie, tylko dla internal endpoints)
 
----
+### ✅ Weryfikacja Finalna
 
-## 11. Etapy implementacji
-
-### Faza 1: Utilities (Priorytet KRYTYCZNY)
-
-**Czas:** 2-3 godziny
-
-**Kolejność:**
-
-1. Utworzenie katalogu `src/lib/utils/` (jeśli nie istnieje)
-
-2. **api-errors.ts** (najpierw, bo używane przez inne)
-   - Implementacja stałych ERROR_CODES
-   - Implementacja stałych ERROR_MESSAGES
-   - Implementacja klas ApiError, DatabaseError, ValidationError, NotFoundError
-   - Eksport wszystkich
-
-3. **zod-helpers.ts**
-   - Implementacja searchParamsToObject
-   - Implementacja zodErrorToValidationDetails
-   - Implementacja parseQueryParams
-   - Implementacja parseRequestBody
-   - Eksport wszystkich
-
-4. **api-response.ts**
-   - Implementacja createJsonResponse (prywatna)
-   - Implementacja createSuccessResponse
-   - Implementacja createListResponse
-   - Implementacja createPaginatedResponse
-   - Implementacja createErrorResponse
-   - Implementacja createValidationErrorResponse (używa zodErrorToValidationDetails)
-   - Implementacja createUnauthorizedResponse
-   - Implementacja createNotFoundResponse
-   - Implementacja createInternalErrorResponse
-   - Implementacja createNoContentResponse
-   - Eksport wszystkich (oprócz createJsonResponse)
-
-5. **logger.ts** (opcjonalnie, można pominąć)
-   - Implementacja logError
-   - Implementacja logWarning
-   - Implementacja logInfo
-   - Eksport wszystkich
-
-**Weryfikacja:**
-
-- TypeScript kompiluje się bez błędów
-- Wszystkie importy działają
-- Linter nie zgłasza błędów
-
----
-
-### Faza 2: Schemas (Priorytet WYSOKI)
-
-**Czas:** 1-2 godziny
-
-**Kolejność:**
-
-1. Utworzenie katalogu `src/lib/schemas/` (jeśli nie istnieje)
-
-2. **common.schemas.ts**
-   - Implementacja idParamSchema
-   - Implementacja tokenParamSchema
-   - Eksport schematów i typów
-
-3. **match.schemas.ts**
-   - Implementacja createMatchCommandSchema
-   - Implementacja matchListQuerySchema
-   - Implementacja updateMatchCommandSchema
-   - Implementacja finishMatchCommandSchema
-   - Implementacja includeQuerySchema
-   - Eksport schematów i typów
-
-**Weryfikacja:**
-
-- TypeScript kompiluje się bez błędów
-- Testy Zod działają (można stworzyć prosty test)
-
----
-
-### Faza 3: Services (Priorytet WYSOKI)
-
-**Czas:** 4-6 godzin
-
-**Kolejność:**
-
-1. Utworzenie katalogu `src/lib/services/` (jeśli nie istnieje)
-
-2. **set.service.ts** (najpierw, bo używany przez match.service)
-   - Implementacja funkcji pomocniczych (mapSetToCurrentSetDto, mapSetToSetDetailDto)
-   - Implementacja createFirstSet
-   - Implementacja getSetsByMatchId
-   - Implementacja getSetById
-   - Implementacja finishSet
-   - Eksport funkcji publicznych
-
-3. **match.service.ts**
-   - Implementacja funkcji pomocniczych (buildFilteredQuery, parseSortParam, mapping functions)
-   - Implementacja getMatchesPaginated
-   - Implementacja createMatch (używa createFirstSet z set.service)
-   - Implementacja getMatchById (używa getSetsByMatchId z set.service)
-   - Implementacja updateMatch
-   - Implementacja finishMatch
-   - Implementacja deleteMatch
-   - Eksport funkcji publicznych
-
-4. **analytics.service.ts**
-   - Implementacja trackEvent
-   - Eksport funkcji publicznych
-
-5. **ai.service.ts**
-   - Implementacja createAiReportRecord
-   - Implementacja generateAiReport (asynchroniczne, fire-and-forget)
-   - Implementacja helper functions dla OpenRouter API
-   - Eksport funkcji publicznych
-
-**Weryfikacja:**
-
-- TypeScript kompiluje się bez błędów
-- Wszystkie importy działają
-- Linter nie zgłasza błędów
-
----
-
-### Faza 4: Przegląd i testy
-
-**Czas:** 1-2 godziny
-
-1. **Code review**
-   - Sprawdzenie zgodności z coding guidelines
-   - Weryfikacja error handling
-   - Sprawdzenie typowania
-
-2. **Refactoring** (jeśli potrzebny)
-   - Poprawa nazw
-   - Optymalizacja
-
-3. **Dokumentacja**
-   - JSDoc dla funkcji publicznych
-   - Komentarze dla skomplikowanej logiki
-
----
-
-## 12. Checklist przed zakończeniem implementacji
-
-### Utilities
-
-- [ ] `api-errors.ts` utworzony i działa
-- [ ] `zod-helpers.ts` utworzony i działa
-- [ ] `api-response.ts` utworzony i działa
-- [ ] `logger.ts` utworzony (opcjonalnie)
-
-### Schemas
-
-- [ ] `common.schemas.ts` utworzony
-- [ ] `match.schemas.ts` utworzony
-- [ ] Wszystkie schematy eksportowane z typami
-
-### Services
-
-- [ ] `set.service.ts` utworzony
-- [ ] `match.service.ts` utworzony
-- [ ] `analytics.service.ts` utworzony (opcjonalnie)
-- [ ] `ai.service.ts` utworzony
-- [ ] Wszystkie funkcje publiczne eksportowane
-
-### Ogólne
-
-- [ ] TypeScript kompiluje się bez błędów (`npx tsc --noEmit`)
-- [ ] Linter nie zgłasza błędów (`npm run lint`)
+- [ ] `npx tsc --noEmit` - brak błędów TypeScript
+- [ ] `npm run lint` - brak błędów lintera
 - [ ] Wszystkie importy działają
-- [ ] Struktura katalogów zgodna z planem
-- [ ] Kod zgodny z guidelines (.cursor/rules/)
+- [ ] Struktura katalogów: src/lib/utils/, src/lib/schemas/, src/lib/services/
 
 ---
 
-## 13. Uwagi końcowe
+## 8. Kluczowe Decyzje Architektoniczne
 
-### Zależności między komponentami
+### 8.1 Development Mode - DEFAULT_USER_ID
 
-```
-api-response.ts
-  ↓ używa
-zod-helpers.ts (zodErrorToValidationDetails)
+- **Decyzja:** Tymczasowo używamy stałego `DEFAULT_USER_ID` zamiast prawdziwej autentykacji
+- **Uzasadnienie:** Umożliwia testowanie API bez pełnej implementacji JWT/auth
+- **UUID:** `"00000000-0000-0000-0000-000000000000"`
+- **Implementacja:**
+  - Wszystkie endpointy używają tego ID
+  - RLS w Supabase działa normalnie
+  - Dane testowe muszą mieć ten `user_id`
+- **Migration path:** Zamiana `DEFAULT_USER_ID` na `context.locals.userId` w przyszłości
+- **TODO:** Implementacja middleware auth + JWT w późniejszych krokach
 
-match.service.ts
-  ↓ używa
-set.service.ts (createFirstSet, getSetsByMatchId)
-ai.service.ts (createAiReportRecord, generateAiReport)
-analytics.service.ts (trackEvent)
+### 8.2 Token Security (Share Service)
 
-Wszystkie services
-  ↓ używają
-api-errors.ts (throw DatabaseError, NotFoundError)
-logger.ts (logError, logWarning)
-```
+- **Decyzja:** Token plaintext w DB (nie hashować)
+- **Uzasadnienie:** 256 bitów entropii = niemożliwy brute force, idempotentność, zgodność z praktykami branżowymi
+- **Model bezpieczeństwa:** Dane meczu są publiczne dla posiadacza tokenu
 
-### Kolejność implementacji jest ważna
+### 8.3 N+1 Prevention
 
-1. Najpierw: api-errors.ts (używane przez wszystko)
-2. Następnie: zod-helpers.ts (używane przez api-response.ts)
-3. Następnie: api-response.ts
-4. Następnie: schemas (niezależne)
-5. Następnie: set.service.ts (używany przez match.service.ts)
-6. Następnie: analytics.service.ts (używany przez match.service.ts)
-7. Następnie: ai.service.ts (używany przez match.service.ts)
-8. Na końcu: match.service.ts
+- **Problem:** Pętle ładujące dane dla każdego rekordu osobno
+- **Rozwiązanie:** `getPointsBySetIds` z `WHERE IN`, nested selects Supabase
+- **Przykład:** Mecz z 5 setami: 2 queries zamiast 6
 
-### Po ukończeniu implementacji shared components
+### 8.4 Fire-and-Forget Operations
 
-Przejść do implementacji konkretnych endpointów:
+- **Stosowanie:** Analytics tracking, AI report generation
+- **Implementacja:** No await w wywołującym kodzie, try-catch wewnątrz, logWarning przy błędzie
+- **Uzasadnienie:** Nie blokować głównego przepływu przez non-critical operations
 
-- GET /api/matches (używa match.service.getMatchesPaginated)
-- POST /api/matches (używa match.service.createMatch)
+### 8.5 Information Disclosure Prevention
+
+- **Wzorzec:** Return null dla "not found" i "access denied", ten sam komunikat błędu
+- **Stosowanie:** Wszystkie funkcje z weryfikacją ownership
+- **Uzasadnienie:** Nie ujawniaj czy zasób istnieje czy użytkownik nie ma dostępu
 
 ---
 
 **Autor:** AI Assistant  
-**Data:** 2025-12-01  
-**Wersja:** 1.0
+**Data:** 2025-12-09  
+**Wersja:** 2.1 (Zoptymalizowana + Development Mode z DEFAULT_USER_ID)

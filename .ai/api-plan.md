@@ -1052,10 +1052,11 @@ Authorization: Bearer {supabase_jwt_token}
 **Business Logic:**
 
 - Validates that match is finished
-- If public share already exists for this match, returns existing token
-- If not exists, generates cryptographically random token (32 bytes, base64url encoded)
-- Stores SHA-256 hash of token in database
-- Returns full public URL
+- If public share already exists for this match, returns existing token (idempotent)
+- If not exists, generates cryptographically random token (32 bytes, base64url encoded = 43 chars)
+- Stores token directly in database (no hashing)
+- Returns full public URL with token
+- Token has 256 bits of entropy - impossible to brute force
 
 **Response Body (200 OK or 201 Created):**
 

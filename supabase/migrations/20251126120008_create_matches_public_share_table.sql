@@ -12,7 +12,7 @@ create table matches_public_share (
     id bigserial primary key,
     match_id bigint not null unique, -- FK to matches(id), no cascade
     user_id uuid not null, -- FK to auth.users.id with cascade on delete
-    token varchar(64) not null unique, -- SHA-256 hex hash of the actual token
+    token varchar(43) not null unique, -- base64url encoded token (32 bytes = 43 chars, 256 bits entropy)
     created_at timestamptz not null default now()
 );
 

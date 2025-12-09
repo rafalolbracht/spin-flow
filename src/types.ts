@@ -275,12 +275,13 @@ export type AiReportDto = Omit<MatchAiReport, "user_id">;
 
 /**
  * DTO for public share link (POST /api/matches/{matchId}/share)
+ * Token is base64url encoded (43 chars, 256 bits entropy)
  */
 export interface PublicShareDto {
   id: number;
   match_id: number;
-  public_url: string;
-  token: string;
+  public_url: string; // Full URL: https://spinflow.app/public/matches/{token}
+  token: string; // base64url token (43 characters)
   created_at: string;
 }
 
