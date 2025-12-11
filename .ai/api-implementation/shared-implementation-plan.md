@@ -16,7 +16,7 @@ Ten dokument opisuje plan implementacji wspólnych komponentów dla API w aplika
 
 - Autentykacja jest **tymczasowo wyłączona** - używamy `DEFAULT_USER_ID`
 - Wszystkie endpointy działają bez JWT token
-- RLS w Supabase weryfikuje `DEFAULT_USER_ID` (`"00000000-0000-0000-0000-000000000000"`)
+- RLS w Supabase weryfikuje `DEFAULT_USER_ID` (`"69c4930b-63f6-4c05-9dec-c3b888fac1f5"`)
 - **Dane testowe w bazie muszą mieć** `user_id = DEFAULT_USER_ID`
 - Pełna autentykacja zostanie dodana w późniejszych krokach projektu
 
@@ -54,7 +54,10 @@ export async function someService(
   // ...
 ) {
   // RLS w Supabase używa userId (DEFAULT_USER_ID w development)
-  const { data } = await supabase.from("matches").select("*").eq("user_id", userId); // ✅ Weryfikacja ownership
+  const { data } = await supabase
+    .from("matches")
+    .select("*")
+    .eq("user_id", userId); // ✅ Weryfikacja ownership
 }
 ```
 
@@ -66,7 +69,7 @@ export async function someService(
 
 **DEFAULT_USER_ID:**
 
-- UUID: `"00000000-0000-0000-0000-000000000000"`
+- UUID: `"69c4930b-63f6-4c05-9dec-c3b888fac1f5"`
 - Używany w development zamiast prawdziwego userId z JWT
 - RLS w Supabase weryfikuje ten ID
 - TODO: Zastąpić prawdziwą autentykacją (middleware + JWT)
@@ -239,7 +242,12 @@ export class NotFoundError extends ApiError {
 
 export class ValidationError extends ApiError {
   constructor(details: ValidationErrorDetail[]) {
-    super(ERROR_CODES.VALIDATION_ERROR, ERROR_MESSAGES.VALIDATION_FAILED, 422, details);
+    super(
+      ERROR_CODES.VALIDATION_ERROR,
+      ERROR_MESSAGES.VALIDATION_FAILED,
+      422,
+      details
+    );
   }
 }
 ```
@@ -260,7 +268,11 @@ export function createSuccessResponse<T>(data: T, status = 200): Response;
 export function createListResponse<T>(data: T[], status = 200): Response;
 
 // Lista z paginacją
-export function createPaginatedResponse<T>(data: T[], total: number, status = 200): Response;
+export function createPaginatedResponse<T>(
+  data: T[],
+  total: number,
+  status = 200
+): Response;
 
 // Błędy
 export function createErrorResponse(
@@ -294,10 +306,14 @@ export function createNoContentResponse(): Response; // 204
 
 ```typescript
 // URLSearchParams -> Object
-export function searchParamsToObject(searchParams: URLSearchParams): Record<string, string>;
+export function searchParamsToObject(
+  searchParams: URLSearchParams
+): Record<string, string>;
 
 // ZodError -> ValidationErrorDetail[]
-export function zodErrorToValidationDetails(error: z.ZodError): ValidationErrorDetail[];
+export function zodErrorToValidationDetails(
+  error: z.ZodError
+): ValidationErrorDetail[];
 
 // Parse query params
 export function parseQueryParams<T>(
@@ -309,7 +325,9 @@ export function parseQueryParams<T>(
 export async function parseRequestBody<T>(
   request: Request,
   schema: z.ZodSchema<T>
-): Promise<{ success: true; data: T } | { success: false; error: z.ZodError | Error }>;
+): Promise<
+  { success: true; data: T } | { success: false; error: z.ZodError | Error }
+>;
 ```
 
 **Implementacja:**
@@ -326,9 +344,21 @@ export async function parseRequestBody<T>(
 **Funkcje:**
 
 ```typescript
-export function logError(endpoint: string, error: Error, context?: Record<string, any>): void;
-export function logWarning(endpoint: string, message: string, context?: Record<string, any>): void;
-export function logInfo(endpoint: string, message: string, context?: Record<string, any>): void;
+export function logError(
+  endpoint: string,
+  error: Error,
+  context?: Record<string, any>
+): void;
+export function logWarning(
+  endpoint: string,
+  message: string,
+  context?: Record<string, any>
+): void;
+export function logInfo(
+  endpoint: string,
+  message: string,
+  context?: Record<string, any>
+): void;
 ```
 
 **Implementacja:** Użyj `console.error/warn/log` z formatowaniem `[endpoint] Level: message`
@@ -468,7 +498,9 @@ export const createAnalyticsEventCommandSchema = z
   })
   .refine(
     (data) => {
-      const requiresMatchId = ["match_created", "match_finished"].includes(data.type);
+      const requiresMatchId = ["match_created", "match_finished"].includes(
+        data.type
+      );
       return !requiresMatchId || data.match_id;
     },
     { message: "match_id required for match events", path: ["match_id"] }
@@ -576,8 +608,14 @@ ORDER BY sequence_in_set ASC
 **Mapping Functions:**
 
 ```typescript
-function mapSetToCurrentSetDto(set: Set, currentServer: SideEnum): CurrentSetDto;
-function mapSetToSetDetailDto(set: Set, points?: PointWithTagsDto[]): SetDetailDto;
+function mapSetToCurrentSetDto(
+  set: Set,
+  currentServer: SideEnum
+): CurrentSetDto;
+function mapSetToSetDetailDto(
+  set: Set,
+  points?: PointWithTagsDto[]
+): SetDetailDto;
 function mapSetToFinishedSetDto(set: Set): FinishedSetDto;
 function determineSetWinner(set: Set): SideEnum;
 function determineNextServer(match: Match, nextSequence: number): SideEnum;
@@ -628,7 +666,11 @@ export async function createPoint(
 **`undoLastPoint`**
 
 ```typescript
-export async function undoLastPoint(supabase: SupabaseClient, userId: string, setId: number): Promise<UndoPointDto>;
+export async function undoLastPoint(
+  supabase: SupabaseClient,
+  userId: string,
+  setId: number
+): Promise<UndoPointDto>;
 ```
 
 - Walidacja: match in_progress, set not finished
@@ -647,7 +689,11 @@ export async function undoLastPoint(supabase: SupabaseClient, userId: string, se
 - **Golden set:** zawsze zmiana co 1 punkt
 
 ```typescript
-function calculateServedBy(match: Match, set: Set, totalPointsInSet: number): SideEnum {
+function calculateServedBy(
+  match: Match,
+  set: Set,
+  totalPointsInSet: number
+): SideEnum {
   const firstServer = determineFirstServerForSet(match, set.sequence_in_match);
 
   if (set.is_golden) {
@@ -661,16 +707,27 @@ function calculateServedBy(match: Match, set: Set, totalPointsInSet: number): Si
   }
 
   // Normalny: zmiana co 2 punkty
-  return Math.floor(totalPointsInSet / 2) % 2 === 0 ? firstServer : opposite(firstServer);
+  return Math.floor(totalPointsInSet / 2) % 2 === 0
+    ? firstServer
+    : opposite(firstServer);
 }
 
-function determineFirstServerForSet(match: Match, sequenceInMatch: number): SideEnum {
+function determineFirstServerForSet(
+  match: Match,
+  sequenceInMatch: number
+): SideEnum {
   // Nieparzyste sety (1,3,5): first_server_first_set
   // Parzyste sety (2,4,6): opposite
-  return sequenceInMatch % 2 === 1 ? match.first_server_first_set : opposite(match.first_server_first_set);
+  return sequenceInMatch % 2 === 1
+    ? match.first_server_first_set
+    : opposite(match.first_server_first_set);
 }
 
-function determineCurrentServer(match: Match, set: Set, totalPointsAfterInsert: number): SideEnum {
+function determineCurrentServer(
+  match: Match,
+  set: Set,
+  totalPointsAfterInsert: number
+): SideEnum {
   return calculateServedBy(match, set, totalPointsAfterInsert);
 }
 
@@ -783,7 +840,11 @@ export async function finishMatch(
 **`deleteMatch`**
 
 ```typescript
-export async function deleteMatch(supabase: SupabaseClient, userId: string, matchId: number): Promise<boolean>;
+export async function deleteMatch(
+  supabase: SupabaseClient,
+  userId: string,
+  matchId: number
+): Promise<boolean>;
 ```
 
 - Weryfikacja ownership, return false jeśli brak
@@ -805,7 +866,8 @@ export async function deleteMatch(supabase: SupabaseClient, userId: string, matc
 function buildFilteredQuery(supabase, userId, query) {
   let q = supabase.from("matches").eq("user_id", userId);
   if (query.player_name) q = q.ilike("player_name", `%${query.player_name}%`);
-  if (query.opponent_name) q = q.ilike("opponent_name", `%${query.opponent_name}%`);
+  if (query.opponent_name)
+    q = q.ilike("opponent_name", `%${query.opponent_name}%`);
   if (query.status) q = q.eq("status", query.status);
   return q; // nie wykonuj, zwróć builder
 }
@@ -818,7 +880,12 @@ function parseSortParam(sort: string): { column: string; ascending: boolean } {
 
 // Mapping functions
 function mapMatchToMatchListItemDto(match: Match): MatchListItemDto;
-function mapMatchToMatchDetailDto(match, currentSet?, sets?, aiReport?): MatchDetailDto;
+function mapMatchToMatchDetailDto(
+  match,
+  currentSet?,
+  sets?,
+  aiReport?
+): MatchDetailDto;
 function mapMatchToCreateMatchDto(match, currentSet): CreateMatchDto;
 ```
 
@@ -865,7 +932,11 @@ export async function createAnalyticsEvent(
 **`createAiReportRecord`**
 
 ```typescript
-export async function createAiReportRecord(supabase: SupabaseClient, matchId: number, userId: string): Promise<void>;
+export async function createAiReportRecord(
+  supabase: SupabaseClient,
+  matchId: number,
+  userId: string
+): Promise<void>;
 ```
 
 - INSERT matches_ai_reports: ai_status='pending', nulls dla reszty
@@ -874,7 +945,10 @@ export async function createAiReportRecord(supabase: SupabaseClient, matchId: nu
 **`generateAiReport` (fire-and-forget)**
 
 ```typescript
-export async function generateAiReport(supabase: SupabaseClient, matchId: number): Promise<void>;
+export async function generateAiReport(
+  supabase: SupabaseClient,
+  matchId: number
+): Promise<void>;
 ```
 
 - Pobierz mecz z setami, punktami, tagami (include=sets,points,tags)
@@ -930,7 +1004,11 @@ function generateSecureToken(): string {
   // crypto.randomBytes(32) -> base64url (43 znaki)
   // 256 bitów entropii, URL-safe, bez padding
   const bytes = crypto.randomBytes(32);
-  return bytes.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  return bytes
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 }
 ```
 
@@ -943,17 +1021,29 @@ function generateSecureToken(): string {
 - Zgodne z praktykami: Google Drive, Dropbox, GitHub Gists
 
 ```typescript
-async function verifyMatchOwnershipAndStatus(supabase, userId, matchId): Promise<void> {
+async function verifyMatchOwnershipAndStatus(
+  supabase,
+  userId,
+  matchId
+): Promise<void> {
   // SELECT status WHERE id=... AND user_id=...
   // Throw NotFoundError jeśli null
   // Throw ApiError(422) jeśli status !== 'finished'
 }
 
-async function getExistingPublicShare(supabase, userId, matchId): Promise<MatchPublicShare | null> {
+async function getExistingPublicShare(
+  supabase,
+  userId,
+  matchId
+): Promise<MatchPublicShare | null> {
   // SELECT * FROM matches_public_share WHERE match_id=... AND user_id=...
 }
 
-async function createPublicShare(supabase, userId, matchId): Promise<MatchPublicShare> {
+async function createPublicShare(
+  supabase,
+  userId,
+  matchId
+): Promise<MatchPublicShare> {
   const token = generateSecureToken();
   // INSERT matches_public_share: { match_id, user_id, token }
   // Return MatchPublicShare
@@ -980,7 +1070,10 @@ function mapToPublicShareDto(record: MatchPublicShare): PublicShareDto {
 **`getPublicMatchByToken`**
 
 ```typescript
-export async function getPublicMatchByToken(supabase: SupabaseClient, token: string): Promise<PublicMatchDataDto>;
+export async function getPublicMatchByToken(
+  supabase: SupabaseClient,
+  token: string
+): Promise<PublicMatchDataDto>;
 ```
 
 - **Token lookup:** SELECT match_id WHERE token=... (plaintext comparison)
@@ -1017,7 +1110,9 @@ export async function getPublicMatchByToken(supabase: SupabaseClient, token: str
 function mapToPublicMatchDto(match: Match): PublicMatchDto;
 function mapToPublicSetDto(set: Set, points: PublicPointDto[]): PublicSetDto;
 function mapToPublicPointDto(point: Point, tagNames: string[]): PublicPointDto;
-function mapToPublicAIReportDto(report: MatchAiReport | null): PublicAIReportDto | null;
+function mapToPublicAIReportDto(
+  report: MatchAiReport | null
+): PublicAIReportDto | null;
 ```
 
 **Importy z:** `../../db/supabase.client`, `../../types`, `../utils/api-errors`
@@ -1029,7 +1124,10 @@ function mapToPublicAIReportDto(report: MatchAiReport | null): PublicAIReportDto
 **`getDictionaryLabels`**
 
 ```typescript
-export async function getDictionaryLabels(supabase: SupabaseClient, domain?: string): Promise<DictionaryLabelDto[]>;
+export async function getDictionaryLabels(
+  supabase: SupabaseClient,
+  domain?: string
+): Promise<DictionaryLabelDto[]>;
 ```
 
 - SELECT dic_lookup_labels
@@ -1057,12 +1155,15 @@ import type { Database } from "../db/database.types.ts";
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 
-export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabaseClient = createClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey
+);
 
 export type SupabaseClient = typeof supabaseClient;
 
 // TODO: Temporary - replace with real authentication
-export const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
+export const DEFAULT_USER_ID = "69c4930b-63f6-4c05-9dec-c3b888fac1f5";
 ```
 
 **Development Mode:**
@@ -1077,13 +1178,19 @@ export const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 **Jeśli będzie potrzebny, dodaj do `src/db/supabase.client.ts`:**
 
 ```typescript
-export function createSupabaseServiceClient(): ReturnType<typeof createClient<Database>> {
-  return createClient<Database>(import.meta.env.SUPABASE_URL, import.meta.env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
+export function createSupabaseServiceClient(): ReturnType<
+  typeof createClient<Database>
+> {
+  return createClient<Database>(
+    import.meta.env.SUPABASE_URL,
+    import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
 }
 ```
 
@@ -1118,7 +1225,7 @@ const userId = context.locals.userId;
 
 1. **Upewnij się że DEFAULT_USER_ID jest w bazie:**
    - Sprawdź czy tabele mają kolumnę `user_id` typu UUID
-   - Dodaj testowe dane z `user_id = '00000000-0000-0000-0000-000000000000'`
+   - Dodaj testowe dane z `user_id = '69c4930b-63f6-4c05-9dec-c3b888fac1f5'`
    - Lub zmodyfikuj istniejące dane testowe
 
 2. **Przykładowy INSERT testowego meczu:**
@@ -1129,7 +1236,7 @@ INSERT INTO matches (
   max_sets, golden_set_enabled, first_server_first_set,
   generate_ai_summary, status, sets_won_player, sets_won_opponent
 ) VALUES (
-  1, '00000000-0000-0000-0000-000000000000',
+  1, '69c4930b-63f6-4c05-9dec-c3b888fac1f5',
   'Player Test', 'Opponent Test',
   5, false, 'player',
   false, 'in_progress', 0, 0
@@ -1284,7 +1391,7 @@ analytics.service.ts + ai.service.ts
 
 - **Decyzja:** Tymczasowo używamy stałego `DEFAULT_USER_ID` zamiast prawdziwej autentykacji
 - **Uzasadnienie:** Umożliwia testowanie API bez pełnej implementacji JWT/auth
-- **UUID:** `"00000000-0000-0000-0000-000000000000"`
+- **UUID:** `"69c4930b-63f6-4c05-9dec-c3b888fac1f5"`
 - **Implementacja:**
   - Wszystkie endpointy używają tego ID
   - RLS w Supabase działa normalnie
@@ -1318,6 +1425,6 @@ analytics.service.ts + ai.service.ts
 
 ---
 
-**Autor:** AI Assistant  
-**Data:** 2025-12-09  
+**Autor:** AI Assistant
+**Data:** 2025-12-09
 **Wersja:** 2.1 (Zoptymalizowana + Development Mode z DEFAULT_USER_ID)

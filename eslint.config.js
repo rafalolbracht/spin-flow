@@ -1,6 +1,5 @@
 import { includeIgnoreFile } from "@eslint/compat";
 import eslint from "@eslint/js";
-import eslintPluginPrettier from "eslint-plugin-prettier/recommended";
 import eslintPluginAstro from "eslint-plugin-astro";
 import angularEslint from "@angular-eslint/eslint-plugin";
 import angularEslintTemplate from "@angular-eslint/eslint-plugin-template";
@@ -14,10 +13,12 @@ const __dirname = path.dirname(__filename);
 const gitignorePath = path.resolve(__dirname, ".gitignore");
 
 const baseConfig = tseslint.config({
-  extends: [eslint.configs.recommended, tseslint.configs.strict, tseslint.configs.stylistic],
+  extends: [eslint.configs.recommended, tseslint.configs.strict],
   rules: {
     "no-console": "warn",
     "no-unused-vars": "off",
+    "eol-last": "off",
+    "comma-dangle": ["error", "always-multiline"],
   },
 });
 
@@ -64,5 +65,4 @@ export default tseslint.config(
   angularConfig,
   angularTemplateConfig,
   eslintPluginAstro.configs["flat/recommended"],
-  eslintPluginPrettier
 );

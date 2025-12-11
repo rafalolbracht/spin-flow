@@ -11,7 +11,9 @@ import { CardModule } from "primeng/card";
   template: `
     <p-card class="w-full max-w-md">
       <ng-template pTemplate="header">
-        <div class="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
+        <div
+          class="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg"
+        >
           <h3 class="text-xl font-bold">Licznik PrimeNG</h3>
         </div>
       </ng-template>
@@ -19,7 +21,12 @@ import { CardModule } from "primeng/card";
       <div class="flex items-center justify-between gap-4">
         <span class="text-lg font-semibold"> Licznik: {{ count() }} </span>
 
-        <p-button label="+1" icon="pi pi-plus" (click)="increment()" styleClass="p-button-success"></p-button>
+        <p-button
+          label="+1"
+          icon="pi pi-plus"
+          (click)="increment()"
+          styleClass="p-button-success"
+        ></p-button>
       </div>
     </p-card>
   `,

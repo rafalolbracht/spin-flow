@@ -5,7 +5,12 @@
  * All types are derived from database entity types defined in database.types.ts
  */
 
-import type { Tables, TablesInsert, TablesUpdate, Enums } from "./db/database.types";
+import type {
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+  Enums,
+} from "./db/database.types";
 
 // =============================================================================
 // BASE ENTITY TYPES (from database)
@@ -59,9 +64,19 @@ export type AnalyticsEventTypeEnum = Enums<"analytics_event_type_enum">;
  * Enum value arrays for Zod validation
  * Use in schemas: z.enum(MATCH_STATUS_VALUES)
  */
-export const MATCH_STATUS_VALUES = ["in_progress", "finished"] as const satisfies readonly MatchStatusEnum[];
-export const SIDE_VALUES = ["player", "opponent"] as const satisfies readonly SideEnum[];
-export const AI_STATUS_VALUES = ["pending", "success", "error"] as const satisfies readonly AiStatusEnum[];
+export const MATCH_STATUS_VALUES = [
+  "in_progress",
+  "finished",
+] as const satisfies readonly MatchStatusEnum[];
+export const SIDE_VALUES = [
+  "player",
+  "opponent",
+] as const satisfies readonly SideEnum[];
+export const AI_STATUS_VALUES = [
+  "pending",
+  "success",
+  "error",
+] as const satisfies readonly AiStatusEnum[];
 export const ANALYTICS_EVENT_TYPE_VALUES = [
   "login",
   "match_created",
