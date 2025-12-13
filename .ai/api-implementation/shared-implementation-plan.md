@@ -1098,9 +1098,9 @@ export async function getPublicMatchByToken(
   ```
 - SELECT matches_ai_reports (może nie istnieć)
 - **Mapuj na publiczne DTOs (usuń wrażliwe dane):**
-  - Match: usuń user_id, first_server_first_set, generate_ai_summary, created_at
-  - Set: usuń match_id, user_id, is_finished, created_at
-  - Point: usuń set_id, user_id
+  - Match: usuń user_id, generate_ai_summary (first_server_first_set, created_at mogą być publiczne)
+  - Set: usuń user_id (match_id, is_finished, created_at mogą być publiczne)
+  - Point: usuń user_id (set_id może być publiczny dla kontekstu)
   - AI Report: tylko ai_status, ai_summary, ai_recommendations
 - Return PublicMatchDataDto
 
