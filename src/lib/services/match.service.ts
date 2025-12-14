@@ -438,7 +438,12 @@ function applyFilters(query: ReturnType<SupabaseClient["from"]>, filters: {
     query = query.ilike("opponent_name", `%${filters.opponent_name}%`);
   }
   if (filters.status) {
-    query = query.eq("status", filters.status);
+    const statuses = filters.status.split(',');
+    if (statuses.length === 1) {
+      query = query.eq("status", filters.status);
+    } else {
+      query = query.in("status", statuses);
+    }
   }
   return query;
 }

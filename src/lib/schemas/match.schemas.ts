@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SIDE_VALUES, MATCH_STATUS_VALUES } from "../../types";
+import { SIDE_VALUES } from "../../types";
 
 /**
  * Schema for creating a new match
@@ -21,7 +21,7 @@ export const matchListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   player_name: z.string().trim().min(1).optional(),
   opponent_name: z.string().trim().min(1).optional(),
-  status: z.enum(MATCH_STATUS_VALUES).optional(),
+  status: z.string().regex(/^(finished|in_progress)(,(finished|in_progress))*$/).optional(),
   sort: z
     .string()
     .regex(/^-?(started_at|ended_at|created_at|player_name|opponent_name)$/)
