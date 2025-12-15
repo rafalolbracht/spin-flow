@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/matches/{id}`  
-**Metoda:** DELETE  
-**Cel:** Trwałe usunięcie meczu wraz z powiązanymi danymi  
+**Endpoint:** `/api/matches/{id}`
+**Metoda:** DELETE
+**Cel:** Trwałe usunięcie meczu wraz z powiązanymi danymi
 **Prerender:** `false`
 
 **Operacje:**
@@ -48,7 +48,7 @@ Body: (empty)
 
 ## Implementacja
 
-### Plik: `src/pages/api/matches/[id].ts` (współdzielony z GET i PATCH)
+### Plik: `src/pages/api/matches/[id]/delete.ts`
 
 ```typescript
 export const prerender = false;
@@ -145,9 +145,9 @@ Maksymalnie 10 queries (szczegóły w shared-plan: Match Service `deleteMatch`)
 
 ## Zależności
 
-**Services:** `match.service.deleteMatch`  
-**Schemas:** `idParamSchema`  
-**Utils:** `createNoContentResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `match.service.deleteMatch`
+**Schemas:** `idParamSchema`
+**Utils:** `createNoContentResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `NotFoundError`, `DatabaseError`
 
 ---

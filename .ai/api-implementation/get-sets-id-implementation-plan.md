@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/sets/{id}`  
-**Metoda:** GET  
-**Cel:** Pobieranie szczegółowych informacji o konkretnym secie  
+**Endpoint:** `/api/sets/{id}`
+**Metoda:** GET
+**Cel:** Pobieranie szczegółowych informacji o konkretnym secie
 **Prerender:** `false`
 
 **Funkcjonalność:**
@@ -71,7 +71,7 @@
 
 ## Implementacja
 
-### Plik: `src/pages/api/sets/[id].ts`
+### Plik: `src/pages/api/sets/[id]/index.ts`
 
 ```typescript
 export const prerender = false;
@@ -90,14 +90,19 @@ export async function GET(context: APIContext) {
   const setId = paramResult.data.id;
 
   // 3. Walidacja query params
-  const queryResult = parseQueryParams(context.url.searchParams, setsIncludeQuerySchema);
+  const queryResult = parseQueryParams(
+    context.url.searchParams,
+    setsIncludeQuerySchema
+  );
   if (!queryResult.success) {
     return createValidationErrorResponse(queryResult.error);
   }
 
   // 4. Określenie flagi includePoints
   const includePoints =
-    queryResult.data.include?.includes("points") || queryResult.data.include?.includes("tags") || false;
+    queryResult.data.include?.includes("points") ||
+    queryResult.data.include?.includes("tags") ||
+    false;
 
   // 5. Pobranie seta
   try {
@@ -110,7 +115,11 @@ export async function GET(context: APIContext) {
     return createSuccessResponse(set);
   } catch (error) {
     if (error instanceof DatabaseError) {
-      logError("GET /api/sets/{id}", error, { userId, setId, include: queryResult.data.include });
+      logError("GET /api/sets/{id}", error, {
+        userId,
+        setId,
+        include: queryResult.data.include,
+      });
       return createInternalErrorResponse();
     }
     throw error;
@@ -165,9 +174,9 @@ Maksymalnie 2 queries:
 
 ## Zależności
 
-**Services:** `set.service.getSetById`  
-**Schemas:** `idParamSchema`, `setsIncludeQuerySchema`  
-**Utils:** `parseQueryParams`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `set.service.getSetById`
+**Schemas:** `idParamSchema`, `setsIncludeQuerySchema`
+**Utils:** `parseQueryParams`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `DatabaseError`
 
 ---

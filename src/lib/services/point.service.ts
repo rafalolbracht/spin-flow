@@ -297,7 +297,6 @@ async function validateTagsExist(
   const { data: existingTags, error } = await supabase
     .from("tags")
     .select("id")
-    .eq("user_id", userId)
     .in("id", tagIds);
 
   if (error) {
@@ -354,7 +353,6 @@ async function getTagNamesByIds(
   const { data: tags, error } = await supabase
     .from("tags")
     .select("name")
-    .eq("user_id", userId)
     .in("id", tagIds);
 
   if (error) {

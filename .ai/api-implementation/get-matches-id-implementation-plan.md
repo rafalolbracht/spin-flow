@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/matches/{id}`  
-**Metoda:** GET  
-**Cel:** Pobieranie szczegółów pojedynczego meczu z opcjonalnym ładowaniem relacji  
+**Endpoint:** `/api/matches/{id}`
+**Metoda:** GET
+**Cel:** Pobieranie szczegółów pojedynczego meczu z opcjonalnym ładowaniem relacji
 **Prerender:** `false`
 
 **Operacje:**
@@ -144,7 +144,7 @@
 
 ## Implementacja
 
-### Plik: `src/pages/api/matches/[id].ts` (współdzielony z DELETE i PATCH)
+### Plik: `src/pages/api/matches/[id]/index.ts`
 
 ```typescript
 export const prerender = false;
@@ -163,7 +163,10 @@ export async function GET(context: APIContext) {
   const matchId = paramResult.data.id;
 
   // 3. Walidacja query param
-  const queryResult = parseQueryParams(context.url.searchParams, includeQuerySchema);
+  const queryResult = parseQueryParams(
+    context.url.searchParams,
+    includeQuerySchema
+  );
   if (!queryResult.success) {
     return createValidationErrorResponse(queryResult.error);
   }
@@ -171,8 +174,12 @@ export async function GET(context: APIContext) {
   const { include } = queryResult.data;
 
   // 4. Parsowanie include
-  const includeSets = include?.includes("sets") || include?.includes("points") || include?.includes("tags");
-  const includePoints = include?.includes("points") || include?.includes("tags");
+  const includeSets =
+    include?.includes("sets") ||
+    include?.includes("points") ||
+    include?.includes("tags");
+  const includePoints =
+    include?.includes("points") || include?.includes("tags");
   const includeTags = include?.includes("tags");
   const includeAiReport = include?.includes("ai_report");
 
@@ -249,7 +256,7 @@ export async function GET(context: APIContext) {
 
 ### Database queries
 
-**Minimum:** 2 queries (match + current_set)  
+**Minimum:** 2 queries (match + current_set)
 **Maximum:** 6 queries (match + current_set + sets + points + tags + ai_report)
 
 **Optymalizacje:**
@@ -286,9 +293,9 @@ Jednolita odpowiedź 404 dla:
 
 ## Zależności
 
-**Services:** `match.service.getMatchById`  
-**Schemas:** `idParamSchema`, `includeQuerySchema`  
-**Utils:** `parseQueryParams`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `match.service.getMatchById`
+**Schemas:** `idParamSchema`, `includeQuerySchema`
+**Utils:** `parseQueryParams`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `NotFoundError`, `DatabaseError`
 
 ---

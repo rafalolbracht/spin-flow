@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/matches/{id}`  
-**Metoda:** PATCH  
-**Cel:** Aktualizacja metadanych istniejącego meczu (partial update)  
+**Endpoint:** `/api/matches/{id}`
+**Metoda:** PATCH
+**Cel:** Aktualizacja metadanych istniejącego meczu (partial update)
 **Prerender:** `false`
 
 **Edytowalne pola:**
@@ -71,7 +71,7 @@
 
 ## Implementacja
 
-### Plik: `src/pages/api/matches/[id].ts` (współdzielony z GET i DELETE)
+### Plik: `src/pages/api/matches/[id]/update.ts`
 
 ```typescript
 export const prerender = false;
@@ -90,7 +90,10 @@ export async function PATCH(context: APIContext) {
   const matchId = paramResult.data.id;
 
   // 3. Walidacja body
-  const bodyResult = await parseRequestBody(context.request, updateMatchCommandSchema);
+  const bodyResult = await parseRequestBody(
+    context.request,
+    updateMatchCommandSchema
+  );
   if (!bodyResult.success) {
     // JSON parse error
     if (bodyResult.error instanceof Error) {
@@ -168,9 +171,9 @@ PATCH jest idempotentny:
 
 ## Zależności
 
-**Services:** `match.service.updateMatch`  
-**Schemas:** `idParamSchema`, `updateMatchCommandSchema`  
-**Utils:** `parseRequestBody`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `match.service.updateMatch`
+**Schemas:** `idParamSchema`, `updateMatchCommandSchema`
+**Utils:** `parseRequestBody`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `NotFoundError`, `DatabaseError`
 
 ---

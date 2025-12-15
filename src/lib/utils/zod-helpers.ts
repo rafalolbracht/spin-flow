@@ -69,6 +69,7 @@ export async function parseRequestBody<T>(
     if (error instanceof Error) {
       return { success: false, error };
     }
-    throw error; // Re-throw unexpected errors
+    // Handle non-Error exceptions (like SyntaxError from JSON.parse)
+    return { success: false, error: new Error(String(error)) };
   }
 }

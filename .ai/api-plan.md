@@ -76,7 +76,7 @@ Authorization: Bearer {supabase_jwt_token}
 
 ---
 
-#### POST /api/matches
+#### POST /api/matches/create
 
 Create a new match with initial configuration. Automatically creates and starts the first set.
 
@@ -400,7 +400,7 @@ Authorization: Bearer {supabase_jwt_token}
 
 ---
 
-#### PATCH /api/matches/{id}
+#### PATCH /api/matches/{id}/update
 
 Update match metadata (limited fields only). Cannot modify sets, points, or match status.
 
@@ -512,7 +512,7 @@ Content-Type: application/json
 
 ---
 
-#### DELETE /api/matches/{id}
+#### DELETE /api/matches/{id}/delete
 
 Permanently delete a match and all associated data (sets, points, point_tags, ai_reports, public_share).
 
@@ -791,7 +791,7 @@ Authorization: Bearer {supabase_jwt_token}
 
 ---
 
-#### POST /api/sets/{setId}/points
+#### POST /api/sets/{setId}/points/create
 
 Add a point to a set. Automatically calculates and records the server, updates set score.
 
@@ -865,7 +865,7 @@ Content-Type: application/json
 
 ---
 
-#### DELETE /api/sets/{setId}/points/last
+#### DELETE /api/sets/{setId}/points/delete
 
 Undo the last point scored in a set. Removes the point and its tag associations, recalculates set score and server.
 

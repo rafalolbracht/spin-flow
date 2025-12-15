@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/sets/{setId}/points`  
-**Metoda:** GET  
-**Cel:** Pobieranie wszystkich punktów dla konkretnego seta  
+**Endpoint:** `/api/sets/{setId}/points`
+**Metoda:** GET
+**Cel:** Pobieranie wszystkich punktów dla konkretnego seta
 **Prerender:** `false`
 
 **Funkcjonalność:**
@@ -67,7 +67,7 @@
 
 ## Implementacja
 
-### Plik: `src/pages/api/sets/[setId]/points.ts`
+### Plik: `src/pages/api/sets/[id]/points/index.ts`
 
 ```typescript
 export const prerender = false;
@@ -86,7 +86,10 @@ export async function GET(context: APIContext) {
   const setId = paramResult.data.id;
 
   // 3. Walidacja query param (opcjonalne, ale zachowane dla zgodności)
-  const queryResult = parseQueryParams(context.url.searchParams, pointsIncludeQuerySchema);
+  const queryResult = parseQueryParams(
+    context.url.searchParams,
+    pointsIncludeQuerySchema
+  );
   if (!queryResult.success) {
     return createValidationErrorResponse(queryResult.error);
   }
@@ -158,9 +161,9 @@ ORDER BY sequence_in_set ASC
 
 ## Zależności
 
-**Services:** `point.service.getPointsBySetId` (używa `set.service.getPointsBySetIds`)  
-**Schemas:** `idParamSchema`, `pointsIncludeQuerySchema`  
-**Utils:** `parseQueryParams`, `createListResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `point.service.getPointsBySetId` (używa `set.service.getPointsBySetIds`)
+**Schemas:** `idParamSchema`, `pointsIncludeQuerySchema`
+**Utils:** `parseQueryParams`, `createListResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `DatabaseError`
 
 ---

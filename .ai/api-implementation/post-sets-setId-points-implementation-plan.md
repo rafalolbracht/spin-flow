@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/sets/{setId}/points`  
-**Metoda:** POST  
-**Cel:** Dodanie punktu do aktywnego seta z automatycznym obliczaniem serwującego  
+**Endpoint:** `/api/sets/{setId}/points`
+**Metoda:** POST
+**Cel:** Dodanie punktu do aktywnego seta z automatycznym obliczaniem serwującego
 **Prerender:** `false`
 
 **Funkcjonalność:**
@@ -74,7 +74,7 @@
 
 ## Implementacja
 
-### Plik: `src/pages/api/sets/[setId]/points/index.ts`
+### Plik: `src/pages/api/sets/[id]/points/index.ts`
 
 ```typescript
 export const prerender = false;
@@ -93,7 +93,10 @@ export async function POST(context: APIContext) {
   const setId = paramResult.data.id;
 
   // 3. Walidacja body
-  const bodyResult = await parseRequestBody(context.request, createPointCommandSchema);
+  const bodyResult = await parseRequestBody(
+    context.request,
+    createPointCommandSchema
+  );
   if (!bodyResult.success) {
     return createValidationErrorResponse(bodyResult.error);
   }
@@ -102,7 +105,13 @@ export async function POST(context: APIContext) {
 
   // 4. Utworzenie punktu
   try {
-    const result = await createPoint(supabase, userId, setId, command.scored_by, command.tag_ids || []);
+    const result = await createPoint(
+      supabase,
+      userId,
+      setId,
+      command.scored_by,
+      command.tag_ids || []
+    );
 
     if (!result) {
       return createNotFoundResponse("Set not found");
@@ -117,7 +126,11 @@ export async function POST(context: APIContext) {
       return createErrorResponse(error.code, error.message, error.statusCode);
     }
     if (error instanceof DatabaseError) {
-      logError("POST /api/sets/{setId}/points", error, { userId, setId, command });
+      logError("POST /api/sets/{setId}/points", error, {
+        userId,
+        setId,
+        command,
+      });
       return createInternalErrorResponse();
     }
     throw error;
@@ -182,9 +195,9 @@ Service weryfikuje:
 
 ## Zależności
 
-**Services:** `point.service.createPoint`  
-**Schemas:** `idParamSchema`, `createPointCommandSchema`  
-**Utils:** `parseRequestBody`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `point.service.createPoint`
+**Schemas:** `idParamSchema`, `createPointCommandSchema`
+**Utils:** `parseRequestBody`, `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `NotFoundError`, `ApiError`, `DatabaseError`
 
 ---

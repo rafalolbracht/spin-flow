@@ -15,8 +15,7 @@ export async function getDictionaryLabels(
   let query = supabase
     .from("dic_lookup_labels")
     .select("*")
-    .order("domain", { ascending: true })
-    .order("order_in_list", { ascending: true });
+    .order("id", { ascending: true });
 
   // Apply domain filter if provided
   if (domain) {

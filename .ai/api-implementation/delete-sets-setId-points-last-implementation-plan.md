@@ -2,9 +2,9 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/sets/{setId}/points/last`  
-**Metoda:** DELETE  
-**Cel:** Cofnięcie ostatniego zdobytego punktu w secie  
+**Endpoint:** `/api/sets/{setId}/points/last`
+**Metoda:** DELETE
+**Cel:** Cofnięcie ostatniego zdobytego punktu w secie
 **Prerender:** `false`
 
 **Operacje:**
@@ -60,7 +60,7 @@ Brak
 
 ## Implementacja
 
-### Plik: `src/pages/api/sets/[setId]/points/last.ts`
+### Plik: `src/pages/api/sets/[id]/points/delete.ts`
 
 ```typescript
 export const prerender = false;
@@ -95,7 +95,10 @@ export async function DELETE(context: APIContext) {
       return createErrorResponse(error.code, error.message, error.statusCode);
     }
     if (error instanceof DatabaseError) {
-      logError("DELETE /api/sets/{setId}/points/last", error, { userId, setId });
+      logError("DELETE /api/sets/{setId}/points/last", error, {
+        userId,
+        setId,
+      });
       return createInternalErrorResponse();
     }
     throw error;
@@ -152,9 +155,9 @@ Maksymalnie 6 queries:
 
 ## Zależności
 
-**Services:** `point.service.undoLastPoint`  
-**Schemas:** `idParamSchema`  
-**Utils:** `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `point.service.undoLastPoint`
+**Schemas:** `idParamSchema`
+**Utils:** `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `NotFoundError`, `ApiError`, `DatabaseError`
 
 ---
