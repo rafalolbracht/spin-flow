@@ -295,7 +295,7 @@ export type AiReportDto = Omit<MatchAiReport, "user_id">;
 export interface PublicShareDto {
   id: number;
   match_id: number;
-  public_url: string; // Full URL: https://spinflow.app/public/matches/{token}
+  public_url: string; // Full URL: https://spin-flow.app/public/matches/{token}
   token: string; // base64url token (43 characters)
   created_at: string;
 }

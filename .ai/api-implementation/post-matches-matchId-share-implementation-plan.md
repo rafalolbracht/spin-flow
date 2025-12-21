@@ -2,10 +2,10 @@
 
 ## Przegląd
 
-**Endpoint:** `/api/matches/{matchId}/share`  
-**Metoda:** POST  
-**Cel:** Generowanie lub pobieranie publicznego linku udostępniania dla zakończonego meczu  
-**Prerender:** `false`  
+**Endpoint:** `/api/matches/{matchId}/share`
+**Metoda:** POST
+**Cel:** Generowanie lub pobieranie publicznego linku udostępniania dla zakończonego meczu
+**Prerender:** `false`
 **Idempotentność:** Wielokrotne wywołanie zwraca ten sam link
 
 ---
@@ -33,7 +33,7 @@ Brak (endpoint nie przyjmuje body)
   data: {
     id: number,
     match_id: number,
-    public_url: string,  // "https://spinflow.app/public/matches/{token}"
+    public_url: string,  // "https://spin-flow.app/public/matches/{token}"
     token: string,       // 43 znaki base64url
     created_at: string
   }
@@ -137,9 +137,9 @@ Service weryfikuje:
 
 ## Zależności
 
-**Services:** `share.service.createOrGetPublicShare`  
-**Schemas:** `idParamSchema`  
-**Utils:** `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`  
+**Services:** `share.service.createOrGetPublicShare`
+**Schemas:** `idParamSchema`
+**Utils:** `createSuccessResponse`, `createNotFoundResponse`, `createValidationErrorResponse`, `createErrorResponse`, `createInternalErrorResponse`, `logError`
 **Errors:** `NotFoundError`, `ApiError`, `DatabaseError`
 
 ---

@@ -1065,7 +1065,7 @@ Authorization: Bearer {supabase_jwt_token}
   "data": {
     "id": 345,
     "match_id": 124,
-    "public_url": "https://spinflow.app/public/matches/a7b3c9d4e5f6g7h8i9j0k1l2m3n4o5p6",
+    "public_url": "https://spin-flow.app/public/matches/a7b3c9d4e5f6g7h8i9j0k1l2m3n4o5p6",
     "token": "a7b3c9d4e5f6g7h8i9j0k1l2m3n4o5p6",
     "created_at": "2024-01-15T16:05:00Z"
   }

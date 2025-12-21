@@ -1050,7 +1050,7 @@ async function createPublicShare(
 }
 
 function mapToPublicShareDto(record: MatchPublicShare): PublicShareDto {
-  const baseUrl = import.meta.env.PUBLIC_BASE_URL || "https://spinflow.app";
+  const baseUrl = import.meta.env.PUBLIC_BASE_URL || "https://spin-flow.app";
   return {
     id: record.id,
     match_id: record.match_id,

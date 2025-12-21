@@ -142,7 +142,7 @@ function generateSecureToken(): string {
  */
 function mapToPublicShareDto(share: MatchPublicShare): PublicShareDto {
   // TODO: Get from environment variable in production
-  const baseUrl = "https://spinflow.app";
+  const baseUrl = "https://spin-flow.app";
 
   return {
     id: share.id,
