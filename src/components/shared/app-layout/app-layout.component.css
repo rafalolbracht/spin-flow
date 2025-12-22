@@ -1,0 +1,59 @@
+/**
+ * Style dla AppLayoutComponent
+ * Responsywny layout z hamburger menu na mobile
+ */
+
+/* Kontener główny layoutu */
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Obszar głównej treści */
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hover effect dla elementów menu */
+.nav-menu-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.nav-menu-item::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--p-primary-color);
+  transition: width 0.2s ease;
+}
+
+.nav-menu-item:hover::after {
+  width: 100%;
+}
+
+/* Aktywny element menu */
+.nav-menu-item.active::after {
+  width: 100%;
+}
+
+/* Menu mobilne - animacja */
+.mobile-menu {
+  transition: all 0.3s ease;
+}
+
+.mobile-menu.hidden {
+  display: none;
+}
+
+/* Separator w prawej sekcji */
+.nav-separator {
+  height: 1.5rem;
+  width: 1px;
+}

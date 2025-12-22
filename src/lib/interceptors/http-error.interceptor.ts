@@ -4,7 +4,6 @@ import type {
   HttpErrorResponse,
 } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
-import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { logError } from '../utils/logger';
 
@@ -15,12 +14,11 @@ import { logError } from '../utils/logger';
  * Mapuje kody błędów na przyjazne komunikaty użytkownika i wykonuje odpowiednie akcje.
  */
 export const HttpErrorInterceptor: HttpInterceptorFn = (request, next) => {
-  const router = inject(Router);
   const messageService = inject(MessageService);
 
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
-      handleHttpError(error, router, messageService);
+      handleHttpError(error, messageService);
       return throwError(() => error);
     }),
   );
@@ -29,10 +27,9 @@ export const HttpErrorInterceptor: HttpInterceptorFn = (request, next) => {
 /**
  * Centralna obsługa błędów HTTP
  * @param error - HttpErrorResponse z Angular
- * @param router - Router service
  * @param messageService - PrimeNG MessageService
  */
-function handleHttpError(error: HttpErrorResponse, router: Router, messageService: MessageService): void {
+function handleHttpError(error: HttpErrorResponse, messageService: MessageService): void {
   logError(
     `HTTP ${error.status}`,
     new Error(error.message),
@@ -51,7 +48,7 @@ function handleHttpError(error: HttpErrorResponse, router: Router, messageServic
       break;
 
     case 401:
-      handleUnauthorizedError(router, messageService);
+      handleUnauthorizedError(messageService);
       break;
 
     case 403:
@@ -91,7 +88,7 @@ function handleNetworkError(messageService: MessageService): void {
 /**
  * Obsługa błędu autoryzacji (401 Unauthorized)
  */
-function handleUnauthorizedError(router: Router, messageService: MessageService): void {
+function handleUnauthorizedError(messageService: MessageService): void {
   messageService.add({
     severity: 'error',
     summary: 'Sesja wygasła',
@@ -99,8 +96,10 @@ function handleUnauthorizedError(router: Router, messageService: MessageService)
     life: 5000,
   });
 
-  // Przekierowanie do strony głównej
-  router.navigate(['/']);
+  // Przekierowanie do strony głównej (używamy window.location, bo routing obsługuje Astro)
+  if (typeof window !== 'undefined') {
+    window.location.href = '/';
+  }
 }
 
 /**

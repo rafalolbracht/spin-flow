@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { MatchListPageComponent } from "@/components/matches/match-list-page/match-list-page.component";
+
+// Placeholder dla przyszłej implementacji autentykacji
+// const session = await Astro.locals.getSession();
+// if (!session) {
+//   return Astro.redirect('/');
+// }
+---
+
+<Layout title="Spin Flow - Moje mecze">
+  <MatchListPageComponent client:only="angular" />
+</Layout>
+

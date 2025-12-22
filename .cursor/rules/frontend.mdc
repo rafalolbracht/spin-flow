@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 globs: *.tsx,*.astro
 alwaysApply: false
 ---
@@ -20,3 +20,17 @@ alwaysApply: false
 - Use the @layer directive (e.g. @layer base) and @apply for cross-cutting base styles like body, a, and headings, only with valid Tailwind / tailwindcss-primeui utilities
 - Treat the selected PrimeUI theme as the single source of truth for colors, radii, and shadows, and avoid introducing a parallel Tailwind-only color system that diverges from Prime
 - Prefer Prime’s theming options and CSS variables for deep visual customization of PrimeNG components, using Tailwind mainly for spacing, alignment, and container backgrounds around them
+
+### Pozostałe
+
+- Zapoznaj sie z @styling-explanation.md  i stosuj do zasad i praktyk tam opisanych dotyczących css i dark mode
+- Stosuj readonly themeService = inject(ThemeService);
+- Do dark mode użyj serwisu @theme.service.ts
+- Stosuj private readonly _themeInit = inject(PrimeNGThemeInitService);
+- Do http użyj klienta z @http-providers.ts  (z interceptorem)
+- Jak zakładasz komponent to zakładaj osobne katalogi na komponenty
+- Nie używaj inline html i css w komponentach - załóż osobne pliki
+- W plikach css komponentów wstawiaj zgrupowane style css, celem jest aby plik html był lepiej czytelny.
+- Uwaga! @apply w komponentowych plikach CSS Angular nie działa prawidłowo z Tailwind CSS, ponieważ Angular używa domyślnie ViewEncapsulation.Emulated, a Tailwind przetwarza @apply tylko w globalnych plikach CSS.
+- W przypadku wąpliwości jak coś zaimplementować przejrzyj codebase, bo może analogiczny problem lub funkcjonalność już istnieje. Najlepiej mnie zapytaj o zdanie/decyzję.
+- Mam wykupione płatne PrimeBlocks, więc oprócz komponentów z https://primeng.org/  uwzględnij również komponenty/bloki z https://primeblocks.org/ . Jeśli chcesz ich użyć, to poproś mnie o kod do nich. Pobiorę ze strony primeblocks i wstawię dla Ciebie.

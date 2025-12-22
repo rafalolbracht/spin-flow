@@ -1,0 +1,157 @@
+<!-- AppLayout - Bazowy layout dla stron zalogowanych użytkowników -->
+<!-- Wzorzec: PrimeBlocks Branded Navigation z hamburger menu -->
+
+<div class="app-layout bg-surface-50">
+  <!-- Navbar -->
+  <!-- Wzorzec: PrimeBlocks "Hover Borders" -->
+  <nav class="bg-surface-0 h-16 px-6 md:px-8 flex items-center lg:items-stretch justify-between border-b border-surface-200 relative lg:static gap-4 lg:gap-8">
+    <!-- Lewa sekcja: Logo -->
+    <a
+      href="/"
+      class="flex items-center gap-3 cursor-pointer shrink-0"
+      aria-label="Spin Flow - strona główna"
+    >
+      <img
+        [src]="logoPath()"
+        alt="Spin Flow Logo"
+        width="32"
+        height="32"
+        class="block"
+      />
+      <span class="text-lg font-semibold text-surface-900">Spin Flow</span>
+    </a>
+
+    <!-- Desktop: Menu główne (widoczne tylko na lg+) -->
+    <!-- Wzorzec: PrimeBlocks "Hover Borders" -->
+    <div class="hidden lg:flex flex-1 items-end gap-2 h-full">
+      @for (item of menuItems(); track item.href; let i = $index) {
+        <a
+          [href]="item.href"
+          [class]="getMenuItemClassDesktop(i)"
+          (click)="setActiveItem(i)"
+        >
+          @if (item.icon) {
+            <i [class]="'pi ' + item.icon + ' text-base ' + getMenuIconClass(i)"></i>
+          }
+          <span [class]="getMenuLabelClass(i)">{{ item.label }}</span>
+        </a>
+      }
+    </div>
+
+    <!-- Prawa sekcja header -->
+    <div class="flex items-center gap-3">
+      <!-- Dark Mode Toggle (zawsze widoczny) -->
+      <a
+        class="flex items-center justify-center p-2 bg-surface-0 rounded-lg border border-surface-200 hover:bg-surface-100 cursor-pointer transition-colors"
+        (click)="toggleDarkMode()"
+        [attr.aria-label]="themeService.isDarkMode() ? 'Przełącz na tryb jasny' : 'Przełącz na tryb ciemny'"
+      >
+        <i [class]="'pi text-base text-surface-600 ' + (themeService.isDarkMode() ? 'pi-sun' : 'pi-moon')"></i>
+      </a>
+
+      <!-- Desktop: User section (ukryte na mobile) -->
+      <div class="hidden lg:flex items-center gap-3">
+        <!-- Separator -->
+        <div class="nav-separator bg-surface-200"></div>
+
+        <!-- User menu trigger -->
+        <div 
+          class="flex items-center gap-3 ml-2 cursor-pointer"
+          (click)="userMenu.toggle($event)"
+          [attr.aria-label]="'Menu użytkownika'"
+          [attr.aria-haspopup]="true"
+        >
+          <p-avatar
+            [label]="userInitials() || undefined"
+            [icon]="!userInitials() ? 'pi pi-user' : undefined"
+            shape="circle"
+            styleClass="bg-primary text-primary-contrast"
+          />
+          @if (userName()) {
+            <span class="text-surface-800 font-medium">
+              {{ userName() }}
+            </span>
+          }
+          <i class="pi pi-chevron-down text-xs text-surface-500"></i>
+        </div>
+
+        <!-- User popup menu (desktop) -->
+        <p-menu
+          #userMenu
+          [model]="userMenuItems()"
+          [popup]="true"
+          appendTo="body"
+        />
+      </div>
+
+      <!-- Mobile: Hamburger button + dropdown -->
+      <a
+        #menuToggle
+        pStyleClass="@next"
+        enterFromClass="hidden"
+        leaveToClass="hidden"
+        [hideOnOutsideClick]="true"
+        class="flex lg:hidden items-center justify-center p-2 cursor-pointer text-surface-700"
+        aria-label="Toggle menu"
+      >
+        <i class="pi pi-bars text-xl"></i>
+      </a>
+
+      <!-- Mobile menu dropdown (musi być bezpośrednio po hamburgerze dla pStyleClass="@next") -->
+      <div 
+        class="hidden absolute w-full bg-surface-0 left-0 top-full z-50 shadow-lg border-b border-surface-200 flex-col lg:!hidden"
+      >
+        <!-- Menu główne (mobile) -->
+        <!-- Wzorzec: PrimeBlocks "Hover Borders" - border-left -->
+        <div class="flex flex-col gap-0 px-0 py-4">
+          @for (item of menuItems(); track item.href; let i = $index) {
+            <a
+              [href]="item.href"
+              [class]="getMenuItemClassMobile(i)"
+              (click)="setActiveItem(i)"
+            >
+              @if (item.icon) {
+                <i [class]="'pi ' + item.icon + ' text-base ' + getMenuIconClass(i)"></i>
+              }
+              <span [class]="getMenuLabelClass(i)">{{ item.label }}</span>
+            </a>
+          }
+        </div>
+
+        <!-- Dolna sekcja: User info + Logout -->
+        <div class="flex items-center justify-between gap-4 px-6 py-4 border-t border-surface-200">
+          <!-- User info -->
+          <div class="flex items-center gap-3">
+            <p-avatar
+              [label]="userInitials() || undefined"
+              [icon]="!userInitials() ? 'pi pi-user' : undefined"
+              shape="circle"
+              styleClass="bg-primary text-primary-contrast"
+            />
+            @if (userName()) {
+              <span class="text-surface-800 font-medium">
+                {{ userName() }}
+              </span>
+            }
+          </div>
+
+          <!-- Logout button (zielony link na mobile) -->
+          <a
+            class="flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors text-primary-500 hover:text-primary-600 font-medium"
+            (click)="onLogoutClick()"
+          >
+            <span>Wyloguj</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Toast dla powiadomień -->
+  <p-toast />
+
+  <!-- Główna zawartość strony (ng-content) -->
+  <main class="app-content p-6 md:p-8 bg-surface-50">
+    <ng-content></ng-content>
+  </main>
+</div>
