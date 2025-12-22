@@ -1,0 +1,21 @@
+{
+  "css.customData": [".vscode/css-custom-data.json"],
+  "css.lint.unknownAtRules": "ignore",
+  "tailwindCSS.experimental.configFile": "tailwind.config.mjs",
+  "tailwindCSS.includeLanguages": {
+    "astro": "html",
+    "typescript": "javascript"
+  },
+  "tailwindCSS.classAttributes": [
+    "class",
+    "className",
+    "ngClass",
+    "styleClass"
+  ],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  }
+}

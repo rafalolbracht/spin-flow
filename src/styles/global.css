@@ -1,13 +1,95 @@
 @import "tailwindcss";
-@import "tailwindcss-primeui";
 @import "primeicons/primeicons.css";
 
-@layer base {
-  body {
-    @apply bg-surface-0 text-surface-900;
-  }
+/* Custom dark mode variant for Tailwind 4 */
+@custom-variant dark (&:is(.dark *));
 
-  a {
-    @apply text-primary;
-  }
+/* Light mode colors (default) */
+:root {
+  /* PrimeNG Primary Colors (Green) */
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
+  --color-primary-950: #052e16;
+
+  /* PrimeNG Surface Colors (Slate) */
+  --color-surface-0: #ffffff;
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  --color-surface-300: #cbd5e1;
+  --color-surface-400: #94a3b8;
+  --color-surface-500: #64748b;
+  --color-surface-600: #475569;
+  --color-surface-700: #334155;
+  --color-surface-800: #1e293b;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #020617;
+}
+
+/* Dark mode colors */
+.dark {
+  /* Primary colors remain the same, but adjusted for dark mode visibility */
+  --color-primary-50: #052e16;
+  --color-primary-100: #14532d;
+  --color-primary-200: #166534;
+  --color-primary-300: #15803d;
+  --color-primary-400: #16a34a;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #4ade80;
+  --color-primary-700: #86efac;
+  --color-primary-800: #bbf7d0;
+  --color-primary-900: #dcfce7;
+  --color-primary-950: #f0fdf4;
+
+  /* Surface colors inverted for dark mode */
+  --color-surface-0: #020617;
+  --color-surface-50: #0f172a;
+  --color-surface-100: #1e293b;
+  --color-surface-200: #334155;
+  --color-surface-300: #475569;
+  --color-surface-400: #64748b;
+  --color-surface-500: #94a3b8;
+  --color-surface-600: #cbd5e1;
+  --color-surface-700: #e2e8f0;
+  --color-surface-800: #f1f5f9;
+  --color-surface-900: #f8fafc;
+  --color-surface-950: #ffffff;
+}
+
+/* Map CSS variables to Tailwind theme */
+@theme {
+  /* Primary colors */
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+  --color-primary-950: var(--color-primary-950);
+
+  /* Surface colors */
+  --color-surface-0: var(--color-surface-0);
+  --color-surface-50: var(--color-surface-50);
+  --color-surface-100: var(--color-surface-100);
+  --color-surface-200: var(--color-surface-200);
+  --color-surface-300: var(--color-surface-300);
+  --color-surface-400: var(--color-surface-400);
+  --color-surface-500: var(--color-surface-500);
+  --color-surface-600: var(--color-surface-600);
+  --color-surface-700: var(--color-surface-700);
+  --color-surface-800: var(--color-surface-800);
+  --color-surface-900: var(--color-surface-900);
+  --color-surface-950: var(--color-surface-950);
 }

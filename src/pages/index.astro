@@ -1,13 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { CounterComponent } from "@/components/ui/counter.component";
+import { LandingPageComponent } from "@/components/landing/landing-page/landing-page.component";
 ---
 
-<Layout title="Welcome to Astro.">
-  <main class="mx-auto max-w-3xl py-12 px-4 space-y-8">
-    <h1 class="text-3xl font-bold">Astro + Angular + Tailwind – starter</h1>
-
-    <!-- Angular jako wysepka z hydratacją na kliencie -->
-    <CounterComponent client:only="angular" />
-  </main>
+<Layout title="Spin Flow - Rejestracja meczów tenisa stołowego na żywo">
+  <LandingPageComponent client:only="angular" />
 </Layout>

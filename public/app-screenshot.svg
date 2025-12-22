@@ -1,0 +1,53 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tło aplikacji -->
+  <rect width="1200" height="800" fill="#ffffff" stroke="#e5e7eb" stroke-width="2" rx="12"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="1200" height="80" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="40" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1e293b">Spin Flow</text>
+  <text x="40" y="55" font-family="Arial, sans-serif" font-size="14" fill="#64748b">Rejestracja meczu na żywo</text>
+
+  <!-- Menu przyciski -->
+  <rect x="900" y="20" width="80" height="40" fill="#3b82f6" rx="6"/>
+  <text x="940" y="42" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">Mecze</text>
+
+  <rect x="1000" y="20" width="80" height="40" fill="#10b981" rx="6"/>
+  <text x="1040" y="42" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">Nowy</text>
+
+  <!-- Główny obszar -->
+  <rect x="40" y="120" width="540" height="600" fill="#f1f5f9" rx="8"/>
+  <text x="310" y="160" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#334155">Mecz: Kowalski vs Nowak</text>
+
+  <!-- Licznik punktów -->
+  <rect x="80" y="200" width="200" height="150" fill="#ffffff" rx="8" stroke="#cbd5e1"/>
+  <text x="180" y="230" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#1e293b">Set 1</text>
+  <text x="150" y="270" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="#3b82f6">11</text>
+  <text x="210" y="270" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="#ef4444">8</text>
+  <text x="150" y="295" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#64748b">Kowalski</text>
+  <text x="210" y="295" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#64748b">Nowak</text>
+
+  <!-- Przyciski akcji -->
+  <rect x="80" y="380" width="140" height="50" fill="#3b82f6" rx="8"/>
+  <text x="150" y="408" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Punkt dla gracza</text>
+
+  <rect x="240" y="380" width="140" height="50" fill="#ef4444" rx="8"/>
+  <text x="310" y="408" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Punkt dla przeciwnika</text>
+
+  <!-- Panel boczny -->
+  <rect x="620" y="120" width="520" height="600" fill="#ffffff" rx="8" stroke="#cbd5e1"/>
+  <text x="880" y="160" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#334155">Historia punktów</text>
+
+  <!-- Lista punktów -->
+  <rect x="650" y="190" width="460" height="40" fill="#f8fafc" rx="4"/>
+  <text x="660" y="212" font-family="Arial, sans-serif" font-size="14" fill="#475569">15:42 - Punkt dla Kowalskiego (forehand top spin)</text>
+
+  <rect x="650" y="240" width="460" height="40" fill="#ffffff" rx="4" stroke="#e2e8f0"/>
+  <text x="660" y="262" font-family="Arial, sans-serif" font-size="14" fill="#475569">15:40 - Punkt dla Nowaka (backhand counter)</text>
+
+  <rect x="650" y="290" width="460" height="40" fill="#f8fafc" rx="4"/>
+  <text x="660" y="312" font-family="Arial, sans-serif" font-size="14" fill="#475569">15:38 - Punkt dla Kowalskiego (serve ace)</text>
+
+  <!-- Footer z informacją o placeholder -->
+  <rect x="40" y="750" width="1120" height="30" fill="#fef3c7" rx="4" stroke="#f59e0b"/>
+  <text x="600" y="768" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#92400e">⚠️ PLACEHOLDER - Zastąp prawdziwym screenshotem aplikacji (1200x800px)</text>
+</svg>

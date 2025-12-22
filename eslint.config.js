@@ -3,6 +3,7 @@ import eslint from "@eslint/js";
 import eslintPluginAstro from "eslint-plugin-astro";
 import angularEslint from "@angular-eslint/eslint-plugin";
 import angularEslintTemplate from "@angular-eslint/eslint-plugin-template";
+import angularTemplateParser from "@angular-eslint/template-parser";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import tseslint from "typescript-eslint";
@@ -53,6 +54,9 @@ const angularTemplateConfig = tseslint.config({
   files: ["**/*.html"],
   plugins: {
     "@angular-eslint/template": angularEslintTemplate,
+  },
+  languageOptions: {
+    parser: angularTemplateParser,
   },
   rules: {
     ...angularEslintTemplate.configs.recommended.rules,
