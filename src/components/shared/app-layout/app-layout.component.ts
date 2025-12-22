@@ -4,8 +4,9 @@ import { StyleClassModule } from 'primeng/styleclass';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RippleModule } from 'primeng/ripple';
-import { MessageService, type MenuItem } from 'primeng/api';
+import { type MenuItem } from 'primeng/api';
 import { ThemeService } from '@/lib/services/theme.service';
 import { PrimeNGThemeInitService } from '@/lib/config/primeng-theme-init.service';
 import { httpProviders } from '@/lib/config/http-providers';
@@ -19,9 +20,9 @@ import type { NavMenuItem } from './app-layout.types';
     AvatarModule,
     MenuModule,
     ToastModule,
+    ConfirmDialogModule,
     RippleModule,
   ],
-  providers: [MessageService],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.css',
 })
@@ -30,7 +31,6 @@ export class AppLayoutComponent {
 
   readonly themeService = inject(ThemeService);
   private readonly _themeInit = inject(PrimeNGThemeInitService);
-  private readonly messageService = inject(MessageService);
 
   readonly userName = input<string | undefined>(undefined);
   readonly userInitials = input<string | undefined>(undefined);
@@ -112,33 +112,6 @@ export class AppLayoutComponent {
 
   toggleDarkMode(): void {
     this.themeService.toggleDarkMode();
-  }
-
-  showInfo(summary: string, detail: string): void {
-    this.messageService.add({
-      severity: 'info',
-      summary,
-      detail,
-      life: 3000,
-    });
-  }
-
-  showSuccess(summary: string, detail: string): void {
-    this.messageService.add({
-      severity: 'success',
-      summary,
-      detail,
-      life: 3000,
-    });
-  }
-
-  showError(summary: string, detail: string): void {
-    this.messageService.add({
-      severity: 'error',
-      summary,
-      detail,
-      life: 5000,
-    });
   }
 
   private onLogout(): void {

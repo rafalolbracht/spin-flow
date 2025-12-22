@@ -1,85 +1,93 @@
 <div class="min-h-screen bg-surface-0">
   <!-- Topbar -->
-  <div class="bg-surface-0 py-3 px-6 md:px-12 border-b border-surface-200 flex items-center justify-between relative lg:static">
-    <a href="/" class="flex items-center gap-3 cursor-pointer" aria-label="Spin Flow - strona główna">
-      <img [src]="logoPath()" alt="Spin Flow Logo" width="36" height="36" class="block" />
-      <span class="text-xl font-semibold text-surface-900">Spin Flow</span>
-    </a>
+  <div class="bg-surface-0 border-b border-surface-200 relative lg:static">
+    <div class="max-w-screen-xl mx-auto py-3 px-6 md:px-8 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3 cursor-pointer" aria-label="Spin Flow - strona główna">
+        <img [src]="logoPath()" alt="Spin Flow Logo" width="36" height="36" class="block" />
+        <span class="text-xl font-semibold text-surface-900">Spin Flow</span>
+      </a>
 
-    <div class="flex items-center gap-3">
-      <p-button
-        [icon]="themeService.isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
-        [text]="true"
-        [rounded]="true"
-        severity="secondary"
-        size="large"
-        (onClick)="toggleTheme()"
-        [attr.aria-label]="themeService.isDarkMode() ? 'Przełącz na tryb jasny' : 'Przełącz na tryb ciemny'"
-      ></p-button>
-      <p-button label="Zaloguj" [rounded]="false" (onClick)="onTopbarLoginClick()"></p-button>
+      <div class="flex items-center gap-3">
+        <p-button
+          [icon]="themeService.isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+          [text]="true"
+          [rounded]="true"
+          severity="secondary"
+          size="large"
+          (onClick)="toggleTheme()"
+          [attr.aria-label]="themeService.isDarkMode() ? 'Przełącz na tryb jasny' : 'Przełącz na tryb ciemny'"
+        ></p-button>
+        <p-button label="Zaloguj" [rounded]="false" (onClick)="onTopbarLoginClick()"></p-button>
+      </div>
     </div>
   </div>
 
   <!-- Hero Section -->
-  <div class="p-12 lg:p-20 pb-0! text-center bg-linear-to-t from-primary-500/10 from-10% to-transparent flex flex-col items-center overflow-hidden">
-    <div class="bg-primary-100 text-primary-700 p-2 mx-auto mb-6 rounded-full border border-primary-200 px-4 backdrop-blur-sm">
-      🏓 {{ heroConfig().badge }}
-    </div>
+  <div class="bg-linear-to-t from-primary-500/10 from-10% to-transparent overflow-hidden">
+    <div class="max-w-screen-xl mx-auto p-12 lg:p-20 pb-0! text-center flex flex-col items-center">
+      <div class="bg-primary-100 text-primary-700 p-2 mx-auto mb-6 rounded-full border border-primary-200 px-4 backdrop-blur-sm">
+        🏓 {{ heroConfig().badge }}
+      </div>
 
-    <div class="text-4xl lg:text-5xl text-surface-900 font-bold mb-1 leading-tight">{{ heroConfig().headline }}</div>
-    <div class="text-xl lg:text-2xl text-surface-600 font-normal mb-6 leading-tight max-w-3xl">{{ heroConfig().subheadline }}</div>
+      <div class="text-4xl lg:text-5xl text-surface-900 font-bold mb-1 leading-tight">{{ heroConfig().headline }}</div>
+      <div class="text-xl lg:text-2xl text-surface-600 font-normal mb-6 leading-tight max-w-3xl">{{ heroConfig().subheadline }}</div>
 
-    <p-button type="button" [label]="heroConfig().ctaLabel" [outlined]="true" (onClick)="onHeroLoginClick()"></p-button>
+      <p-button type="button" [label]="heroConfig().ctaLabel" [outlined]="true" (onClick)="onHeroLoginClick()"></p-button>
 
-    <div class="w-full grow flex items-start justify-center rounded-t-3xl mt-12">
-      <div class="overflow-hidden w-full aspect-720/295 max-w-[720px] rounded-t-3xl shadow-2xl">
-        <img
-          [src]="heroConfig().appScreenshotUrl"
-          [alt]="heroConfig().appScreenshotAlt"
-          class="block w-full h-full object-cover object-top rounded-t-3xl"
-        />
+      <div class="w-full grow flex items-start justify-center rounded-t-3xl mt-12">
+        <div class="overflow-hidden w-full aspect-720/295 max-w-[720px] rounded-t-3xl shadow-2xl">
+          <img
+            [src]="heroConfig().appScreenshotUrl"
+            [alt]="heroConfig().appScreenshotAlt"
+            class="block w-full h-full object-cover object-top rounded-t-3xl"
+          />
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Features Section -->
-  <div class="bg-surface-0 px-6 md:px-12 lg:px-20 py-20 text-center">
-    <div class="flex flex-col gap-6">
-      <div class="flex flex-col items-center gap-4">
-        <div class="font-bold text-3xl leading-tight">
-          <span class="text-surface-900">Wszystko czego potrzebujesz, </span>
-          <span class="text-primary-500">w jednej aplikacji</span>
-        </div>
-        <div class="text-surface-500 leading-tight max-w-2xl">Spin Flow to kompleksowe narzędzie dla trenerów tenisa stołowego do rejestracji meczów i generowania analiz AI.</div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        @for (feature of features(); track feature.title) {
-          <div class="w-full rounded-md p-4">
-            <span class="mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-surface-0 shadow mx-auto">
-              <i [ngClass]="feature.icon" class="text-2xl! lg:text-3xl! text-primary-500"></i>
-            </span>
-            <div class="flex flex-col gap-1">
-              <div class="text-surface-900 text-xl font-medium leading-tight">{{ feature.title }}</div>
-              <p class="text-surface-500 leading-normal">{{ feature.description }}</p>
-            </div>
+  <div class="bg-surface-0">
+    <div class="max-w-screen-xl mx-auto px-6 md:px-8 py-20 text-center">
+      <div class="flex flex-col gap-6">
+        <div class="flex flex-col items-center gap-4">
+          <div class="font-bold text-3xl leading-tight">
+            <span class="text-surface-900">Wszystko czego potrzebujesz, </span>
+            <span class="text-primary-500">w jednej aplikacji</span>
           </div>
-        }
+          <div class="text-surface-500 leading-tight max-w-2xl">Spin Flow to kompleksowe narzędzie dla trenerów tenisa stołowego do rejestracji meczów i generowania analiz AI.</div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          @for (feature of features(); track feature.title) {
+            <div class="w-full rounded-md p-4">
+              <span class="mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-surface-0 shadow mx-auto">
+                <i [ngClass]="feature.icon" class="text-2xl! lg:text-3xl! text-primary-500"></i>
+              </span>
+              <div class="flex flex-col gap-1">
+                <div class="text-surface-900 text-xl font-medium leading-tight">{{ feature.title }}</div>
+                <p class="text-surface-500 leading-normal">{{ feature.description }}</p>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Footer -->
-  <div class="bg-surface-900 px-6 py-12 md:px-12 lg:px-20">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-3">
-        <img [src]="footerLogoPath()" alt="Spin Flow Logo" width="32" height="32" class="block" />
-        <span class="text-surface-0 text-lg font-semibold leading-tight">Spin Flow</span>
-      </div>
+  <div class="bg-surface-900">
+    <div class="max-w-screen-xl mx-auto px-6 md:px-8 py-12">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <img [src]="footerLogoPath()" alt="Spin Flow Logo" width="32" height="32" class="block" />
+          <span class="text-surface-0 text-lg font-semibold leading-tight">Spin Flow</span>
+        </div>
 
-      <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-        <a class="text-surface-200 hover:text-surface-0 leading-tight transition-colors cursor-pointer text-sm">Polityka prywatności</a>
-        <div class="text-surface-400 text-sm leading-tight">© 2025 Spin Flow</div>
+        <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+          <a class="text-surface-200 hover:text-surface-0 leading-tight transition-colors cursor-pointer text-sm">Polityka prywatności</a>
+          <div class="text-surface-400 text-sm leading-tight">© 2025 Spin Flow</div>
+        </div>
       </div>
     </div>
   </div>

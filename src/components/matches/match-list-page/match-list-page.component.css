@@ -1,2 +1,17 @@
 /* MatchListPage Component Styles */
-/* Plik zarezerwowany dla przyszłych stylów specyficznych dla listy meczów */
+
+/* Match Card Styles */
+.match-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.match-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Ripple effect container */
+.match-card[pRipple] {
+  position: relative;
+  overflow: hidden;
+}

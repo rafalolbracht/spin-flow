@@ -13,8 +13,6 @@
 /* Obszar głównej treści */
 .app-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Hover effect dla elementów menu */

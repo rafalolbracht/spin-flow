@@ -4,7 +4,8 @@
 <div class="app-layout bg-surface-50">
   <!-- Navbar -->
   <!-- Wzorzec: PrimeBlocks "Hover Borders" -->
-  <nav class="bg-surface-0 h-16 px-6 md:px-8 flex items-center lg:items-stretch justify-between border-b border-surface-200 relative lg:static gap-4 lg:gap-8">
+  <nav class="bg-surface-0 border-b border-surface-200">
+    <div class="max-w-screen-xl mx-auto px-6 md:px-8 h-16 flex items-center lg:items-stretch justify-between relative lg:static gap-4 lg:gap-8">
     <!-- Lewa sekcja: Logo -->
     <a
       href="/"
@@ -55,7 +56,7 @@
         <div class="nav-separator bg-surface-200"></div>
 
         <!-- User menu trigger -->
-        <div 
+        <div
           class="flex items-center gap-3 ml-2 cursor-pointer"
           (click)="userMenu.toggle($event)"
           [attr.aria-label]="'Menu użytkownika'"
@@ -98,7 +99,7 @@
       </a>
 
       <!-- Mobile menu dropdown (musi być bezpośrednio po hamburgerze dla pStyleClass="@next") -->
-      <div 
+      <div
         class="hidden absolute w-full bg-surface-0 left-0 top-full z-50 shadow-lg border-b border-surface-200 flex-col lg:!hidden"
       >
         <!-- Menu główne (mobile) -->
@@ -145,13 +146,19 @@
         </div>
       </div>
     </div>
+    </div>
   </nav>
 
   <!-- Toast dla powiadomień -->
   <p-toast />
 
+  <!-- Dialog potwierdzenia (globalny) -->
+  <p-confirmDialog />
+
   <!-- Główna zawartość strony (ng-content) -->
-  <main class="app-content p-6 md:p-8 bg-surface-50">
-    <ng-content></ng-content>
+  <main class="app-content bg-surface-50">
+    <div class="max-w-screen-xl mx-auto px-6 md:px-8 py-6 md:py-8">
+      <ng-content></ng-content>
+    </div>
   </main>
 </div>
