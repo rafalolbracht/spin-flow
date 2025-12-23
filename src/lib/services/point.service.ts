@@ -11,7 +11,7 @@ import type {
   PointTagInsert,
 } from "../../types";
 import { DatabaseError, ApiError } from "../utils/api-errors";
-import { getSetById, getPointsBySetIds } from "./set.service";
+import { getSetById, getPointsBySetIds, calculateActionFlags } from "./set.service";
 
 /**
  * Get all points for a specific set
@@ -321,50 +321,7 @@ async function getSetWithMatch(
   return data as Set & { matches: Match };
 }
 
-/**
- * Calculate action flags for current set state
- * These flags determine which actions are available to the user
- */
-function calculateActionFlags(
-  set: Set,
-  match: { max_sets: number; sets_won_player: number; sets_won_opponent: number },
-): { can_undo_point: boolean; can_finish_set: boolean; can_finish_match: boolean } {
-  // Can undo point if there are any points scored
-  const can_undo_point = (set.set_score_player + set.set_score_opponent) > 0;
-
-  // Cannot finish with tie score
-  const isTied = set.set_score_player === set.set_score_opponent;
-  
-  if (isTied) {
-    return {
-      can_undo_point,
-      can_finish_set: false,
-      can_finish_match: false,
-    };
-  }
-
-  // Determine who would win current set
-  const setWinner: SideEnum = set.set_score_player > set.set_score_opponent ? 'player' : 'opponent';
-  const newSetsWonPlayer = match.sets_won_player + (setWinner === 'player' ? 1 : 0);
-  const newSetsWonOpponent = match.sets_won_opponent + (setWinner === 'opponent' ? 1 : 0);
-  
-  const setsToWin = Math.ceil(match.max_sets / 2);
-  const matchWouldEnd = newSetsWonPlayer >= setsToWin || newSetsWonOpponent >= setsToWin;
-  
-  // Can finish set only if match wouldn't end and it's not the last possible set
-  const setsPlayed = match.sets_won_player + match.sets_won_opponent + 1;
-  const isLastPossibleSet = setsPlayed >= match.max_sets;
-  const can_finish_set = !matchWouldEnd && !isLastPossibleSet;
-  
-  // Can finish match if match would end or it's the last possible set
-  const can_finish_match = matchWouldEnd || isLastPossibleSet;
-
-  return {
-    can_undo_point,
-    can_finish_set,
-    can_finish_match,
-  };
-}
+// Note: calculateActionFlags is now imported from set.service.ts to avoid duplication
 
 /**
  * Validate that all provided tag IDs exist and belong to the user

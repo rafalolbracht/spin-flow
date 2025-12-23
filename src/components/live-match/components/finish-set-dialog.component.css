@@ -73,3 +73,70 @@
 }
 
 /* Dialog używa standardowych styli PrimeNG theme */
+
+/* Responsywność na małych ekranach */
+@media (max-width: 640px) {
+  .dialog-content {
+    gap: 1.25rem;
+  }
+
+  .score-confirmation {
+    padding: 0.875rem;
+  }
+
+  .confirmation-label {
+    font-size: 0.8125rem;
+  }
+
+  .confirmation-score {
+    font-size: 1.625rem;
+  }
+
+  .notes-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  .char-counter,
+  .validation-error {
+    font-size: 0.6875rem;
+  }
+
+  .dialog-footer {
+    gap: 0.5rem;
+  }
+}
+
+/* Bardzo małe ekrany (≤375px) */
+@media (max-width: 375px) {
+  .dialog-content {
+    gap: 1rem;
+  }
+
+  .score-confirmation {
+    padding: 0.75rem;
+  }
+
+  .confirmation-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .confirmation-score {
+    font-size: 1.5rem;
+  }
+
+  ::ng-deep .notes-textarea textarea {
+    font-size: 0.875rem !important;
+  }
+
+  .dialog-footer {
+    gap: 0.5rem;
+  }
+
+  .dialog-footer ::ng-deep .p-button {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+}

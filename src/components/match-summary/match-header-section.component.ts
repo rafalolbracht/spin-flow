@@ -24,7 +24,7 @@ import { CommonModule } from '@angular/common';
         <div class="player-column">
           <div class="player-name">{{ playerName() }}</div>
           <div class="score-row">
-            <div class="sets-won-badge">{{ setsWonPlayer() }}</div>
+            <div class="sets-won-badge player-badge">{{ setsWonPlayer() }}</div>
           </div>
         </div>
 
@@ -32,7 +32,7 @@ import { CommonModule } from '@angular/common';
         <div class="opponent-column">
           <div class="opponent-name">{{ opponentName() }}</div>
           <div class="score-row">
-            <div class="sets-won-badge">{{ setsWonOpponent() }}</div>
+            <div class="sets-won-badge opponent-badge">{{ setsWonOpponent() }}</div>
           </div>
         </div>
       </div>

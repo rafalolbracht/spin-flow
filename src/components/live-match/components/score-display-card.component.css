@@ -168,6 +168,51 @@
   }
 }
 
+/* Bardzo małe ekrany (≤375px) */
+@media (max-width: 375px) {
+  .scoreboard-card {
+    padding: 1rem 0.75rem 0.75rem 0.75rem;
+  }
+
+  .score-display {
+    gap: 0.5rem;
+  }
+
+  .score-row {
+    gap: 0.5rem;
+  }
+
+  .score-value {
+    font-size: 2.5rem; /* ~40px - jeszcze mniejszy */
+  }
+
+  .sets-won-badge {
+    min-width: 32px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .player-name,
+  .opponent-name {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .set-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .server-indicator {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .score-wrapper {
+    margin-top: 0.375rem;
+  }
+}
+
 @media (min-width: 768px) {
   .score-value {
     font-size: 6rem; /* text-6xl desktop */

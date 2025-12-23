@@ -337,8 +337,10 @@ export async function getPointsBySetIds(
 /**
  * Calculate action flags for current set state
  * These flags determine which actions are available to the user
+ * 
+ * Exported for use in match.service.ts when loading matches
  */
-function calculateActionFlags(
+export function calculateActionFlags(
   set: Set,
   match: { max_sets: number; sets_won_player: number; sets_won_opponent: number },
 ): { can_undo_point: boolean; can_finish_set: boolean; can_finish_match: boolean } {

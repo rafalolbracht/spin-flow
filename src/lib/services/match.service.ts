@@ -17,7 +17,7 @@ import type {
   PaginationDto,
 } from "../../types";
 import { DatabaseError, ApiError } from "../utils/api-errors";
-import { createFirstSet } from "./set.service";
+import { createFirstSet, calculateActionFlags } from "./set.service";
 import { getSetsByMatchId } from "./set.service";
 import { trackEvent } from "./analytics.service";
 import { createAiReportRecord, getAiReportByMatchId } from "./ai.service";
@@ -194,8 +194,14 @@ export async function getMatchById(
   if (match.status === "in_progress" && sets) {
     const unfinishedSet = sets.find(set => !set.is_finished);
     if (unfinishedSet) {
+      // Calculate action flags for the unfinished set
+      const actionFlags = calculateActionFlags(unfinishedSet, {
+        max_sets: match.max_sets,
+        sets_won_player: match.sets_won_player,
+        sets_won_opponent: match.sets_won_opponent,
+      });
+      
       // Calculate current server for unfinished set
-      // This would need to be implemented based on serving rules
       currentSet = {
         id: unfinishedSet.id,
         sequence_in_match: unfinishedSet.sequence_in_match,
@@ -204,6 +210,9 @@ export async function getMatchById(
         set_score_opponent: unfinishedSet.set_score_opponent,
         is_finished: unfinishedSet.is_finished,
         current_server: unfinishedSet.current_server || match.first_server_first_set,
+        can_undo_point: actionFlags.can_undo_point,
+        can_finish_set: actionFlags.can_finish_set,
+        can_finish_match: actionFlags.can_finish_match,
       };
     }
   }
