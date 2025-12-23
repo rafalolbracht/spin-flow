@@ -1,0 +1,75 @@
+/* Dialog content */
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Potwierdzenie wyniku */
+.score-confirmation {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--p-surface-100);
+}
+
+:host-context(.dark) .score-confirmation {
+  background-color: rgba(51, 65, 85, 0.6);
+}
+
+.confirmation-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--p-text-muted-color);
+}
+
+.confirmation-score {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+
+/* Sekcja uwag */
+.notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .notes-textarea {
+  width: 100%;
+}
+
+/* Textarea i Label używają standardowych styli PrimeNG - nie nadpisujemy */
+
+.notes-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.char-counter {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+}
+
+.char-counter.error {
+  font-weight: 600;
+  color: var(--p-red-500);
+}
+
+.validation-error {
+  font-size: 0.75rem;
+  color: var(--p-red-500);
+}
+
+/* Footer dialogu */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Dialog używa standardowych styli PrimeNG theme */

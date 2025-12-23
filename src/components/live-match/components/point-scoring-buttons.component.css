@@ -1,0 +1,92 @@
+/* Kontener przycisków scoring */
+.scoring-buttons-container {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem; /* 24px */
+  margin-bottom: 0; /* usunięty - odstęp kontrolowany przez gap w parent */
+}
+
+/* Duże okrągłe przyciski */
+.scoring-button {
+  width: 112px; /* 7rem / 28 */
+  height: 112px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.scoring-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.scoring-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.scoring-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Ikona plus */
+.scoring-button i {
+  font-size: 3rem; /* text-5xl / 48px */
+  color: white;
+}
+
+/* Przycisk gracza - niebieski */
+.player-button {
+  background: linear-gradient(
+    135deg,
+    rgb(59, 130, 246) 0%,
+    rgb(37, 99, 235) 100%
+  );
+}
+
+.player-button:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    rgb(37, 99, 235) 0%,
+    rgb(29, 78, 216) 100%
+  );
+}
+
+/* Przycisk rywala - pomarańczowy */
+.opponent-button {
+  background: linear-gradient(
+    135deg,
+    rgb(251, 146, 60) 0%,
+    rgb(249, 115, 22) 100%
+  );
+}
+
+.opponent-button:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    rgb(249, 115, 22) 0%,
+    rgb(234, 88, 12) 100%
+  );
+}
+
+/* Responsywność */
+@media (max-width: 640px) {
+  .scoring-buttons-container {
+    gap: 1rem;
+  }
+
+  .scoring-button {
+    width: 96px; /* 6rem / 24 */
+    height: 96px;
+  }
+
+  .scoring-button i {
+    font-size: 2.5rem; /* trochę mniejsza ikona na mobile */
+  }
+}

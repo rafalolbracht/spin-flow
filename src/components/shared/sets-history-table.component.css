@@ -1,0 +1,114 @@
+/* Sekcja historii setów */
+.sets-history-section {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+:host-context(.dark) .sets-history-section {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Tabela */
+.sets-table {
+  width: 100%;
+  font-size: 1rem;
+  border-collapse: collapse;
+}
+
+/* Nagłówki - numery setów */
+.header-row {
+  border-bottom: 1px solid var(--p-surface-300);
+}
+
+:host-context(.dark) .header-row {
+  border-bottom-color: rgba(71, 85, 105, 0.6);
+}
+
+.set-header {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  font-weight: 500;
+  color: var(--p-surface-600);
+  width: 50px;
+  min-width: 50px;
+}
+
+:host-context(.dark) .set-header {
+  color: #cbd5e1;
+}
+
+/* Wypełniacz - zajmuje pozostałą przestrzeń */
+.filler {
+  width: 100%;
+}
+
+/* Komórki wyników */
+.score-cell {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  width: 50px;
+  min-width: 50px;
+}
+
+/* Wynik zwycięzcy gracza - niebieski bold */
+.score-cell.winner.player {
+  font-weight: 700;
+  color: rgb(59, 130, 246); /* blue-500 - kolor gracza */
+}
+
+:host-context(.dark) .score-cell.winner.player {
+  color: rgb(96, 165, 250); /* blue-400 - jaśniejszy w dark mode */
+}
+
+/* Wynik zwycięzcy rywala - pomarańczowy bold */
+.score-cell.winner.opponent {
+  font-weight: 700;
+  color: rgb(251, 146, 60); /* orange-400 - kolor rywala */
+}
+
+:host-context(.dark) .score-cell.winner.opponent {
+  color: rgb(251, 146, 60); /* orange-400 - ten sam w dark mode */
+}
+
+/* Wynik przegranego - szary */
+.score-cell.loser {
+  color: var(--p-surface-500);
+}
+
+:host-context(.dark) .score-cell.loser {
+  color: #94a3b8; /* slate-400 */
+}
+
+/* Set w toku - szary */
+.score-cell.in-progress {
+  color: var(--p-surface-400);
+}
+
+:host-context(.dark) .score-cell.in-progress {
+  color: #94a3b8; /* slate-400 */
+}
+
+/* Responsywność */
+@media (max-width: 640px) {
+  .sets-table {
+    font-size: 0.875rem;
+  }
+
+  .set-header,
+  .score-cell {
+    padding: 0.5rem 0.25rem;
+    width: 40px;
+    min-width: 40px;
+  }
+
+  .sets-history-section {
+    padding: 0.75rem;
+  }
+}

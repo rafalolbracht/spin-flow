@@ -137,6 +137,7 @@ export async function createMatch(
     newMatch.id,
     userId,
     command.first_server_first_set,
+    command.max_sets,
     false, // Not golden for first set
   );
 
@@ -285,7 +286,57 @@ export async function finishMatch(
 
   // Finish current set if not finished
   if (match.current_set && !match.current_set.is_finished) {
-    throw new ApiError("VALIDATION_ERROR", "Current set must be finished before ending match", 422);
+    // Validate: cannot finish with tie score
+    if (match.current_set.set_score_player === match.current_set.set_score_opponent) {
+      throw new ApiError("VALIDATION_ERROR", "Cannot finish match with tie score in current set", 422);
+    }
+
+    // Determine winner of current set
+    const setWinner: SideEnum = match.current_set.set_score_player > match.current_set.set_score_opponent 
+      ? 'player' 
+      : 'opponent';
+
+    // Update current set as finished
+    const finishedAt = new Date().toISOString();
+    const { error: updateSetError } = await supabase
+      .from("sets")
+      .update({
+        is_finished: true,
+        winner: setWinner,
+        finished_at: finishedAt,
+        coach_notes: null, // Coach notes go to match, not individual set
+      })
+      .eq("id", match.current_set.id)
+      .eq("user_id", userId);
+
+    if (updateSetError) {
+      throw new DatabaseError();
+    }
+
+    // Update match sets won counts
+    const incrementField = setWinner === 'player' ? 'sets_won_player' : 'sets_won_opponent';
+    const currentSetsWon = match[incrementField];
+    const newSetsWon = currentSetsWon + 1;
+
+    const { error: updateMatchSetsError } = await supabase
+      .from("matches")
+      .update({
+        [incrementField]: newSetsWon,
+      })
+      .eq("id", matchId)
+      .eq("user_id", userId);
+
+    if (updateMatchSetsError) {
+      throw new DatabaseError();
+    }
+
+    // Update local match object for validation
+    match[incrementField] = newSetsWon;
+  }
+
+  // Validate: match result cannot be a tie (considering finished current set)
+  if (match.sets_won_player === match.sets_won_opponent) {
+    throw new ApiError("VALIDATION_ERROR", "Cannot finish match with tie score in sets", 422);
   }
 
   // Update match status

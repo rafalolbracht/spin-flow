@@ -26,6 +26,7 @@ export async function createFirstSet(
   matchId: number,
   userId: string,
   firstServer: SideEnum,
+  maxSets: number,
   isGolden = false,
 ): Promise<CurrentSetDto> {
   // Insert first set
@@ -48,7 +49,11 @@ export async function createFirstSet(
     throw new DatabaseError();
   }
 
-  return mapSetToCurrentSetDto(newSet, firstServer);
+  return mapSetToCurrentSetDto(newSet, firstServer, {
+    max_sets: maxSets,
+    sets_won_player: 0,
+    sets_won_opponent: 0,
+  });
 }
 
 /**
@@ -195,6 +200,15 @@ export async function finishSet(
     throw new ApiError("VALIDATION_ERROR", "Cannot finish set with tie score", 422);
   }
 
+  // Cannot finish last set - use POST /api/matches/{id}/finish instead
+  if (set.sequence_in_match === match.max_sets) {
+    throw new ApiError(
+      "VALIDATION_ERROR",
+      "Cannot finish last set. Use POST /api/matches/{id}/finish to complete the match.",
+      422,
+    );
+  }
+
   // Determine winner
   const winner: SideEnum = set.set_score_player > set.set_score_opponent ? 'player' : 'opponent';
 
@@ -217,39 +231,17 @@ export async function finishSet(
 
   // Update match sets won counts
   const incrementField = winner === 'player' ? 'sets_won_player' : 'sets_won_opponent';
+  const newSetsWon = (match[incrementField as keyof Match] as number) + 1;
   const { error: updateMatchError } = await supabase
     .from("matches")
     .update({
-      [incrementField]: match[incrementField as keyof Match] as number + 1,
+      [incrementField]: newSetsWon,
     })
     .eq("id", match.id)
     .eq("user_id", userId);
 
   if (updateMatchError) {
     throw new DatabaseError();
-  }
-
-  // Check if match should end
-  const { data: updatedMatch } = await supabase
-    .from("matches")
-    .select("sets_won_player, sets_won_opponent, max_sets")
-    .eq("id", match.id)
-    .eq("user_id", userId)
-    .single();
-
-  if (updatedMatch) {
-    const playerWon = updatedMatch.sets_won_player;
-    const opponentWon = updatedMatch.sets_won_opponent;
-    const maxSets = updatedMatch.max_sets;
-
-    // If someone reached the required number of sets, match should end
-    if (playerWon > maxSets / 2 || opponentWon > maxSets / 2) {
-      throw new ApiError(
-        "VALIDATION_ERROR",
-        "Match has ended. Use POST /api/matches/{id}/finish to complete the match.",
-        422,
-      );
-    }
   }
 
   // Create next set
@@ -279,7 +271,11 @@ export async function finishSet(
 
   return {
     finished_set: mapSetToFinishedSetDto({ ...set, is_finished: true, winner, finished_at: finishedAt } as Set),
-    next_set: mapSetToCurrentSetDto(nextSet, nextFirstServer),
+    next_set: mapSetToCurrentSetDto(nextSet, nextFirstServer, {
+      max_sets: match.max_sets,
+      sets_won_player: winner === 'player' ? match.sets_won_player + 1 : match.sets_won_player,
+      sets_won_opponent: winner === 'opponent' ? match.sets_won_opponent + 1 : match.sets_won_opponent,
+    }),
   };
 }
 
@@ -338,10 +334,58 @@ export async function getPointsBySetIds(
 // MAPPING FUNCTIONS
 // =============================================================================
 
+/**
+ * Calculate action flags for current set state
+ * These flags determine which actions are available to the user
+ */
+function calculateActionFlags(
+  set: Set,
+  match: { max_sets: number; sets_won_player: number; sets_won_opponent: number },
+): { can_undo_point: boolean; can_finish_set: boolean; can_finish_match: boolean } {
+  // Can undo point if there are any points scored
+  const can_undo_point = (set.set_score_player + set.set_score_opponent) > 0;
+
+  // Cannot finish with tie score
+  const isTied = set.set_score_player === set.set_score_opponent;
+  
+  if (isTied) {
+    return {
+      can_undo_point,
+      can_finish_set: false,
+      can_finish_match: false,
+    };
+  }
+
+  // Determine who would win current set
+  const setWinner: SideEnum = set.set_score_player > set.set_score_opponent ? 'player' : 'opponent';
+  const newSetsWonPlayer = match.sets_won_player + (setWinner === 'player' ? 1 : 0);
+  const newSetsWonOpponent = match.sets_won_opponent + (setWinner === 'opponent' ? 1 : 0);
+  
+  const setsToWin = Math.ceil(match.max_sets / 2);
+  const matchWouldEnd = newSetsWonPlayer >= setsToWin || newSetsWonOpponent >= setsToWin;
+  
+  // Can finish set only if match wouldn't end and it's not the last possible set
+  const setsPlayed = match.sets_won_player + match.sets_won_opponent + 1;
+  const isLastPossibleSet = setsPlayed >= match.max_sets;
+  const can_finish_set = !matchWouldEnd && !isLastPossibleSet;
+  
+  // Can finish match if match would end or it's the last possible set
+  const can_finish_match = matchWouldEnd || isLastPossibleSet;
+
+  return {
+    can_undo_point,
+    can_finish_set,
+    can_finish_match,
+  };
+}
+
 function mapSetToCurrentSetDto(
   set: Set,
   currentServer: SideEnum,
+  match: { max_sets: number; sets_won_player: number; sets_won_opponent: number },
 ): CurrentSetDto {
+  const flags = calculateActionFlags(set, match);
+  
   return {
     id: set.id,
     sequence_in_match: set.sequence_in_match,
@@ -350,6 +394,9 @@ function mapSetToCurrentSetDto(
     set_score_opponent: set.set_score_opponent,
     is_finished: set.is_finished,
     current_server: currentServer,
+    can_undo_point: flags.can_undo_point,
+    can_finish_set: flags.can_finish_set,
+    can_finish_match: flags.can_finish_match,
   };
 }
 

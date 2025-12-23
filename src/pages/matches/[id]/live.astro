@@ -1,0 +1,35 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { LiveMatchPageComponent, type LiveMatchPageComponentProps } from '@/components/live-match/live-match-page.component';
+
+/**
+ * Live Match Page - Widok meczu "W toku"
+ * Służy do rejestracji przebiegu meczu tenisa stołowego na żywo.
+ *
+ * Route: /matches/:id/live
+ * Access: Chroniony - wymaga autentykacji (TODO: dodać middleware auth)
+ * Validation: Weryfikacja ownership meczu + redirect do summary jeśli zakończony
+ */
+
+const { id } = Astro.params;
+
+// Walidacja parametru ID
+if (!id || isNaN(Number(id))) {
+  return Astro.redirect('/matches');
+}
+
+const matchId = Number(id);
+
+// TODO: Dodać weryfikację autentykacji i ownership meczu
+// TODO: Sprawdzić czy mecz nie jest zakończony (redirect do /matches/{id}/summary)
+
+export const prerender = false;
+
+// Props dla komponentu Angular
+const props: LiveMatchPageComponentProps = { matchId };
+---
+
+<Layout title="Mecz - Spin Flow">
+  <LiveMatchPageComponent client:only="angular" {...props} />
+</Layout>
+

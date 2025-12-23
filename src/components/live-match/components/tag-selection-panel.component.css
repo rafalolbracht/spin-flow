@@ -1,0 +1,75 @@
+/* Kontener tagów */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem; /* zmniejszone z 0.75rem */
+  justify-content: center;
+}
+
+/* Przyciski tagów - duże chipy */
+.tag-chip {
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 400; /* zmniejszone z 500 */
+  transition: all 0.2s ease-in-out;
+  background-color: var(--p-surface-0);
+  color: var(--p-text-color);
+  border: 2px solid var(--p-surface-200); /* jaśniejsze obramowanie - ściszone */
+  cursor: pointer;
+  opacity: 0.6; /* ściszone niewybrane tagi */
+}
+
+:host-context(.dark) .tag-chip:not(.selected) {
+  background-color: rgba(30, 41, 59, 0.3); /* bardziej przezroczyste */
+  border-color: rgba(51, 65, 85, 0.4); /* ściśnięte obramowanie */
+  color: #cbd5e1; /* jaśniejszy szary tekst */
+  opacity: 0.5; /* jeszcze bardziej ściszone w dark mode */
+}
+
+.tag-chip:hover:not(:disabled):not(.selected) {
+  background-color: var(--p-surface-100);
+  border-color: var(--p-surface-300);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0.8; /* delikatnie rozjaśnione na hover */
+}
+
+:host-context(.dark) .tag-chip:hover:not(:disabled):not(.selected) {
+  background-color: rgba(51, 65, 85, 0.5);
+  border-color: rgba(71, 85, 105, 0.6);
+  opacity: 0.7;
+}
+
+.tag-chip.selected {
+  background-color: var(--p-surface-0) !important;
+  color: var(--p-text-color) !important;
+  border: 3px solid #334155 !important; /* slate-700 - grube obramowanie */
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(51, 65, 85, 0.25) !important;
+  transform: translateY(-2px);
+  opacity: 1 !important; /* pełna widoczność */
+}
+
+:host-context(.dark) .tag-chip.selected {
+  background-color: rgba(51, 65, 85, 0.6) !important;
+  border-color: #94a3b8 !important; /* slate-400 */
+  color: #f1f5f9 !important;
+  opacity: 1 !important;
+}
+
+.tag-chip.selected:hover:not(:disabled) {
+  border-color: #1e293b !important; /* slate-800 - ciemniejszy hover */
+  box-shadow: 0 6px 16px rgba(30, 41, 59, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+:host-context(.dark) .tag-chip.selected:hover:not(:disabled) {
+  border-color: #cbd5e1 !important; /* slate-300 - jaśniejszy hover */
+  box-shadow: 0 6px 16px rgba(203, 213, 225, 0.2) !important;
+}
+
+.tag-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

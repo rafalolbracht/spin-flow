@@ -1,0 +1,98 @@
+/* Kontener akcji kontrolujących */
+.control-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Górne przyciski (Zakończ set i Cofnij punkt) - obok siebie */
+.top-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Wspólne style przycisków */
+.control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  background-color: var(--p-surface-0);
+  color: var(--p-text-color);
+  border: 2px solid var(--p-surface-300);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+:host-context(.dark) .control-button {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  color: #e2e8f0;
+}
+
+.control-button:hover:not(:disabled) {
+  background-color: var(--p-surface-100);
+  border-color: var(--p-surface-400);
+  transform: translateY(-2px);
+}
+
+:host-context(.dark) .control-button:hover:not(:disabled) {
+  background-color: rgba(51, 65, 85, 0.7);
+  border-color: rgba(71, 85, 105, 0.8);
+}
+
+.control-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.control-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.control-button i {
+  font-size: 1.25rem;
+}
+
+/* Górne przyciski - dzielą przestrzeń po równo */
+.top-buttons .finish-set-button,
+.top-buttons .undo-button {
+  flex: 1;
+}
+
+/* Dolny przycisk - pełna szerokość */
+.finish-match-button {
+  width: 100%;
+}
+
+.finish-set-button:hover:not(:disabled) {
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
+}
+
+.finish-match-button {
+  color: var(--p-red-500);
+}
+
+.finish-match-button:hover:not(:disabled) {
+  border-color: var(--p-red-500);
+}
+
+/* Responsywność - na mobile przyciski pod sobą */
+@media (max-width: 640px) {
+  .top-buttons {
+    flex-direction: column;
+  }
+
+  .top-buttons .finish-set-button,
+  .top-buttons .undo-button {
+    width: 100%;
+  }
+}

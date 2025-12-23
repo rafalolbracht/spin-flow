@@ -1,0 +1,99 @@
+<!-- App Layout (nawigacja) -->
+<app-layout
+  [userName]="userName"
+  [userInitials]="userInitials"
+  [activeMenuIndex]="0"
+>
+  <!-- Toast notifications -->
+  <p-toast position="top-right" />
+
+  <!-- Main content -->
+  <main class="live-match-container">
+    <!-- BlockUI overlay dla operacji API -->
+    <p-blockui [blocked]="store.isLoading()">
+      <div class="block-ui-spinner">
+        <p-progressspinner
+          styleClass="w-16 h-16"
+          strokeWidth="4"
+        />
+      </div>
+    </p-blockui>
+
+    <!-- Zawartość widoku -->
+    <div class="live-match-content">
+      <!-- Scoreboard -->
+      <app-score-display-card
+        [playerName]="store.playerName()"
+        [opponentName]="store.opponentName()"
+        [setsWonPlayer]="store.setsWonPlayer()"
+        [setsWonOpponent]="store.setsWonOpponent()"
+        [setScorePlayer]="store.currentSet()?.set_score_player ?? 0"
+        [setScoreOpponent]="store.currentSet()?.set_score_opponent ?? 0"
+        [currentServer]="store.currentSet()?.current_server ?? 'player'"
+        [currentSetNumber]="getCurrentSetNumber()"
+        [sets]="store.sets()"
+      />
+
+      <!-- Tag Selection Panel -->
+      <app-tag-selection-panel
+        [tags]="store.tags()"
+        [selectedTagIds]="store.selectedTagIds()"
+        [disabled]="store.isLoading()"
+        (selectionChange)="onTagSelectionChange($event)"
+      />
+
+      <!-- Point Scoring Buttons - PONIŻEJ tagów! -->
+      <app-point-scoring-buttons
+        [disabled]="store.isLoading()"
+        (pointScored)="onPointScored($event)"
+      />
+
+      <!-- Match Control Actions -->
+      <app-match-control-actions
+        [canUndoPoint]="store.canUndoPoint()"
+        [canFinishSet]="store.canFinishSet()"
+        [canFinishMatch]="store.canFinishMatch()"
+        [disabled]="store.isLoading()"
+        (undoPoint)="onUndoPoint()"
+        (finishSet)="onFinishSetRequested()"
+        (finishMatch)="onFinishMatchRequested()"
+      />
+    </div>
+
+    <!-- Sets History Table - na samym dole, pod wszystkimi przyciskami -->
+    <div class="sets-history-wrapper">
+      @if (store.sets().length > 0) {
+        <app-sets-history-table
+          [sets]="store.sets()"
+          [currentSetId]="store.currentSet()?.id ?? null"
+          [playerName]="store.playerName()"
+          [opponentName]="store.opponentName()"
+        />
+      }
+    </div>
+
+    <!-- Finish Set Dialog -->
+    <app-finish-set-dialog
+      [visible]="store.isFinishSetDialogVisible()"
+      [setNumber]="getCurrentSetNumber()"
+      [currentScore]="getCurrentScore()"
+      [isLoading]="store.isLoading()"
+      (dialogCancel)="onFinishSetCancel()"
+      (confirm)="onFinishSetConfirm($event)"
+    />
+
+    <!-- Finish Match Dialog -->
+    <app-finish-match-dialog
+      [visible]="store.isFinishMatchDialogVisible()"
+      [playerName]="store.playerName()"
+      [opponentName]="store.opponentName()"
+      [setsWonPlayer]="store.predictedSetsWonPlayer()"
+      [setsWonOpponent]="store.predictedSetsWonOpponent()"
+      [generateAiSummary]="store.generateAiSummary()"
+      [isLoading]="store.isLoading()"
+      (dialogCancel)="onFinishMatchCancel()"
+      (confirm)="onFinishMatchConfirm($event)"
+    />
+  </main>
+</app-layout>
+

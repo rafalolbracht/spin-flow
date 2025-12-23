@@ -1,0 +1,81 @@
+/* Główny kontener widoku live match */
+.live-match-container {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--p-surface-0);
+}
+
+:host-context(.dark) .live-match-container {
+  background-color: #0f172a; /* Bezpośrednie granatowe tło */
+}
+
+/* Spinner dla BlockUI */
+.block-ui-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  width: 100%;
+}
+
+/* Zawartość widoku - centrowanie i ograniczenie szerokości */
+.live-match-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* zmniejszone z 1.5rem */
+  max-width: 28rem; /* 448px */
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* Dodatkowy odstęp dla przycisków kontrolnych */
+.live-match-content app-match-control-actions {
+  margin-top: 1rem;
+}
+
+/* Wrapper dla tabeli setów na dole */
+.sets-history-wrapper {
+  max-width: 28rem; /* 448px */
+  margin: 0 auto; /* Wycentrowanie bez marginesu góra */
+  padding: 0 1rem 2rem 1rem;
+}
+
+/* Responsywność - desktop */
+@media (min-width: 768px) {
+  .live-match-content {
+    max-width: 42rem; /* 672px */
+    gap: 1.25rem; /* zmniejszone z 1.75rem */
+    padding: 2.5rem 1rem;
+  }
+
+  .live-match-content app-match-control-actions {
+    margin-top: 1.5rem;
+  }
+
+  .sets-history-wrapper {
+    max-width: 42rem; /* 672px */
+    padding: 0 1rem 2.5rem 1rem;
+  }
+}
+
+/* BlockUI overlay styling */
+:host ::ng-deep .p-blockui {
+  z-index: 1100;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+:host ::ng-deep .p-blockui-mask {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+:host-context(.dark) ::ng-deep .p-blockui-mask {
+  background: rgba(0, 0, 0, 0.6);
+}

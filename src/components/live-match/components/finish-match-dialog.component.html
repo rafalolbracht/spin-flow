@@ -1,0 +1,88 @@
+<p-dialog
+  header="Zakończ mecz"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="finish-match-dialog"
+  [style]="{ width: '90vw', maxWidth: '500px' }"
+>
+  <ng-template pTemplate="content">
+    <div class="dialog-content">
+      <!-- Podsumowanie wyniku -->
+      <div class="match-summary">
+        <p class="summary-label">Końcowy wynik meczu:</p>
+        <p class="summary-score">
+          {{ setsWonPlayer() }} : {{ setsWonOpponent() }}
+        </p>
+        <p class="winner-info">
+          <strong>Zwycięzca:</strong> {{ getWinnerName() }}
+        </p>
+        <p class="summary-note">
+          <i class="pi pi-info-circle"></i>
+          <span>Bieżący set zostanie automatycznie zamknięty</span>
+        </p>
+      </div>
+
+      <!-- Informacja o AI -->
+      <div *ngIf="generateAiSummary()" class="ai-info">
+        <i class="pi pi-info-circle"></i>
+        <span>Po zakończeniu meczu zostanie wygenerowany raport AI z analizą i rekomendacjami treningowymi.</span>
+      </div>
+
+      <!-- Uwagi trenera -->
+      <div class="notes-section">
+        <p-floatlabel>
+          <textarea
+            pTextarea
+            id="coach-notes-match"
+            [(ngModel)]="coachNotes"
+            [rows]="5"
+            [autoResize]="true"
+            [disabled]="isLoading()"
+            class="notes-textarea"
+          ></textarea>
+          <label for="coach-notes-match">Uwagi do meczu (opcjonalnie)</label>
+        </p-floatlabel>
+
+        <!-- Licznik znaków i błąd walidacji -->
+        <div class="notes-footer">
+          <small
+            class="char-counter"
+            [class.error]="!isValid()"
+          >
+            {{ coachNotes.length }} / {{ MAX_NOTES_LENGTH }}
+          </small>
+          <small
+            *ngIf="getValidationError()"
+            class="validation-error"
+          >
+            {{ getValidationError() }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <p-button
+        label="Anuluj"
+        [outlined]="true"
+        (onClick)="onCancel()"
+        [disabled]="isLoading()"
+      />
+      <p-button
+        label="Zakończ mecz"
+        severity="danger"
+        (onClick)="onConfirm()"
+        [disabled]="!isValid() || isLoading()"
+        [loading]="isLoading()"
+        loadingIcon="pi pi-spinner pi-spin"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+

@@ -1,0 +1,20 @@
+<div class="scoring-buttons-container">
+  <button
+    type="button"
+    class="scoring-button player-button"
+    [disabled]="disabled()"
+    (click)="onPlayerScored()"
+  >
+    <i class="pi pi-plus"></i>
+  </button>
+
+  <button
+    type="button"
+    class="scoring-button opponent-button"
+    [disabled]="disabled()"
+    (click)="onOpponentScored()"
+  >
+    <i class="pi pi-plus"></i>
+  </button>
+</div>
+

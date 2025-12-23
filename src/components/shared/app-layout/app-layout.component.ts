@@ -85,9 +85,9 @@ export class AppLayoutComponent {
     const isActive = this._activeItem() === index;
 
     if (isActive) {
-      return `${base} border-primary-500`;
+      return `${base} dark:border-white border-primary-500`;
     }
-    return `${base} border-transparent hover:border-primary-500`;
+    return `${base} border-transparent dark:hover:border-white hover:border-primary-500`;
   }
 
   getMenuItemClassMobile(index: number): string {
@@ -95,9 +95,9 @@ export class AppLayoutComponent {
     const isActive = this._activeItem() === index;
 
     if (isActive) {
-      return `${base} border-primary-500`;
+      return `${base} dark:border-white border-primary-500`;
     }
-    return `${base} border-transparent hover:border-primary-500`;
+    return `${base} border-transparent dark:hover:border-white hover:border-primary-500`;
   }
 
   getMenuIconClass(index: number): string {
@@ -124,7 +124,6 @@ export class AppLayoutComponent {
 
   private performLogout(): void {
     // TODO: Implementacja logout z Supabase Auth
-    console.log('Logout clicked - placeholder for future auth implementation');
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }

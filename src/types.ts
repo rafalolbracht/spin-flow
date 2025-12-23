@@ -90,6 +90,7 @@ export const ANALYTICS_EVENT_TYPE_VALUES = [
 /**
  * Current set information for in-progress matches
  * Includes current server information calculated from serving rules
+ * and action flags calculated by backend
  */
 export interface CurrentSetDto {
   id: number;
@@ -99,6 +100,9 @@ export interface CurrentSetDto {
   set_score_opponent: number;
   is_finished: boolean;
   current_server: SideEnum;
+  can_undo_point: boolean;
+  can_finish_set: boolean;
+  can_finish_match: boolean;
 }
 
 /**
@@ -233,16 +237,20 @@ export interface FinishSetDto {
 /**
  * Current state of a set after point operations
  * Used in point creation and undo responses
+ * Includes action flags calculated by backend
  */
 export interface SetStateDto {
   id: number;
   set_score_player: number;
   set_score_opponent: number;
   current_server: SideEnum;
+  can_undo_point: boolean;
+  can_finish_set: boolean;
+  can_finish_match: boolean;
 }
 
 /**
- * Request body for adding a point (POST /api/sets/{setId}/points)
+ * Request body for adding a point (POST /api/sets/{setId}/points/create)
  */
 export interface CreatePointCommandDto {
   scored_by: SideEnum;
@@ -454,10 +462,10 @@ export type FinishSetResponse = SingleItemResponseDto<FinishSetDto>;
 /** GET /api/sets/{setId}/points */
 export type PointListResponse = ListResponseDto<PointWithTagsDto>;
 
-/** POST /api/sets/{setId}/points */
+/** POST /api/sets/{setId}/points/create */
 export type CreatePointResponse = SingleItemResponseDto<CreatePointDto>;
 
-/** DELETE /api/sets/{setId}/points/last */
+/** DELETE /api/sets/{setId}/points/delete */
 export type UndoPointResponse = SingleItemResponseDto<UndoPointDto>;
 
 // --- Tag Endpoints ---

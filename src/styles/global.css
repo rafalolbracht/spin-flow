@@ -93,3 +93,35 @@
   --color-surface-900: var(--color-surface-900);
   --color-surface-950: var(--color-surface-950);
 }
+
+/* Globalne style dla PrimeNG ProgressSpinner - monochromatyczny, szary */
+.p-progressspinner {
+  --p-progressspinner-color-one: var(--p-surface-500);
+  --p-progressspinner-color-two: var(--p-surface-500);
+  --p-progressspinner-color-three: var(--p-surface-500);
+  --p-progressspinner-color-four: var(--p-surface-500);
+}
+
+/* Wyłączenie zielonej ramki dla wypełnionych pól formularzy PrimeNG */
+.p-inputtext:enabled:focus,
+.p-textarea:enabled:focus,
+.p-inputnumber-input:enabled:focus,
+textarea.p-inputtext:enabled:focus {
+  border-color: var(--p-inputtext-border-color) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Usunięcie koloru primary z wypełnionych pól (filled state) */
+.p-inputtext.p-filled,
+.p-textarea.p-filled,
+textarea.p-inputtext.p-filled {
+  border-color: var(--p-inputtext-border-color) !important;
+}
+
+/* Wyłączenie zielonej ramki dla float label */
+.p-floatlabel:has(.p-inputtext:focus) label,
+.p-floatlabel:has(.p-textarea:focus) label,
+.p-floatlabel:has(textarea:focus) label {
+  color: var(--p-inputtext-placeholder-color) !important;
+}

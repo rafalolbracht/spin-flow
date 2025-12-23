@@ -1,0 +1,36 @@
+<div class="control-actions">
+  <!-- Zakończ set i Cofnij punkt - obok siebie -->
+  <div class="top-buttons">
+    <button
+      type="button"
+      class="control-button finish-set-button"
+      [disabled]="isFinishSetDisabled()"
+      (click)="onFinishSet()"
+    >
+      <i class="pi pi-flag"></i>
+      <span>Zakończ set</span>
+    </button>
+
+    <button
+      type="button"
+      class="control-button undo-button"
+      [disabled]="isUndoDisabled()"
+      (click)="onUndoPoint()"
+    >
+      <i class="pi pi-undo"></i>
+      <span>Cofnij ostatni punkt</span>
+    </button>
+  </div>
+
+  <!-- Zakończ mecz - pełna szerokość - NA DOLE -->
+  <button
+    type="button"
+    class="control-button finish-match-button"
+    [disabled]="isFinishMatchDisabled()"
+    (click)="onFinishMatch()"
+  >
+    <i class="pi pi-stop-circle"></i>
+    <span>Zakończ mecz</span>
+  </button>
+</div>
+

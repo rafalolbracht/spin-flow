@@ -138,6 +138,19 @@ export async function createPoint(
   // Calculate next server (after this point was scored)
   const nextServer = calculateServedBy(match, set, totalPoints);
 
+  // Calculate updated set state for flags
+  const updatedSet: Set = {
+    ...set,
+    set_score_player: (set.set_score_player || 0) + (scoredBy === 'player' ? 1 : 0),
+    set_score_opponent: (set.set_score_opponent || 0) + (scoredBy === 'opponent' ? 1 : 0),
+  };
+
+  const flags = calculateActionFlags(updatedSet, {
+    max_sets: match.max_sets,
+    sets_won_player: match.sets_won_player,
+    sets_won_opponent: match.sets_won_opponent,
+  });
+
   const pointWithTags: PointWithTagsDto = {
     ...newPoint,
     tags: tagNames,
@@ -145,9 +158,12 @@ export async function createPoint(
 
   const setState: SetStateDto = {
     id: setId,
-    set_score_player: (set.set_score_player || 0) + (scoredBy === 'player' ? 1 : 0),
-    set_score_opponent: (set.set_score_opponent || 0) + (scoredBy === 'opponent' ? 1 : 0),
+    set_score_player: updatedSet.set_score_player,
+    set_score_opponent: updatedSet.set_score_opponent,
     current_server: nextServer,
+    can_undo_point: flags.can_undo_point,
+    can_finish_set: flags.can_finish_set,
+    can_finish_match: flags.can_finish_match,
   };
 
   return {
@@ -238,11 +254,27 @@ export async function undoLastPoint(
     throw new DatabaseError();
   }
 
-  const setState: SetStateDto = {
-    id: setId,
+  // Calculate updated set state for flags
+  const updatedSet: Set = {
+    ...set,
     set_score_player: Math.max(0, (set.set_score_player || 0) - (lastPoint.scored_by === 'player' ? 1 : 0)),
     set_score_opponent: Math.max(0, (set.set_score_opponent || 0) - (lastPoint.scored_by === 'opponent' ? 1 : 0)),
+  };
+
+  const flags = calculateActionFlags(updatedSet, {
+    max_sets: match.max_sets,
+    sets_won_player: match.sets_won_player,
+    sets_won_opponent: match.sets_won_opponent,
+  });
+
+  const setState: SetStateDto = {
+    id: setId,
+    set_score_player: updatedSet.set_score_player,
+    set_score_opponent: updatedSet.set_score_opponent,
     current_server: previousServer,
+    can_undo_point: flags.can_undo_point,
+    can_finish_set: flags.can_finish_set,
+    can_finish_match: flags.can_finish_match,
   };
 
   return {
@@ -272,7 +304,10 @@ async function getSetWithMatch(
         user_id,
         status,
         first_server_first_set,
-        golden_set_enabled
+        golden_set_enabled,
+        max_sets,
+        sets_won_player,
+        sets_won_opponent
       )
     `)
     .eq("id", setId)
@@ -284,6 +319,51 @@ async function getSetWithMatch(
   }
 
   return data as Set & { matches: Match };
+}
+
+/**
+ * Calculate action flags for current set state
+ * These flags determine which actions are available to the user
+ */
+function calculateActionFlags(
+  set: Set,
+  match: { max_sets: number; sets_won_player: number; sets_won_opponent: number },
+): { can_undo_point: boolean; can_finish_set: boolean; can_finish_match: boolean } {
+  // Can undo point if there are any points scored
+  const can_undo_point = (set.set_score_player + set.set_score_opponent) > 0;
+
+  // Cannot finish with tie score
+  const isTied = set.set_score_player === set.set_score_opponent;
+  
+  if (isTied) {
+    return {
+      can_undo_point,
+      can_finish_set: false,
+      can_finish_match: false,
+    };
+  }
+
+  // Determine who would win current set
+  const setWinner: SideEnum = set.set_score_player > set.set_score_opponent ? 'player' : 'opponent';
+  const newSetsWonPlayer = match.sets_won_player + (setWinner === 'player' ? 1 : 0);
+  const newSetsWonOpponent = match.sets_won_opponent + (setWinner === 'opponent' ? 1 : 0);
+  
+  const setsToWin = Math.ceil(match.max_sets / 2);
+  const matchWouldEnd = newSetsWonPlayer >= setsToWin || newSetsWonOpponent >= setsToWin;
+  
+  // Can finish set only if match wouldn't end and it's not the last possible set
+  const setsPlayed = match.sets_won_player + match.sets_won_opponent + 1;
+  const isLastPossibleSet = setsPlayed >= match.max_sets;
+  const can_finish_set = !matchWouldEnd && !isLastPossibleSet;
+  
+  // Can finish match if match would end or it's the last possible set
+  const can_finish_match = matchWouldEnd || isLastPossibleSet;
+
+  return {
+    can_undo_point,
+    can_finish_set,
+    can_finish_match,
+  };
 }
 
 /**

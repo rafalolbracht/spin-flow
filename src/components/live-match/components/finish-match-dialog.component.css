@@ -1,0 +1,123 @@
+/* Dialog content */
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Podsumowanie meczu */
+.match-summary {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--p-surface-50);
+  border: 1px solid var(--p-surface-200);
+}
+
+:host-context(.dark) .match-summary {
+  background-color: rgba(51, 65, 85, 0.3);
+  border-color: rgba(71, 85, 105, 0.5);
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--p-text-muted-color);
+}
+
+.summary-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--p-text-color);
+}
+
+.winner-info {
+  font-size: 1rem;
+  color: var(--p-text-color);
+}
+
+.summary-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--p-surface-200);
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+:host-context(.dark) .summary-note {
+  border-top-color: rgba(71, 85, 105, 0.5);
+}
+
+.summary-note i {
+  font-size: 0.875rem;
+}
+
+/* Informacja o AI */
+.ai-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+}
+
+.ai-info i {
+  margin-top: 0.125rem;
+  font-size: 1rem;
+  color: var(--p-text-muted-color);
+}
+
+.ai-info span {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+}
+
+/* Sekcja uwag */
+.notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .notes-textarea {
+  width: 100%;
+}
+
+/* Textarea i Label używają standardowych styli PrimeNG - nie nadpisujemy */
+
+.notes-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.char-counter {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+}
+
+.char-counter.error {
+  font-weight: 600;
+  color: var(--p-red-500);
+}
+
+.validation-error {
+  font-size: 0.75rem;
+  color: var(--p-red-500);
+}
+
+/* Footer dialogu */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Dialog używa standardowych styli PrimeNG theme */

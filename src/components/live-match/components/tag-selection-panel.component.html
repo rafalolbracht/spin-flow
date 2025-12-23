@@ -1,0 +1,13 @@
+<div class="tags-container">
+  <button
+    *ngFor="let tag of tags(); trackBy: trackByTagId"
+    type="button"
+    class="tag-chip"
+    [class.selected]="isTagSelected(tag.id)"
+    [disabled]="disabled()"
+    (click)="toggleTag(tag.id)"
+  >
+    {{ tag.name }}
+  </button>
+</div>
+
