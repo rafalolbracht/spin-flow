@@ -1,0 +1,55 @@
+/* CreateMatchWizardPage - Style komponentu wizarda */
+
+/* Style dla kart PrimeNG */
+:host ::ng-deep .p-card .p-card-body {
+  padding: 1.5rem;
+}
+
+/* Style dla Select - pełna szerokość */
+:host ::ng-deep p-select {
+  width: 100%;
+}
+
+/* Przyciski wyboru serwującego */
+.server-button {
+  min-height: 6rem;
+}
+
+.server-button-unselected {
+  background-color: var(--p-surface-0);
+  border-color: var(--p-surface-200);
+  color: var(--p-surface-600);
+}
+
+.server-button-unselected:hover {
+  background-color: var(--p-surface-50);
+  border-color: var(--p-surface-300);
+}
+
+.server-button-selected {
+  background-color: var(--p-primary-50);
+  border-color: var(--p-primary-500);
+  color: var(--p-primary-700);
+}
+
+.server-button-selected i {
+  color: var(--p-primary-500);
+}
+
+/* Dark mode dla przycisków serwującego */
+:host-context(.dark) .server-button-unselected {
+  background-color: var(--p-surface-800);
+  border-color: var(--p-surface-600);
+  color: var(--p-surface-300);
+}
+
+:host-context(.dark) .server-button-unselected:hover {
+  background-color: var(--p-surface-700);
+  border-color: var(--p-surface-500);
+}
+
+:host-context(.dark) .server-button-selected {
+  background-color: var(--p-primary-900);
+  border-color: var(--p-primary-500);
+  color: var(--p-primary-300);
+}

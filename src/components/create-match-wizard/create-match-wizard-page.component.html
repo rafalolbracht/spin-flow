@@ -1,0 +1,337 @@
+<!-- CreateMatchWizardPage - Wizard tworzenia nowego meczu -->
+<app-layout
+  [userName]="userName()"
+  [userInitials]="userInitials()"
+  [activeMenuIndex]="0"
+>
+  <div class="relative max-w-xl mx-auto">
+    <!-- Nagłówek strony -->
+    <header class="text-center mb-8">
+      <h1 class="text-2xl md:text-3xl font-semibold text-surface-900 mb-2">Nowy mecz</h1>
+      <p class="text-surface-500">Wypełnij formularz, aby rozpocząć rejestrację meczu</p>
+    </header>
+
+    <!-- Stepper (Wizard) -->
+    <p-stepper
+      [(value)]="activeStep"
+      [linear]="true"
+      class="w-full"
+    >
+      <p-step-list>
+        <p-step [value]="1" class="flex flex-row flex-auto gap-2">
+          <ng-template #content let-activateCallback="activateCallback" let-value="value">
+            <button 
+              class="bg-transparent border-0 inline-flex flex-col items-center gap-2 cursor-pointer p-2"
+              (click)="activateCallback()"
+              [attr.aria-label]="'Krok 1: Zawodnicy'"
+            >
+              <span 
+                class="rounded-full border-2 w-12 h-12 inline-flex items-center justify-center transition-all duration-200"
+                [class.bg-primary]="value <= activeStep()"
+                [class.text-primary-contrast]="value <= activeStep()"
+                [class.border-primary]="value <= activeStep()"
+                [class.border-surface-300]="value > activeStep()"
+                [class.text-surface-500]="value > activeStep()"
+              >
+                <i class="pi pi-users text-lg"></i>
+              </span>
+              <span 
+                class="text-sm font-medium transition-colors"
+                [class.text-surface-900]="value <= activeStep()"
+                [class.text-surface-500]="value > activeStep()"
+              >Zawodnicy</span>
+            </button>
+          </ng-template>
+        </p-step>
+
+        <p-step [value]="2" class="flex flex-row flex-auto gap-2">
+          <ng-template #content let-activateCallback="activateCallback" let-value="value">
+            <button 
+              class="bg-transparent border-0 inline-flex flex-col items-center gap-2 cursor-pointer p-2"
+              (click)="activateCallback()"
+              [attr.aria-label]="'Krok 2: Serwujący'"
+            >
+              <span 
+                class="rounded-full border-2 w-12 h-12 inline-flex items-center justify-center transition-all duration-200"
+                [class.bg-primary]="value <= activeStep()"
+                [class.text-primary-contrast]="value <= activeStep()"
+                [class.border-primary]="value <= activeStep()"
+                [class.border-surface-300]="value > activeStep()"
+                [class.text-surface-500]="value > activeStep()"
+              >
+                <i class="pi pi-flag text-lg"></i>
+              </span>
+              <span 
+                class="text-sm font-medium transition-colors"
+                [class.text-surface-900]="value <= activeStep()"
+                [class.text-surface-500]="value > activeStep()"
+              >Serwujący</span>
+            </button>
+          </ng-template>
+        </p-step>
+
+        <p-step [value]="3" class="flex flex-row flex-auto gap-2">
+          <ng-template #content let-activateCallback="activateCallback" let-value="value">
+            <button 
+              class="bg-transparent border-0 inline-flex flex-col items-center gap-2 cursor-pointer p-2"
+              (click)="activateCallback()"
+              [attr.aria-label]="'Krok 3: Opcje'"
+            >
+              <span 
+                class="rounded-full border-2 w-12 h-12 inline-flex items-center justify-center transition-all duration-200"
+                [class.bg-primary]="value <= activeStep()"
+                [class.text-primary-contrast]="value <= activeStep()"
+                [class.border-primary]="value <= activeStep()"
+                [class.border-surface-300]="value > activeStep()"
+                [class.text-surface-500]="value > activeStep()"
+              >
+                <i class="pi pi-cog text-lg"></i>
+              </span>
+              <span 
+                class="text-sm font-medium transition-colors"
+                [class.text-surface-900]="value <= activeStep()"
+                [class.text-surface-500]="value > activeStep()"
+              >Opcje</span>
+            </button>
+          </ng-template>
+        </p-step>
+      </p-step-list>
+
+      <p-step-panels>
+        <!-- Krok 1: Nazwy zawodników -->
+        <p-step-panel [value]="1">
+          <ng-template #content let-activateCallback="activateCallback">
+            <div class="flex flex-col gap-6 pt-6">
+              <p-card styleClass="bg-surface-0 border border-surface-200 rounded-xl">
+                <div class="mb-6">
+                  <h2 class="text-xl font-semibold text-surface-900 mb-1">Dane zawodników</h2>
+                  <p class="text-sm text-surface-500">Wprowadź nazwy zawodnika ocenianego i jego rywala</p>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                  <!-- Pole: Nazwa zawodnika ocenianego -->
+                  <div class="flex flex-col gap-1">
+                    <p-floatlabel variant="on" class="w-full">
+                      <input
+                        pInputText
+                        id="player_name"
+                        [formControl]="form.controls.player_name"
+                        class="w-full"
+                        [invalid]="isInvalid('player_name')"
+                        autocomplete="off"
+                        aria-describedby="player_name_error"
+                      />
+                      <label for="player_name">Nazwa zawodnika ocenianego</label>
+                    </p-floatlabel>
+                    @if (hasError('player_name', 'required')) {
+                      <small id="player_name_error" class="text-red-500 text-xs">Nazwa zawodnika jest wymagana</small>
+                    }
+                    @if (hasError('player_name', 'maxlength')) {
+                      <small id="player_name_error" class="text-red-500 text-xs">Maksymalnie 200 znaków</small>
+                    }
+                  </div>
+
+                  <!-- Pole: Nazwa rywala -->
+                  <div class="flex flex-col gap-1">
+                    <p-floatlabel variant="on" class="w-full">
+                      <input
+                        pInputText
+                        id="opponent_name"
+                        [formControl]="form.controls.opponent_name"
+                        class="w-full"
+                        [invalid]="isInvalid('opponent_name')"
+                        autocomplete="off"
+                        aria-describedby="opponent_name_error"
+                      />
+                      <label for="opponent_name">Nazwa rywala</label>
+                    </p-floatlabel>
+                    @if (hasError('opponent_name', 'required')) {
+                      <small id="opponent_name_error" class="text-red-500 text-xs">Nazwa rywala jest wymagana</small>
+                    }
+                    @if (hasError('opponent_name', 'maxlength')) {
+                      <small id="opponent_name_error" class="text-red-500 text-xs">Maksymalnie 200 znaków</small>
+                    }
+                  </div>
+                </div>
+              </p-card>
+
+              <!-- Nawigacja kroku -->
+              <div class="flex justify-end">
+                <p-button
+                  label="Dalej"
+                  icon="pi pi-arrow-right"
+                  iconPos="right"
+                  (onClick)="goToNextStep(1, activateCallback)"
+                  [disabled]="isSubmitting()"
+                  aria-label="Przejdź do kroku 2"
+                />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Krok 2: Wybór serwującego -->
+        <p-step-panel [value]="2">
+          <ng-template #content let-activateCallback="activateCallback">
+            <div class="flex flex-col gap-6 pt-6">
+              <p-card styleClass="bg-surface-0 border border-surface-200 rounded-xl">
+                <div class="mb-6">
+                  <h2 class="text-xl font-semibold text-surface-900 mb-1">Kto serwuje pierwszy?</h2>
+                  <p class="text-sm text-surface-500">Wybierz zawodnika, który rozpocznie serwowanie w pierwszym secie</p>
+                </div>
+
+                <div class="flex flex-col items-center gap-4">
+                  <div class="flex flex-col sm:flex-row gap-3 w-full">
+                    <button
+                      type="button"
+                      class="server-button flex-1 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer text-center"
+                      [class.server-button-selected]="form.controls.first_server_first_set.value === 'player'"
+                      [class.server-button-unselected]="form.controls.first_server_first_set.value !== 'player'"
+                      (click)="selectServer('player')"
+                      [attr.aria-pressed]="form.controls.first_server_first_set.value === 'player'"
+                      aria-label="Wybierz zawodnika jako pierwszego serwującego"
+                    >
+                      <i class="pi pi-user text-2xl mb-2 block"></i>
+                      <span class="font-medium text-base block">{{ form.controls.player_name.value || 'Zawodnik' }}</span>
+                      <span class="text-xs mt-1 block opacity-70">Zawodnik oceniany</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="server-button flex-1 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer text-center"
+                      [class.server-button-selected]="form.controls.first_server_first_set.value === 'opponent'"
+                      [class.server-button-unselected]="form.controls.first_server_first_set.value !== 'opponent'"
+                      (click)="selectServer('opponent')"
+                      [attr.aria-pressed]="form.controls.first_server_first_set.value === 'opponent'"
+                      aria-label="Wybierz rywala jako pierwszego serwującego"
+                    >
+                      <i class="pi pi-user text-2xl mb-2 block"></i>
+                      <span class="font-medium text-base block">{{ form.controls.opponent_name.value || 'Rywal' }}</span>
+                      <span class="text-xs mt-1 block opacity-70">Rywal</span>
+                    </button>
+                  </div>
+                  @if (hasError('first_server_first_set', 'required')) {
+                    <small class="text-red-500 text-xs text-center">Wybierz pierwszego serwującego</small>
+                  }
+                </div>
+              </p-card>
+
+              <!-- Nawigacja kroku -->
+              <div class="flex justify-between gap-4">
+                <p-button
+                  label="Wstecz"
+                  icon="pi pi-arrow-left"
+                  severity="secondary"
+                  (onClick)="goToPreviousStep(activateCallback, 1)"
+                  [disabled]="isSubmitting()"
+                  aria-label="Powrót do kroku 1"
+                />
+                <p-button
+                  label="Dalej"
+                  icon="pi pi-arrow-right"
+                  iconPos="right"
+                  (onClick)="goToNextStep(2, activateCallback)"
+                  [disabled]="isSubmitting()"
+                  aria-label="Przejdź do kroku 3"
+                />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Krok 3: Opcje zaawansowane -->
+        <p-step-panel [value]="3">
+          <ng-template #content let-activateCallback="activateCallback">
+            <div class="flex flex-col gap-6 pt-6">
+              <p-card styleClass="bg-surface-0 border border-surface-200 rounded-xl">
+                <div class="mb-6">
+                  <h2 class="text-xl font-semibold text-surface-900 mb-1">Opcje meczu</h2>
+                  <p class="text-sm text-surface-500">Dostosuj ustawienia meczu do swoich potrzeb</p>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                  <!-- Pole: Maksymalna liczba setów -->
+                  <div class="flex flex-col gap-1">
+                    <p-floatlabel variant="on" class="w-full">
+                      <p-select
+                        inputId="max_sets"
+                        [options]="maxSetsOptions"
+                        [formControl]="form.controls.max_sets"
+                        optionLabel="label"
+                        optionValue="value"
+                        class="w-full"
+                      />
+                      <label for="max_sets">Maksymalna liczba setów</label>
+                    </p-floatlabel>
+                  </div>
+
+                  <!-- Pole: Złoty set -->
+                  <div class="p-4 bg-surface-50 rounded-lg">
+                    <div class="flex items-center justify-between gap-4">
+                      <div class="flex flex-col gap-0.5">
+                        <label for="golden_set" class="font-medium text-surface-900">Złoty set</label>
+                        <span class="text-xs text-surface-500">Dodatkowy set przy remisie</span>
+                      </div>
+                      <p-toggleswitch
+                        inputId="golden_set"
+                        [formControl]="form.controls.golden_set_enabled"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Pole: Podsumowanie AI -->
+                  <div class="p-4 bg-surface-50 rounded-lg">
+                    <div class="flex items-center justify-between gap-4">
+                      <div class="flex flex-col gap-0.5">
+                        <label for="ai_summary" class="font-medium text-surface-900">Podsumowanie AI</label>
+                        <span class="text-xs text-surface-500">Wygeneruj analizę po meczu</span>
+                      </div>
+                      <p-toggleswitch
+                        inputId="ai_summary"
+                        [formControl]="form.controls.generate_ai_summary"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </p-card>
+
+              <!-- Nawigacja kroku -->
+              <div class="flex flex-col-reverse sm:flex-row justify-between gap-4">
+                <p-button
+                  label="Wstecz"
+                  icon="pi pi-arrow-left"
+                  severity="secondary"
+                  (onClick)="goToPreviousStep(activateCallback, 2)"
+                  [disabled]="isSubmitting()"
+                  aria-label="Powrót do kroku 2"
+                  styleClass="w-full sm:w-auto"
+                />
+                <p-button
+                  label="Utwórz mecz"
+                  icon="pi pi-check"
+                  severity="success"
+                  (onClick)="onSubmit()"
+                  [loading]="isSubmitting()"
+                  [disabled]="isSubmitting() || !form.valid"
+                  aria-label="Utwórz nowy mecz"
+                  styleClass="w-full sm:w-auto"
+                />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+
+    <!-- Loading overlay -->
+    @if (isSubmitting()) {
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-surface-0/90 dark:bg-surface-900/90 rounded-xl z-10">
+        <p-progressSpinner
+          strokeWidth="4"
+          animationDuration=".5s"
+          ariaLabel="Tworzenie meczu"
+        />
+        <span class="text-sm font-medium text-surface-700">Tworzenie meczu...</span>
+      </div>
+    }
+  </div>
+</app-layout>

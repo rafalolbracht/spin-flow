@@ -2,7 +2,8 @@ import {
   Component,
   signal,
   computed,
-  inject, OnDestroy,
+  inject,
+  type OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -169,16 +170,10 @@ export class MatchListPageComponent implements OnDestroy {
           }));
           this.isLoading.set(false);
         },
-        error: (err) => {
-          console.error('Error loading matches:', err);
+        error: () => {
+          // Błędy są obsługiwane przez httpErrorInterceptor
           this.error.set('Nie udało się załadować listy meczów');
           this.isLoading.set(false);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Błąd',
-            detail: 'Nie udało się załadować listy meczów',
-            life: 5000,
-          });
         },
       });
   }
@@ -301,15 +296,9 @@ export class MatchListPageComponent implements OnDestroy {
           });
           this.loadMatches();
         },
-        error: (err) => {
-          console.error('Error deleting match:', err);
+        error: () => {
+          // Błędy są obsługiwane przez httpErrorInterceptor
           this.isDeleting.set(false);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Błąd',
-            detail: 'Nie udało się usunąć meczu',
-            life: 5000,
-          });
         },
       });
   }

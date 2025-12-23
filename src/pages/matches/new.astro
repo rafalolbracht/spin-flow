@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { CreateMatchWizardPageComponent } from "@/components/create-match-wizard/create-match-wizard-page.component";
+
+// Placeholder dla przyszłej implementacji autentykacji
+// const session = await Astro.locals.getSession();
+// if (!session) {
+//   return Astro.redirect('/');
+// }
+---
+
+<Layout title="Spin Flow - Nowy mecz">
+  <CreateMatchWizardPageComponent client:only="angular" />
+</Layout>
+

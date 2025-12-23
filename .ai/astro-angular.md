@@ -603,26 +603,88 @@ export class PersistentStateService {
 
 ## 8. Komunikacja z API
 
-### 8.1 HttpClient w wyspach
+### 8.1 HttpClient z interceptorem (httpProviders)
 
-Każda wyspa musi mieć skonfigurowany HttpClient:
+Projekt używa centralnego `httpProviders` z `HttpErrorInterceptor`, który automatycznie obsługuje wszystkie błędy HTTP (401, 403, 404, 422, 500, błędy sieci).
+
+**Konfiguracja (`src/lib/config/http-providers.ts`):**
 
 ```typescript
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpErrorInterceptor } from '@/lib/interceptors/http-error.interceptor';
+import { provideHttpClient, withInterceptors } from "@angular/common/http";
+import { HttpErrorInterceptor } from "../interceptors/http-error.interceptor";
 
-// W osobnym pliku helper
 export const httpProviders = provideHttpClient(
   withInterceptors([HttpErrorInterceptor])
 );
-
-// W komponencie
-@Component({
-  providers: [httpProviders],
-})
 ```
 
-### 8.2 Względne vs absolutne URL
+**Użycie w komponentach:**
+
+`httpProviders` jest już zawarty w `AppLayoutComponent.clientProviders`, więc komponenty stron automatycznie go dziedziczą:
+
+```typescript
+@Component({...})
+export class MyPageComponent {
+  // ✅ Prawidłowo - delegacja providerów (zawiera httpProviders)
+  static clientProviders = [
+    ...AppLayoutComponent.clientProviders,
+    MessageService,  // Wymagany dla interceptora
+  ];
+
+  private readonly http = inject(HttpClient);
+}
+```
+
+### 8.2 Obsługa błędów - NIE duplikować
+
+**❌ NIEPRAWIDŁOWO - duplikacja obsługi błędów:**
+
+```typescript
+this.http.post("/api/matches", data).subscribe({
+  next: (response) => {
+    /* ... */
+  },
+  error: (error) => {
+    // ❌ Interceptor już wyświetlił toast!
+    this.messageService.add({
+      severity: "error",
+      detail: "Błąd zapisu",
+    });
+  },
+});
+```
+
+**✅ PRAWIDŁOWO - pozwól interceptorowi obsłużyć błędy:**
+
+```typescript
+this.http.post("/api/matches", data).subscribe({
+  next: (response) => {
+    // Obsługa sukcesu (interceptor nie obsługuje sukcesów)
+    this.messageService.add({
+      severity: "success",
+      detail: "Mecz utworzony",
+    });
+  },
+  error: () => {
+    // Błędy są obsługiwane przez httpErrorInterceptor
+    // Tutaj tylko reset stanu lokalnego (np. loading)
+    this.isSubmitting.set(false);
+  },
+});
+```
+
+### 8.3 Co robi HttpErrorInterceptor
+
+| Kod HTTP | Akcja interceptora                            |
+| -------- | --------------------------------------------- |
+| 0        | Toast "Błąd połączenia"                       |
+| 401      | Toast "Sesja wygasła" + redirect do `/`       |
+| 403      | Toast "Brak dostępu"                          |
+| 404      | Toast kontekstowy (np. "Mecz nie znaleziony") |
+| 422      | Toast z komunikatem walidacji z API           |
+| 500      | Toast "Błąd serwera"                          |
+
+### 8.4 Względne vs absolutne URL
 
 ```typescript
 // ✅ Prawidłowo - względne URL (Astro obsługuje)
@@ -678,11 +740,12 @@ Tworząc nową stronę z komponentem Angular:
 
 - [ ] `standalone: true`
 - [ ] Import `AppLayoutComponent`
-- [ ] `static clientProviders = AppLayoutComponent.clientProviders`
+- [ ] `static clientProviders = [...AppLayoutComponent.clientProviders, MessageService]`
 - [ ] `@ViewChild(AppLayoutComponent)` dla dostępu do metod toast
 - [ ] Signals dla `userName` i `userInitials`
 - [ ] Nawigacja przez `<a href="">` lub `window.location`
 - [ ] SSR-safe kod (sprawdzenie `typeof window`)
+- [ ] Obsługa błędów HTTP przez interceptor (nie duplikować toastów!)
 
 ### 10.3 Szablon HTML
 
