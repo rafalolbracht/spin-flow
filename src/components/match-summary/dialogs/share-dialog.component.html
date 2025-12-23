@@ -1,0 +1,60 @@
+<p-dialog
+  header="Udostępnij mecz"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="share-dialog"
+  [style]="{ width: '90vw', maxWidth: '600px' }"
+>
+  <ng-template pTemplate="content">
+    <div class="dialog-content">
+      <!-- Tekst informacyjny -->
+      <p class="info-text">
+        Poniższy link umożliwia podgląd zakończonego meczu bez konieczności logowania.
+        Możesz udostępnić go swoim zawodnikom lub innym trenerom.
+      </p>
+
+      <!-- Input z linkiem i przyciskiem kopiowania -->
+      <div *ngIf="isLoading()" class="loading-container">
+        <i class="pi pi-spin pi-spinner loading-icon"></i>
+      </div>
+
+      <p-inputgroup *ngIf="!isLoading() && publicUrl()" styleClass="copy-input-group">
+        <input
+          pInputText
+          #urlInput
+          [value]="publicUrl()!"
+          readonly
+          class="url-input"
+          (click)="onInputClick($event)"
+        />
+        <p-button
+          icon="pi pi-copy"
+          severity="success"
+          (onClick)="onCopyClick()"
+          pTooltip="Kopiuj"
+          tooltipPosition="top"
+        />
+      </p-inputgroup>
+
+      <p *ngIf="!isLoading() && !publicUrl()" class="no-link-text">
+        Brak dostępnego linku
+      </p>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <p-button
+        label="Zamknij"
+        [outlined]="true"
+        severity="success"
+        (onClick)="onVisibleChange(false)"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+

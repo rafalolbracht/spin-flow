@@ -1,0 +1,146 @@
+/* Główna karta - takie samo tło jak inne boxy */
+:host {
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+:host-context(.dark) {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Nagłówek sekcji */
+.section-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--p-surface-200);
+}
+
+:host-context(.dark) .section-header {
+  border-bottom-color: rgba(51, 65, 85, 0.6);
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  margin: 0;
+}
+
+/* Stylowanie PrimeNG Accordion jako karty */
+::ng-deep .p-accordion {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+::ng-deep .p-accordion-panel {
+  background: transparent !important;
+  border: none !important;
+}
+
+::ng-deep .p-accordion-header {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+::ng-deep .p-accordion-header-content {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--p-surface-200) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+:host-context(.dark) ::ng-deep .p-accordion-header-content {
+  border-bottom-color: rgba(51, 65, 85, 0.6) !important;
+}
+
+/* Content accordion - wszystkie możliwe selektory */
+::ng-deep .p-accordion-content {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 1.5rem !important;
+}
+
+::ng-deep .p-accordion-panel-content {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+::ng-deep .p-accordion .p-accordion-panel .p-accordion-content {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Wrapper contentu */
+::ng-deep .p-toggleable-content {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .p-accordion-content-wrapper {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .p-accordion .p-toggleable-content {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Header */
+::ng-deep .p-accordion-header-icon {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .p-accordion .p-accordion-panel .p-accordion-header {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+::ng-deep .p-accordion .p-accordion-header .p-accordion-toggle-icon {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Wszystkie dzieci p-accordion-content */
+::ng-deep p-accordion-content {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+::ng-deep p-accordion-content > * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Ostatni panel bez dolnej ramki na content */
+:host ::ng-deep .p-accordion-panel:last-child .p-accordion-header-content {
+  border-bottom: none !important;
+}
+
+/* Agresywne nadpisanie tylko dla tego komponentu */
+:host ::ng-deep .p-accordion * {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Przywróć border dla header-content */
+:host ::ng-deep .p-accordion-header-content {
+  border-bottom: 1px solid var(--p-surface-200) !important;
+}
+
+:host-context(.dark) ::ng-deep .p-accordion-header-content {
+  border-bottom-color: rgba(51, 65, 85, 0.6) !important;
+}

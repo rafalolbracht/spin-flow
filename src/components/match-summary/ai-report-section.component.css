@@ -1,0 +1,62 @@
+/* Główna karta AI Report - takie samo tło jak inne boxy */
+:host {
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+:host-context(.dark) {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Stylowanie PrimeNG Panel jako karty */
+::ng-deep .p-panel {
+  background: transparent !important;
+  border: none;
+  box-shadow: none;
+}
+
+::ng-deep .p-panel .p-panel-header {
+  background: transparent !important;
+  border: none;
+  border-bottom: 1px solid var(--p-surface-200);
+  padding: 1.25rem 1.5rem;
+}
+
+:host-context(.dark) ::ng-deep .p-panel .p-panel-header {
+  border-bottom-color: rgba(51, 65, 85, 0.6);
+}
+
+::ng-deep .p-panel .p-panel-content {
+  background: transparent !important;
+  border: none;
+  padding: 1.5rem;
+}
+
+/* Wymuszenie przezroczystego tła na wszystkich poziomach panelu */
+::ng-deep .p-panel .p-panel-header-icon {
+  background: transparent !important;
+}
+
+::ng-deep .p-panel .p-toggleable-content {
+  background: transparent !important;
+}
+
+::ng-deep .p-panel-content-wrapper {
+  background: transparent !important;
+}
+
+/* Separator między sekcjami w content */
+::ng-deep .p-panel .p-panel-content .border-t {
+  border-color: var(--p-surface-200) !important;
+}
+
+:host-context(.dark) ::ng-deep .p-panel .p-panel-content .border-t {
+  border-color: rgba(51, 65, 85, 0.6) !important;
+}

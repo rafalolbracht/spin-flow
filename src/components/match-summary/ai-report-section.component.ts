@@ -1,0 +1,132 @@
+import { Component, input, output, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { PanelModule } from 'primeng/panel';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
+import type { AiReportDto } from '@/types';
+import type { AiReportState } from './services/match-summary-state.service';
+
+/**
+ * AiReportSectionComponent
+ *
+ * Sekcja prezentująca raport AI z trzema możliwymi stanami:
+ * - pending: spinner + tekst "Generowanie raportu AI..." + przycisk "Sprawdź status"
+ * - success: opis meczu + zalecenia treningowe (bez przycisku odświeżania)
+ * - error: komunikat błędu + przycisk "Spróbuj ponownie"
+ * - hidden: komponent nie renderowany (AI wyłączone)
+ *
+ * Przycisk odświeżania widoczny tylko dla statusów 'error' i 'pending'.
+ */
+@Component({
+  selector: 'app-ai-report-section',
+  standalone: true,
+  imports: [
+    CommonModule,
+    PanelModule,
+    ButtonModule,
+    ProgressSpinnerModule,
+    MessageModule,
+    TooltipModule,
+  ],
+  template: `
+    @if (isAiEnabled() && aiReportState() !== 'hidden') {
+      <p-panel>
+        <ng-template pTemplate="header">
+          <div class="flex items-center gap-2">
+            <i class="pi pi-sparkles text-primary"></i>
+            <span class="font-semibold">Analiza AI</span>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="icons">
+          @if (aiReportState() === 'error' || aiReportState() === 'pending') {
+            <p-button
+              icon="pi pi-refresh"
+              [rounded]="true"
+              [text]="true"
+              severity="success"
+              [loading]="isRefreshing()"
+              (onClick)="refreshClicked.emit()"
+              [pTooltip]="aiReportState() === 'error' ? 'Spróbuj ponownie' : 'Sprawdź status'"
+              tooltipPosition="left"
+            />
+          }
+        </ng-template>
+
+        <!-- Stan: pending -->
+        @if (aiReportState() === 'pending') {
+          <div class="flex flex-col items-center justify-center py-8 gap-4">
+            <p-progressSpinner
+              styleClass="w-16 h-16"
+              strokeWidth="4"
+              animationDuration="1s"
+            />
+            <p class="text-surface-600">Generowanie raportu AI...</p>
+          </div>
+        }
+
+        <!-- Stan: success -->
+        @if (aiReportState() === 'success' && report()) {
+          <div class="space-y-6">
+            <!-- Opis meczu -->
+            @if (report()!.ai_summary) {
+              <div>
+                <h3 class="text-lg font-semibold text-surface-900 mb-3">Opis meczu</h3>
+                <div class="prose prose-sm max-w-none text-surface-500 whitespace-pre-wrap">
+                  {{ report()!.ai_summary }}
+                </div>
+              </div>
+            }
+
+            <!-- Zalecenia treningowe -->
+            @if (report()!.ai_recommendations) {
+              <div class="pt-4 border-t border-surface-200">
+                <h3 class="text-lg font-semibold text-surface-900 mb-3">Zalecenia treningowe</h3>
+                <div class="prose prose-sm max-w-none text-surface-500 whitespace-pre-wrap">
+                  {{ report()!.ai_recommendations }}
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Stan: error -->
+        @if (aiReportState() === 'error') {
+          <p-message
+            severity="error"
+            text="Nie udało się wygenerować raportu AI. Spróbuj odświeżyć raport."
+          />
+        }
+      </p-panel>
+    }
+  `,
+  styleUrl: './ai-report-section.component.css',
+})
+export class AiReportSectionComponent {
+  // Props
+  readonly report = input<AiReportDto | null>(null);
+  readonly isAiEnabled = input.required<boolean>();
+  readonly isRefreshing = input<boolean>(false);
+
+  // Outputs
+  readonly refreshClicked = output();
+
+  /**
+   * Stan raportu AI obliczony z propsów
+   */
+  readonly aiReportState = computed<AiReportState>(() => {
+    if (!this.isAiEnabled()) {
+      return 'hidden';
+    }
+
+    const rep = this.report();
+    if (!rep) {
+      return 'pending';
+    }
+
+    return rep.ai_status as AiReportState;
+  });
+}
+

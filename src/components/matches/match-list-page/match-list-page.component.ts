@@ -22,12 +22,15 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Shared Components
 import { AppLayoutComponent } from '@/components/shared/app-layout/app-layout.component';
+import { EditMatchDialogComponent } from './dialogs/edit-match-dialog.component';
 
 // Types
 import type {
   MatchListItemDto,
   MatchListResponse,
   MatchStatusEnum,
+  UpdateMatchCommandDto,
+  UpdateMatchResponse,
 } from '@/types';
 import type {
   MatchListFilters,
@@ -60,6 +63,7 @@ import {
     PaginatorModule,
     SkeletonModule,
     RippleModule,
+    EditMatchDialogComponent,
   ],
   templateUrl: './match-list-page.component.html',
   styleUrl: './match-list-page.component.css',
@@ -99,7 +103,12 @@ export class MatchListPageComponent implements OnDestroy {
   );
   readonly isLoading = signal<boolean>(false);
   readonly isDeleting = signal<boolean>(false);
+  readonly isSaving = signal<boolean>(false);
   readonly error = signal<string | null>(null);
+
+  // Stan dialogu edycji
+  readonly isEditDialogVisible = signal<boolean>(false);
+  readonly editingMatch = signal<MatchListItemDto | null>(null);
 
   // Computed signals
   readonly isEmpty = computed(
@@ -311,6 +320,77 @@ export class MatchListPageComponent implements OnDestroy {
     if (typeof window !== 'undefined') {
       window.location.href = '/matches/new';
     }
+  }
+
+  /**
+   * Otwarcie dialogu edycji meczu
+   */
+  onEditClick(event: Event, match: MatchListItemDto): void {
+    event.stopPropagation();
+    this.editingMatch.set(match);
+    this.isEditDialogVisible.set(true);
+  }
+
+  /**
+   * Zamknięcie dialogu edycji
+   */
+  onEditDialogCancel(): void {
+    this.isEditDialogVisible.set(false);
+    this.editingMatch.set(null);
+  }
+
+  /**
+   * Zapisanie zmian w meczu
+   */
+  onEditDialogConfirm(data: {
+    playerName: string;
+    opponentName: string;
+  }): void {
+    const match = this.editingMatch();
+    if (!match) return;
+
+    this.isSaving.set(true);
+
+    const updateData: UpdateMatchCommandDto = {
+      player_name: data.playerName,
+      opponent_name: data.opponentName,
+    };
+
+    this.http
+      .patch<UpdateMatchResponse>(`/api/matches/${match.id}/update`, updateData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isSaving.set(false);
+          this.isEditDialogVisible.set(false);
+          this.editingMatch.set(null);
+
+          // Aktualizacja meczu na liście
+          this.matches.update((matches) =>
+            matches.map((m) =>
+              m.id === match.id
+                ? {
+                    ...m,
+                    player_name: response.data.player_name,
+                    opponent_name: response.data.opponent_name,
+                    updated_at: response.data.updated_at,
+                  }
+                : m,
+            ),
+          );
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sukces',
+            detail: 'Dane meczu zostały zaktualizowane',
+            life: 3000,
+          });
+        },
+        error: () => {
+          // Błędy są obsługiwane przez httpErrorInterceptor
+          this.isSaving.set(false);
+        },
+      });
   }
 
   /**

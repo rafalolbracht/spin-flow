@@ -1,0 +1,53 @@
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-text {
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.loading-icon {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.url-input {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.875rem;
+  direction: ltr;
+  text-align: left;
+  /* Wymuś pokazywanie początku tekstu */
+  caret-color: transparent;
+}
+
+.no-link-text {
+  text-align: center;
+  color: var(--text-color-secondary);
+  padding: 2rem;
+  margin: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Odstęp między inputem a przyciskiem w inputgroup */
+::ng-deep .copy-input-group .p-inputgroup-addon,
+::ng-deep .copy-input-group .p-button {
+  margin-left: 0.5rem;
+}

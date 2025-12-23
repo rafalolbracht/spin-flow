@@ -1,0 +1,109 @@
+/* Główna karta nagłówka */
+.match-header-card {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:host-context(.dark) .match-header-card {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Główna sekcja wyniku - grid 2 kolumny */
+.score-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+/* Kolumny graczy */
+.player-column,
+.opponent-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Nazwiska zawodników */
+.player-name,
+.opponent-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  max-width: 100%;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: var(--p-text-color);
+  padding: 0 0.25rem;
+}
+
+/* Wiersz wyniku */
+.score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* Liczba wygranych setów (białe kwadraciki) */
+.sets-won-badge {
+  background-color: var(--p-surface-100);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  color: var(--p-text-color);
+  font-weight: 700;
+  font-size: 2rem;
+  min-width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+  border: 1px solid var(--p-surface-300);
+}
+
+:host-context(.dark) .sets-won-badge {
+  background-color: rgba(51, 65, 85, 0.6);
+  border-color: rgba(71, 85, 105, 0.7);
+  color: #f1f5f9;
+}
+
+/* Data meczu */
+.match-date {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--p-surface-200);
+  color: var(--p-text-color-secondary);
+  font-size: 0.875rem;
+}
+
+:host-context(.dark) .match-date {
+  border-top-color: rgba(51, 65, 85, 0.6);
+}
+
+/* Responsywność */
+@media (max-width: 640px) {
+  .sets-won-badge {
+    font-size: 1.5rem;
+    min-width: 50px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .player-name,
+  .opponent-name {
+    font-size: 1rem;
+  }
+
+  .header-title {
+    font-size: 1.125rem;
+  }
+}

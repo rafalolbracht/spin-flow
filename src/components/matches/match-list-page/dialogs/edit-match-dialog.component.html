@@ -1,0 +1,77 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!isLoading()"
+  [closeOnEscape]="!isLoading()"
+  [dismissableMask]="false"
+  [blockScroll]="true"
+  styleClass="w-full max-w-md"
+>
+  <ng-template #header>
+    <span class="font-semibold">Edytuj dane meczu</span>
+  </ng-template>
+
+  <form [formGroup]="editForm" class="flex flex-col gap-6 pt-4">
+    <!-- Pole: Nazwa zawodnika -->
+    <div class="flex flex-col gap-2">
+      <p-floatlabel variant="on" class="w-full">
+        <input
+          pInputText
+          id="playerName"
+          formControlName="playerName"
+          class="w-full"
+        />
+        <label for="playerName">Nazwa zawodnika ocenianego</label>
+      </p-floatlabel>
+
+      @if (hasError('playerName', 'required')) {
+      <p-message severity="error" text="Nazwa zawodnika jest wymagana" />
+      } @if (hasError('playerName', 'maxlength')) {
+      <p-message severity="error" text="Maksymalnie 200 znaków" />
+      }
+    </div>
+
+    <!-- Pole: Nazwa rywala -->
+    <div class="flex flex-col gap-2">
+      <p-floatlabel variant="on" class="w-full">
+        <input
+          pInputText
+          id="opponentName"
+          formControlName="opponentName"
+          class="w-full"
+        />
+        <label for="opponentName">Nazwa rywala</label>
+      </p-floatlabel>
+
+      @if (hasError('opponentName', 'required')) {
+      <p-message severity="error" text="Nazwa rywala jest wymagana" /> } @if
+      (hasError('opponentName', 'maxlength')) {
+      <p-message severity="error" text="Maksymalnie 200 znaków" />
+      }
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button
+        label="Anuluj"
+        severity="success"
+        [outlined]="true"
+        [disabled]="isLoading()"
+        (onClick)="onVisibleChange(false)"
+      />
+      <p-button
+        label="Zapisz"
+        icon="pi pi-check"
+        severity="success"
+        [loading]="isLoading()"
+        [disabled]="editForm.invalid"
+        (onClick)="onConfirm()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+

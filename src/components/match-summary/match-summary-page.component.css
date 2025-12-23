@@ -1,0 +1,119 @@
+/* Główny kontener widoku match summary */
+.match-summary-container {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--p-surface-0);
+}
+
+:host-context(.dark) .match-summary-container {
+  background-color: #0f172a; /* Bezpośrednie granatowe tło jak w live */
+}
+
+/* Zawartość widoku - centrowanie i ograniczenie szerokości */
+.match-summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 28rem; /* 448px */
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem 1rem; /* Zmniejszony padding górny o połowę */
+}
+
+/* Wrapper dla przycisków na górze */
+.top-buttons-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Ukryj tekst przycisku "Udostępnij" na mobilce - zostaw tylko ikonę */
+@media (max-width: 640px) {
+  .top-buttons-wrapper ::ng-deep .share-button .p-button-label {
+    display: none;
+  }
+
+  .top-buttons-wrapper ::ng-deep .share-button {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Skeleton cards */
+.skeleton-card {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:host-context(.dark) .skeleton-card {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Error card */
+.error-card {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+:host-context(.dark) .error-card {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Skeleton animation override */
+::ng-deep .p-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-200) 25%,
+    var(--surface-100) 50%,
+    var(--surface-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-animation 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-animation {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Smooth transitions dla dialogów */
+::ng-deep .p-dialog {
+  animation: dialog-show 0.2s ease-out;
+}
+
+@keyframes dialog-show {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsywność - desktop */
+@media (min-width: 768px) {
+  .match-summary-content {
+    max-width: 42rem; /* 672px */
+    gap: 1.25rem;
+    padding: 1.25rem 1rem 2.5rem 1rem; /* Zmniejszony padding górny o połowę */
+  }
+}

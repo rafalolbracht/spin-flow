@@ -1,0 +1,37 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { MatchSummaryPageComponent, type MatchSummaryPageComponentProps } from '@/components/match-summary/match-summary-page.component';
+
+/**
+ * Match Summary Page - Widok meczu "Zakończony"
+ * Służy do przeglądu zakończonego meczu tenisa stołowego.
+ * Prezentuje pełne podsumowanie meczu, w tym wyniki setów, uwagi trenera oraz raport AI.
+ *
+ * Route: /matches/:id/summary
+ * Access: Chroniony - wymaga autentykacji (TODO: dodać middleware auth)
+ * Validation: Weryfikacja ownership meczu + redirect do live jeśli in_progress
+ */
+
+const { id } = Astro.params;
+
+// Walidacja parametru ID
+if (!id || isNaN(Number(id))) {
+  return Astro.redirect('/matches');
+}
+
+const matchId = Number(id);
+
+// TODO: Dodać weryfikację autentykacji i ownership meczu
+// TODO: Sprawdzić czy mecz jest w statusie 'finished' (redirect do /matches/{id}/live jeśli in_progress)
+// Uwaga: Weryfikacja statusu meczu jest również wykonywana w komponencie Angular (MatchSummaryStateService.loadMatch)
+
+export const prerender = false;
+
+// Props dla komponentu Angular
+const props: MatchSummaryPageComponentProps = { matchId };
+---
+
+<Layout title="Podsumowanie meczu - Spin Flow">
+  <MatchSummaryPageComponent client:only="angular" {...props} />
+</Layout>
+

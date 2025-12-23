@@ -25,7 +25,7 @@
   gap: 1rem; /* zmniejszone z 1.5rem */
   max-width: 28rem; /* 448px */
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1rem 1rem 2rem 1rem; /* Zmniejszony padding górny o połowę */
 }
 
 /* Dodatkowy odstęp dla przycisków kontrolnych */
@@ -45,7 +45,7 @@
   .live-match-content {
     max-width: 42rem; /* 672px */
     gap: 1.25rem; /* zmniejszone z 1.75rem */
-    padding: 2.5rem 1rem;
+    padding: 1.25rem 1rem 2.5rem 1rem; /* Zmniejszony padding górny o połowę */
   }
 
   .live-match-content app-match-control-actions {

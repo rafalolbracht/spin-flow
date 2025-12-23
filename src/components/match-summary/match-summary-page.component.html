@@ -1,0 +1,111 @@
+<app-layout [userName]="userName" [userInitials]="userInitials">
+  <!-- Toast dla powiadomień -->
+  <p-toast position="top-right" />
+
+  <!-- Główna zawartość -->
+  <main class="match-summary-container">
+    <!-- Stan ładowania: skeleton placeholders -->
+    @if (store.isLoading()) {
+      <div class="match-summary-content">
+        <div class="skeleton-card">
+          <p-skeleton width="200px" height="24px" styleClass="mb-4" />
+          <div class="grid grid-cols-3 gap-4">
+            <p-skeleton height="80px" />
+            <p-skeleton height="80px" />
+            <p-skeleton height="80px" />
+          </div>
+        </div>
+
+        <div class="skeleton-card">
+          <p-skeleton height="120px" />
+        </div>
+
+        <div class="skeleton-card">
+          <p-skeleton height="200px" />
+        </div>
+      </div>
+    }
+
+    <!-- Stan załadowany: pełna zawartość -->
+    @if (!store.isLoading() && store.matchId() > 0) {
+      <div class="match-summary-content">
+        <!-- Przyciski nawigacji i akcji -->
+        <div class="top-buttons-wrapper">
+          <p-button
+            label="Powrót do listy"
+            icon="pi pi-arrow-left"
+            severity="success"
+            [outlined]="true"
+            (onClick)="onBackToListClicked()"
+          />
+          <p-button
+            label="Udostępnij"
+            icon="pi pi-share-alt"
+            severity="primary"
+            [disabled]="store.isGeneratingShare()"
+            (onClick)="onShareClicked()"
+            styleClass="share-button"
+          />
+        </div>
+
+        <!-- Sekcja nagłówka meczu -->
+        <app-match-header-section
+          [playerName]="store.playerName()"
+          [opponentName]="store.opponentName()"
+          [setsWonPlayer]="store.setsWonPlayer()"
+          [setsWonOpponent]="store.setsWonOpponent()"
+          [startedAt]="store.startedAt()"
+        />
+
+        <!-- Sekcja tabeli setów -->
+        @if (store.sets().length > 0) {
+          <app-sets-history-table
+            [sets]="store.sets()"
+            [currentSetId]="null"
+            [playerName]="store.playerName()"
+            [opponentName]="store.opponentName()"
+          />
+        }
+
+        <!-- Sekcja uwag trenera (widoczna tylko gdy są jakiekolwiek uwagi) -->
+        @if (hasAnyNotes()) {
+          <app-coach-notes-accordion
+            [matchNotes]="store.matchNotes()"
+            [sets]="store.sets()"
+          />
+        }
+
+        <!-- Sekcja raportu AI (widoczna tylko gdy AI było włączone) -->
+        @if (store.generateAiSummary()) {
+          <app-ai-report-section
+            [report]="store.aiReport()"
+            [isAiEnabled]="store.generateAiSummary()"
+            [isRefreshing]="store.isRefreshingAi()"
+            (refreshClicked)="onRefreshAiClicked()"
+          />
+        }
+      </div>
+    }
+
+    <!-- Stan błędu -->
+    @if (!store.isLoading() && store.error()) {
+      <div class="match-summary-content">
+        <div class="error-card">
+          <i class="pi pi-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+          <p class="text-surface-700">{{ store.error() }}</p>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- Dialogi modalne -->
+
+  <!-- Dialog udostępniania -->
+  <app-share-dialog
+    [visible]="store.isShareDialogVisible()"
+    [publicUrl]="store.publicUrl()"
+    [isLoading]="store.isGeneratingShare()"
+    (dialogClose)="onShareDialogClose()"
+  />
+</app-layout>
+

@@ -1,0 +1,5 @@
+/* Stylowanie dialogu edycji meczu */
+
+:host {
+  display: contents;
+}

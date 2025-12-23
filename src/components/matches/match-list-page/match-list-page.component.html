@@ -53,6 +53,7 @@
         <p-button
           label="Wyczyść"
           icon="pi pi-filter-slash"
+          severity="success"
           [outlined]="true"
           [disabled]="!hasActiveFilters()"
           (onClick)="onClearFilters()"
@@ -134,8 +135,19 @@
               {{ match.started_at | date: 'dd.MM.yyyy, HH:mm' }}
             </div>
 
-            <!-- Przycisk usunięcia -->
-            <div class="flex-shrink-0">
+            <!-- Przyciski akcji -->
+            <div class="flex-shrink-0 flex gap-1">
+              <!-- Przycisk edycji -->
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                severity="success"
+                size="small"
+                (onClick)="onEditClick($event, match)"
+                [attr.aria-label]="'Edytuj mecz ' + match.player_name + ' vs ' + match.opponent_name"
+              />
+
+              <!-- Przycisk usunięcia -->
               <p-button
                 icon="pi pi-trash"
                 [text]="true"
@@ -164,3 +176,13 @@
     </div>
   }
 </app-layout>
+
+<!-- Dialog edycji meczu -->
+<app-edit-match-dialog
+  [visible]="isEditDialogVisible()"
+  [playerName]="editingMatch()?.player_name ?? ''"
+  [opponentName]="editingMatch()?.opponent_name ?? ''"
+  [isLoading]="isSaving()"
+  (dialogClose)="onEditDialogCancel()"
+  (confirmClicked)="onEditDialogConfirm($event)"
+/>
