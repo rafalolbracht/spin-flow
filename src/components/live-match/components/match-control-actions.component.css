@@ -24,10 +24,10 @@
   font-size: 1rem;
   transition: all 0.2s ease-in-out;
   cursor: pointer;
-  background-color: var(--p-surface-0);
-  color: var(--p-text-color);
+  background-color: var(--p-surface-50);
+  color: var(--p-surface-700);
   border: 2px solid var(--p-surface-300);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 :host-context(.dark) .control-button {
@@ -38,8 +38,10 @@
 
 .control-button:hover:not(:disabled) {
   background-color: var(--p-surface-100);
-  border-color: var(--p-surface-400);
+  border-color: var(--p-primary-400);
+  color: var(--p-primary-600);
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 :host-context(.dark) .control-button:hover:not(:disabled) {
@@ -73,16 +75,15 @@
 }
 
 .finish-set-button:hover:not(:disabled) {
-  border-color: var(--p-primary-color);
-  color: var(--p-primary-color);
-}
-
-.finish-match-button {
-  color: var(--p-red-500);
+  border-color: var(--p-primary-500);
+  color: var(--p-primary-700);
+  background-color: var(--p-primary-50);
 }
 
 .finish-match-button:hover:not(:disabled) {
-  border-color: var(--p-red-500);
+  border-color: var(--p-primary-500);
+  color: var(--p-primary-700);
+  background-color: var(--p-primary-50);
 }
 
 /* Responsywność - na mobile przyciski pod sobą */

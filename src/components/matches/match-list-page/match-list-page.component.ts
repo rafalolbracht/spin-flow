@@ -271,7 +271,8 @@ export class MatchListPageComponent implements OnDestroy {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Usuń',
       rejectLabel: 'Anuluj',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-outlined',
       accept: () => this.deleteMatch(match.id),
     });
   }

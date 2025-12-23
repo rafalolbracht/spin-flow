@@ -18,55 +18,61 @@
   </div>
 
   <!-- Sekcja filtrów -->
-  <div class="flex flex-col sm:flex-row gap-4 mb-6">
-    <!-- Filtr zawodnika -->
-    <p-iconfield iconPosition="left" class="flex-1">
-      <p-inputicon styleClass="pi pi-user" />
-      <input
-        type="text"
-        pInputText
-        placeholder="Wyszukaj mecze zawodnika"
-        #playerInput
-        [value]="filters().playerName"
-        (input)="onPlayerNameFilterChange(playerInput.value)"
-        class="w-full"
-      />
-    </p-iconfield>
+  <div class="bg-surface-0 border border-surface-200 rounded-xl p-4 mb-6 shadow-sm">
+    <div class="flex flex-col sm:flex-row gap-4">
+      <!-- Filtr zawodnika -->
+      <p-iconfield iconPosition="left" class="flex-1">
+        <p-inputicon styleClass="pi pi-user" />
+        <input
+          type="text"
+          pInputText
+          placeholder="Wyszukaj mecze zawodnika"
+          #playerInput
+          [value]="filters().playerName"
+          (input)="onPlayerNameFilterChange(playerInput.value)"
+          class="w-full"
+        />
+      </p-iconfield>
 
-    <!-- Filtr rywala -->
-    <p-iconfield iconPosition="left" class="flex-1">
-      <p-inputicon styleClass="pi pi-users" />
-      <input
-        type="text"
-        pInputText
-        placeholder="Wyszukaj mecze rywala"
-        #opponentInput
-        [value]="filters().opponentName"
-        (input)="onOpponentNameFilterChange(opponentInput.value)"
-        class="w-full"
-      />
-    </p-iconfield>
+      <!-- Filtr rywala -->
+      <p-iconfield iconPosition="left" class="flex-1">
+        <p-inputicon styleClass="pi pi-users" />
+        <input
+          type="text"
+          pInputText
+          placeholder="Wyszukaj mecze rywala"
+          #opponentInput
+          [value]="filters().opponentName"
+          (input)="onOpponentNameFilterChange(opponentInput.value)"
+          class="w-full"
+        />
+      </p-iconfield>
 
-    <!-- Przycisk czyszczenia filtrów -->
-    @if (hasActiveFilters()) {
-      <p-button
-        label="Wyczyść"
-        icon="pi pi-filter-slash"
-        [outlined]="true"
-        (onClick)="onClearFilters()"
-      />
-    }
+      <!-- Przycisk czyszczenia filtrów -->
+      <div class="sm:flex-shrink-0 flex justify-end">
+        <p-button
+          label="Wyczyść"
+          icon="pi pi-filter-slash"
+          [outlined]="true"
+          [disabled]="!hasActiveFilters()"
+          (onClick)="onClearFilters()"
+        />
+      </div>
+    </div>
   </div>
 
   <!-- Skeleton loading -->
   @if (isLoading()) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="flex flex-col gap-3">
       @for (item of [1, 2, 3, 4, 5, 6]; track item) {
         <div class="bg-surface-0 border border-surface-200 rounded-xl p-4">
-          <p-skeleton width="4rem" height="1.5rem" styleClass="mb-3" />
-          <p-skeleton width="100%" height="1.5rem" styleClass="mb-2" />
-          <p-skeleton width="3rem" height="2rem" styleClass="mb-2" />
-          <p-skeleton width="8rem" height="1rem" />
+          <div class="flex items-center justify-between gap-4">
+            <p-skeleton width="4rem" height="1.5rem" />
+            <p-skeleton width="30%" height="1.5rem" />
+            <p-skeleton width="8rem" height="2rem" />
+            <p-skeleton width="10rem" height="1rem" />
+            <p-skeleton width="2rem" height="2rem" styleClass="rounded-full" />
+          </div>
         </div>
       }
     </div>
@@ -91,48 +97,54 @@
     </div>
   }
 
-  <!-- Grid kart meczów -->
+  <!-- Lista wierszy meczów -->
   @else {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="flex flex-col gap-3">
       @for (match of matches(); track match.id) {
         <article
-          class="match-card bg-surface-0 border border-surface-200 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary-500"
+          class="match-row bg-surface-0 border border-surface-200 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary-500"
           pRipple
           (click)="onMatchClick(match)"
         >
-          <!-- Badge statusu -->
-          <div class="flex items-center justify-between mb-3">
-            <p-tag
-              [value]="getMatchStatusLabel(match.status)"
-              [severity]="getMatchStatusSeverity(match.status)"
-            />
-            <p-button
-              icon="pi pi-trash"
-              [text]="true"
-              severity="danger"
-              size="small"
-              (onClick)="onDeleteClick($event, match)"
-              [attr.aria-label]="'Usuń mecz ' + match.player_name + ' vs ' + match.opponent_name"
-            />
-          </div>
-
-          <!-- Nazwy zawodników -->
-          <div class="mb-3">
-            <div class="text-lg font-semibold text-surface-900 mb-1">
-              {{ match.player_name }}
-              <span class="text-surface-500 font-normal">vs</span>
-              {{ match.opponent_name }}
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Badge statusu -->
+            <div class="flex-shrink-0">
+              <p-tag
+                [value]="getMatchStatusLabel(match.status)"
+                [severity]="getMatchStatusSeverity(match.status)"
+              />
             </div>
-          </div>
 
-          <!-- Wynik setowy -->
-          <div class="text-2xl font-bold text-primary-500 mb-2">
-            {{ match.sets_won_player }} : {{ match.sets_won_opponent }}
-          </div>
+            <!-- Nazwy zawodników -->
+            <div class="flex-1 min-w-[200px]">
+              <div class="text-base sm:text-lg font-semibold text-surface-900">
+                {{ match.player_name }}
+                <span class="text-surface-500 font-normal mx-1">vs</span>
+                {{ match.opponent_name }}
+              </div>
+            </div>
 
-          <!-- Data rozpoczęcia -->
-          <div class="text-sm text-surface-500">
-            {{ match.started_at | date: 'dd.MM.yyyy, HH:mm' }}
+            <!-- Wynik setowy -->
+            <div class="flex-shrink-0 text-xl sm:text-2xl font-bold text-surface-600 dark:text-white">
+              {{ match.sets_won_player }} : {{ match.sets_won_opponent }}
+            </div>
+
+            <!-- Data rozpoczęcia -->
+            <div class="flex-shrink-0 text-sm text-surface-500 min-w-[140px] text-right">
+              {{ match.started_at | date: 'dd.MM.yyyy, HH:mm' }}
+            </div>
+
+            <!-- Przycisk usunięcia -->
+            <div class="flex-shrink-0">
+              <p-button
+                icon="pi pi-trash"
+                [text]="true"
+                severity="success"
+                size="small"
+                (onClick)="onDeleteClick($event, match)"
+                [attr.aria-label]="'Usuń mecz ' + match.player_name + ' vs ' + match.opponent_name"
+              />
+            </div>
           </div>
         </article>
       }
