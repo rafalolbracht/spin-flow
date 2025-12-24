@@ -55,3 +55,10 @@
   height: 1.5rem;
   width: 1px;
 }
+
+/* Sticky navbar */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}

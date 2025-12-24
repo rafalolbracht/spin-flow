@@ -141,8 +141,8 @@ function generateSecureToken(): string {
  * Map MatchPublicShare to PublicShareDto
  */
 function mapToPublicShareDto(share: MatchPublicShare): PublicShareDto {
-  // TODO: Get from environment variable in production
-  const baseUrl = "https://spin-flow.app";
+  // Get base URL from environment variable or fallback to localhost for development
+  const baseUrl = import.meta.env.SITE_URL || "http://localhost:4300";
 
   return {
     id: share.id,

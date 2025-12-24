@@ -1,8 +1,13 @@
 /* Główny kontener widoku match summary */
 .match-summary-container {
   position: relative;
-  min-height: 100vh;
   background-color: var(--p-surface-0);
+}
+
+/* Nadpisz domyślne zachowanie AppLayout - usuń flex z kontenera w app-content */
+:host ::ng-deep .app-layout .app-content > div {
+  flex: none !important;
+  min-height: auto !important;
 }
 
 :host-context(.dark) .match-summary-container {

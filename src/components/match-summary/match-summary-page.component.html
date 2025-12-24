@@ -67,14 +67,6 @@
           />
         }
 
-        <!-- Sekcja uwag trenera (widoczna tylko gdy są jakiekolwiek uwagi) -->
-        @if (hasAnyNotes()) {
-          <app-coach-notes-accordion
-            [matchNotes]="store.matchNotes()"
-            [sets]="store.sets()"
-          />
-        }
-
         <!-- Sekcja raportu AI (widoczna tylko gdy AI było włączone) -->
         @if (store.generateAiSummary()) {
           <app-ai-report-section
@@ -82,6 +74,14 @@
             [isAiEnabled]="store.generateAiSummary()"
             [isRefreshing]="store.isRefreshingAi()"
             (refreshClicked)="onRefreshAiClicked()"
+          />
+        }
+
+        <!-- Sekcja uwag trenera (widoczna tylko gdy są jakiekolwiek uwagi) -->
+        @if (hasAnyNotes()) {
+          <app-coach-notes-accordion
+            [matchNotes]="store.matchNotes()"
+            [sets]="store.sets()"
           />
         }
       </div>

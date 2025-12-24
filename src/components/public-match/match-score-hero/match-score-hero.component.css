@@ -1,0 +1,86 @@
+/* Hero Container */
+.hero-container {
+  @apply bg-gradient-to-br from-surface-50 to-surface-100 rounded-xl p-6 md:p-8 mb-6;
+}
+
+/* Data meczu */
+.match-date {
+  @apply flex items-center justify-center text-sm mb-6;
+}
+
+/* Sekcja wyniku */
+.score-section {
+  @apply w-full;
+}
+
+/* Desktop Layout (grid 3 kolumny) */
+.desktop-layout {
+  grid-template-columns: 1fr auto 1fr;
+  @apply gap-8 items-center;
+}
+
+/* Mobile Layout (flex column) */
+.mobile-layout {
+  @apply flex flex-col items-center gap-6;
+}
+
+/* Informacje o graczu */
+.player-info {
+  @apply flex items-center;
+}
+
+.player-side {
+  @apply justify-end;
+}
+
+.opponent-side {
+  @apply justify-start;
+}
+
+.player-info-mobile {
+  @apply text-center;
+}
+
+/* Nazwy graczy */
+.player-name {
+  @apply text-2xl md:text-3xl font-bold;
+}
+
+/* Kolory graczy */
+.player-color {
+  color: var(--color-player, #f97316);
+}
+
+.opponent-color {
+  color: var(--color-opponent, #3b82f6);
+}
+
+/* Wynik setowy */
+.score-display {
+  @apply flex items-center justify-center gap-4;
+}
+
+.score-display-mobile {
+  @apply flex items-center justify-center gap-6;
+}
+
+.sets-won {
+  @apply text-6xl md:text-7xl font-bold;
+}
+
+.score-separator {
+  @apply text-5xl md:text-6xl font-light text-surface-400;
+}
+
+/* Dark mode support */
+:global(.app-dark) .hero-container {
+  @apply from-surface-800 to-surface-900;
+}
+
+:global(.app-dark) .match-date {
+  @apply text-surface-400;
+}
+
+:global(.app-dark) .score-separator {
+  @apply text-surface-500;
+}

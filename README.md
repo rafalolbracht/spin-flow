@@ -57,7 +57,24 @@ To set up and run the project locally:
 
 4. **Configure Environment Variables:**
    - Create a `.env` file in the root directory.
-   - Add necessary variables for Supabase (e.g., `SUPABASE_URL`, `SUPABASE_ANON_KEY`) and OpenRouter (e.g., `OPENROUTER_API_KEY`). These are required for authentication, database access, and AI integration. Refer to Supabase and OpenRouter documentation for setup.
+   - Add the following variables (required for authentication, database access, AI integration, and public sharing):
+
+     ```
+     # Supabase Configuration
+     SUPABASE_URL=https://your-project.supabase.co
+     SUPABASE_KEY=your-anon-key-here
+     SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+     # OpenRouter API (for AI features)
+     OPENROUTER_API_KEY=your-openrouter-api-key-here
+
+     # Site URL (for public share links)
+     # Development: http://localhost:4300
+     # Production: https://spin-flow.app
+     SITE_URL=http://localhost:4300
+     ```
+
+   - Refer to Supabase and OpenRouter documentation for obtaining API keys.
 
 5. **Run the Development Server:**
    ```

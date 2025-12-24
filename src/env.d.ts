@@ -14,7 +14,9 @@ declare global {
 interface ImportMetaEnv {
   readonly SUPABASE_URL: string;
   readonly SUPABASE_KEY: string;
+  readonly SUPABASE_SERVICE_ROLE_KEY?: string;
   readonly OPENROUTER_API_KEY: string;
+  readonly SITE_URL?: string; // Base URL for public share links (e.g., http://localhost:4321 or https://spin-flow.app)
 }
 
 interface ImportMeta {

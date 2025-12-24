@@ -136,6 +136,16 @@
   background-color: transparent !important;
 }
 
+/* Ukryj całkowicie zawartość zwiniętych paneli aby zapobiec pustemu miejscu */
+:host
+  ::ng-deep
+  .p-accordion-panel:not(.p-accordion-panel-active)
+  .p-accordion-content {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
 /* Przywróć border dla header-content */
 :host ::ng-deep .p-accordion-header-content {
   border-bottom: 1px solid var(--p-surface-200) !important;

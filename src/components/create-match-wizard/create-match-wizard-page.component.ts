@@ -23,7 +23,6 @@ import type {
   CreateMatchResponse,
   SideEnum,
 } from '@/types';
-
 /**
  * Opcja dla dropdownu liczby setów
  */

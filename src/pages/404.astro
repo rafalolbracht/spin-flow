@@ -1,0 +1,8 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { ErrorPageComponent } from "@/components/error-page/error-page.component";
+---
+
+<Layout title="Spin Flow - Strona nie znaleziona">
+  <ErrorPageComponent client:only="angular" errorType="not_found" />
+</Layout>

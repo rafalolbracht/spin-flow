@@ -6,6 +6,10 @@
 
 /* Light mode colors (default) */
 :root {
+  /* Player colors for match views */
+  --color-player: #f97316; /* Orange-500 */
+  --color-opponent: #3b82f6; /* Blue-500 */
+
   /* PrimeNG Primary Colors (Green) */
   --color-primary-50: #f0fdf4;
   --color-primary-100: #dcfce7;
@@ -36,6 +40,10 @@
 
 /* Dark mode colors */
 .dark {
+  /* Player colors for match views (same in dark mode) */
+  --color-player: #fb923c; /* Orange-400 - brighter for dark mode */
+  --color-opponent: #60a5fa; /* Blue-400 - brighter for dark mode */
+
   /* Primary colors remain the same, but adjusted for dark mode visibility */
   --color-primary-50: #052e16;
   --color-primary-100: #14532d;

@@ -9,7 +9,7 @@ import { AppLayoutComponent } from '@/components/shared/app-layout/app-layout.co
 import { SetsHistoryTableComponent } from '@/components/shared/sets-history-table.component';
 
 // Local components
-import { MatchHeaderSectionComponent } from './match-header-section.component';
+import { MatchHeaderSectionComponent } from '@/components/shared/match-header-section.component';
 import { CoachNotesAccordionComponent } from './coach-notes-accordion.component';
 import { AiReportSectionComponent } from './ai-report-section.component';
 import { ButtonModule } from 'primeng/button';

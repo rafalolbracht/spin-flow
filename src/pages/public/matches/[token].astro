@@ -1,0 +1,45 @@
+---
+import { PublicMatchContainerComponent, type PublicMatchContainerComponentProps } from '@/components/public-match/public-match-container.component';
+import "../../../styles/global.css";
+import "../../../theme/theme.ts";
+
+/**
+ * Public Match View - Widok publiczny zakończonego meczu
+ *
+ * Publiczny widok meczu dostępny przez token bez wymagania autentykacji.
+ * Prezentuje zakończony mecz z wynikami, uwagami trenera i raportem AI.
+ *
+ * Route: /public/matches/:token
+ * Access: Publiczny - brak wymagania autentykacji
+ * Token: 43-znakowy ciąg base64url (256 bitów entropii)
+ */
+
+const { token } = Astro.params;
+
+// Upewnienie się, że token istnieje (parametr path jest zawsze string w Astro)
+if (!token) {
+  return Astro.redirect('/');
+}
+
+export const prerender = false;
+
+// Props dla komponentu Angular
+const props: PublicMatchContainerComponentProps = { token };
+---
+
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content="Podgląd zakończonego meczu tenisa stołowego - Spin Flow" />
+    <title>Podgląd meczu - Spin Flow</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.png" />
+  </head>
+  <body class="min-h-screen bg-surface-0 text-surface-900">
+    <PublicMatchContainerComponent client:only="angular" {...props} />
+  </body>
+</html>
+
+

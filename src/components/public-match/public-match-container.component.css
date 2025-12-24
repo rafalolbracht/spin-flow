@@ -1,0 +1,17 @@
+/* Public Match Container Styles */
+
+/* Dostosuj wysokość kontenera aby uniknąć pustego miejsca */
+.public-match-content {
+  min-height: auto !important;
+}
+
+/* Główny kontener zajmuje pełną wysokość */
+.public-match-container {
+  min-height: 100vh !important;
+}
+
+/* Main zajmuje pozostałą dostępną przestrzeń */
+.public-match-main {
+  flex: 1 !important;
+  min-height: auto !important;
+}

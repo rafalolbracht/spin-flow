@@ -43,6 +43,10 @@ export class AppLayoutComponent {
     this.themeService.isDarkMode() ? '/logo-dark.svg' : '/logo.svg',
   );
 
+  readonly darkModeIconClass = computed(() =>
+    this.themeService.isDarkMode() ? 'pi pi-sun text-base text-surface-600' : 'pi pi-moon text-base text-surface-600',
+  );
+
   readonly menuItems = computed<NavMenuItem[]>(() => {
     const custom = this.customMenuItems();
     if (custom && custom.length > 0) {

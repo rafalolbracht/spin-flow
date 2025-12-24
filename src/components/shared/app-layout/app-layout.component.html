@@ -47,7 +47,7 @@
         (click)="toggleDarkMode()"
         [attr.aria-label]="themeService.isDarkMode() ? 'Przełącz na tryb jasny' : 'Przełącz na tryb ciemny'"
       >
-        <i [class]="'pi text-base text-surface-600 ' + (themeService.isDarkMode() ? 'pi-sun' : 'pi-moon')"></i>
+        <i [class]="darkModeIconClass()"></i>
       </a>
 
       <!-- Desktop: User section (ukryte na mobile) -->
@@ -82,7 +82,20 @@
           [model]="userMenuItems()"
           [popup]="true"
           appendTo="body"
-        />
+        >
+          <ng-template pTemplate="item" let-item>
+            <a
+              [attr.href]="item.url"
+              [attr.target]="item.target"
+              class="p-menuitem-link flex align-items-center px-3 py-2 text-color hover:surface-100 hover:text-color cursor-pointer no-underline"
+              [class.text-green-600]="item.label === 'Wyloguj się'"
+              (click)="item.command ? item.command($event) : null"
+            >
+              <span *ngIf="item.icon" class="p-menuitem-icon pi mr-2" [class]="item.icon"></span>
+              <span class="p-menuitem-text" [class.text-green-600]="item.label === 'Wyloguj się'">{{ item.label }}</span>
+            </a>
+          </ng-template>
+        </p-menu>
       </div>
 
       <!-- Mobile: Hamburger button + dropdown -->
