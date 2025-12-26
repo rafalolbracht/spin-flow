@@ -16,33 +16,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-match-header-section',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="match-header-card">
-      <!-- Wynik setowy i zawodnicy -->
-      <div class="score-display">
-        <!-- Kolumna zawodnika -->
-        <div class="player-column">
-          <div class="player-name">{{ playerName() }}</div>
-          <div class="score-row">
-            <div class="sets-won-badge player-badge">{{ setsWonPlayer() }}</div>
-          </div>
-        </div>
-
-        <!-- Kolumna rywala -->
-        <div class="opponent-column">
-          <div class="opponent-name">{{ opponentName() }}</div>
-          <div class="score-row">
-            <div class="sets-won-badge opponent-badge">{{ setsWonOpponent() }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Data i godzina -->
-      <div class="match-date">
-        {{ formattedStartDate() }}
-      </div>
-    </div>
-  `,
+  templateUrl: './match-header-section.component.html',
   styleUrl: './match-header-section.component.css',
 })
 export class MatchHeaderSectionComponent {

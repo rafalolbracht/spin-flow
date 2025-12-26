@@ -1,0 +1,50 @@
+    <div class="hero-container">
+      <!-- Data i godzina startu -->
+      <div class="match-date">
+        <i class="pi pi-calendar text-surface-500 mr-2"></i>
+        <span class="text-surface-600">{{ formattedStartDate() }}</span>
+      </div>
+
+      <!-- Główna sekcja wyniku -->
+      <div class="score-section">
+        <!-- Desktop layout -->
+        <div class="desktop-layout hidden md:grid">
+          <!-- Nazwa zawodnika (lewa strona) -->
+          <div class="player-info player-side">
+            <span class="player-name player-color">{{ playerName() }}</span>
+          </div>
+
+          <!-- Wynik setowy (centrum) -->
+          <div class="score-display">
+            <span class="sets-won player-color">{{ setsWonPlayer() }}</span>
+            <span class="score-separator">:</span>
+            <span class="sets-won opponent-color">{{ setsWonOpponent() }}</span>
+          </div>
+
+          <!-- Nazwa rywala (prawa strona) -->
+          <div class="player-info opponent-side">
+            <span class="player-name opponent-color">{{ opponentName() }}</span>
+          </div>
+        </div>
+
+        <!-- Mobile layout -->
+        <div class="mobile-layout md:hidden">
+          <!-- Nazwa zawodnika (góra) -->
+          <div class="player-info-mobile">
+            <span class="player-name player-color">{{ playerName() }}</span>
+          </div>
+
+          <!-- Wynik setowy (centrum) -->
+          <div class="score-display-mobile">
+            <span class="sets-won player-color">{{ setsWonPlayer() }}</span>
+            <span class="score-separator">:</span>
+            <span class="sets-won opponent-color">{{ setsWonOpponent() }}</span>
+          </div>
+
+          <!-- Nazwa rywala (dół) -->
+          <div class="player-info-mobile">
+            <span class="player-name opponent-color">{{ opponentName() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>

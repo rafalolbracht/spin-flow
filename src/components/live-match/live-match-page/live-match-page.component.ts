@@ -7,18 +7,18 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Shared components
 import { AppLayoutComponent } from '@/components/shared/app-layout/app-layout.component';
-import { SetsHistoryTableComponent } from '@/components/shared/sets-history-table.component';
+import { SetsHistoryTableComponent } from '@/components/shared/sets-history-table/sets-history-table.component';
 
 // Local components
-import { ScoreDisplayCardComponent } from './components/score-display-card.component';
-import { TagSelectionPanelComponent } from './components/tag-selection-panel.component';
-import { PointScoringButtonsComponent } from './components/point-scoring-buttons.component';
-import { MatchControlActionsComponent } from './components/match-control-actions.component';
-import { FinishSetDialogComponent } from './components/finish-set-dialog.component';
-import { FinishMatchDialogComponent } from './components/finish-match-dialog.component';
+import { ScoreDisplayCardComponent } from '../score-display-card/score-display-card.component';
+import { TagSelectionPanelComponent } from '../tag-selection-panel/tag-selection-panel.component';
+import { PointScoringButtonsComponent } from '../point-scoring-buttons/point-scoring-buttons.component';
+import { MatchControlActionsComponent } from '../match-control-actions/match-control-actions.component';
+import { FinishSetDialogComponent } from '../finish-set-dialog/finish-set-dialog.component';
+import { FinishMatchDialogComponent } from '../finish-match-dialog/finish-match-dialog.component';
 
 // Services
-import { LiveMatchStoreService } from './services/live-match-store.service';
+import { LiveMatchStoreService } from '../services/live-match-store.service';
 import { ThemeService } from '@/lib/services/theme.service';
 import { PrimeNGThemeInitService } from '@/lib/config/primeng-theme-init.service';
 

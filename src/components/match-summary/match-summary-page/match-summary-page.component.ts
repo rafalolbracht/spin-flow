@@ -6,19 +6,19 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Shared components
 import { AppLayoutComponent } from '@/components/shared/app-layout/app-layout.component';
-import { SetsHistoryTableComponent } from '@/components/shared/sets-history-table.component';
+import { SetsHistoryTableComponent } from '@/components/shared/sets-history-table/sets-history-table.component';
 
 // Local components
-import { MatchHeaderSectionComponent } from '@/components/shared/match-header-section.component';
-import { CoachNotesAccordionComponent } from './coach-notes-accordion.component';
-import { AiReportSectionComponent } from './ai-report-section.component';
+import { MatchHeaderSectionComponent } from '@/components/shared/match-header-section/match-header-section.component';
+import { CoachNotesAccordionComponent } from '../coach-notes-accordion/coach-notes-accordion.component';
+import { AiReportSectionComponent } from '../ai-report-section/ai-report-section.component';
 import { ButtonModule } from 'primeng/button';
 
 // Dialogs
-import { ShareDialogComponent } from './dialogs/share-dialog.component';
+import { ShareDialogComponent } from '../dialogs/share-dialog.component';
 
 // Services
-import { MatchSummaryStateService } from './services/match-summary-state.service';
+import { MatchSummaryStateService } from '../services/match-summary-state.service';
 import { ThemeService } from '@/lib/services/theme.service';
 import { PrimeNGThemeInitService } from '@/lib/config/primeng-theme-init.service';
 

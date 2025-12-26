@@ -22,7 +22,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Shared Components
 import { AppLayoutComponent } from '@/components/shared/app-layout/app-layout.component';
-import { EditMatchDialogComponent } from './dialogs/edit-match-dialog.component';
+import { EditMatchDialogComponent } from '../dialogs/edit-match-dialog/edit-match-dialog.component';
 
 // Types
 import type {
@@ -35,12 +35,12 @@ import type {
 import type {
   MatchListFilters,
   MatchListPagination,
-} from '../match-list.types';
+} from './match-list.types';
 import {
   DEFAULT_MATCH_LIST_FILTERS,
   DEFAULT_MATCH_LIST_PAGINATION,
   ROWS_PER_PAGE_OPTIONS,
-} from '../match-list.types';
+} from './match-list.types';
 
 /**
  * Komponent strony listy meczów

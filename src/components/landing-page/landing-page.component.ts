@@ -1,9 +1,9 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
-import { PrimeNGThemeInitService } from '../../../lib/config/primeng-theme-init.service';
-import type { HeroConfig, FeatureCardData } from '../types';
-import { ThemeService } from '../../../lib/services/theme.service';
+import { PrimeNGThemeInitService } from '../../lib/config/primeng-theme-init.service';
+import type { HeroConfig, FeatureCardData } from './landing-page.types';
+import { ThemeService } from '../../lib/services/theme.service';
 
 @Component({
   selector: 'app-landing-page',
@@ -30,7 +30,7 @@ export class LandingPageComponent {
     subheadline: 'Rejestruj każdy punkt w czasie rzeczywistym i otrzymuj inteligentne analizy oraz zalecenia treningowe wygenerowane przez AI.',
     ctaLabel: 'Zaloguj i zacznij',
     miniFeatures: [],
-    appScreenshotUrl: '/app-screenshot.svg',
+    appScreenshotUrl: '/app-screenshot2.png',
     appScreenshotAlt: 'Zrzut ekranu aplikacji Spin Flow pokazujący interfejs rejestracji meczu',
   });
 

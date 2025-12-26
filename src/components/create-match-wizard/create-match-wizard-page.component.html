@@ -20,12 +20,12 @@
       <p-step-list>
         <p-step [value]="1" class="flex flex-row flex-auto gap-2">
           <ng-template #content let-activateCallback="activateCallback" let-value="value">
-            <button 
+            <button
               class="bg-transparent border-0 inline-flex flex-col items-center gap-2 cursor-pointer p-2"
               (click)="activateCallback()"
               [attr.aria-label]="'Krok 1: Zawodnicy'"
             >
-              <span 
+              <span
                 class="rounded-full border-2 w-12 h-12 inline-flex items-center justify-center transition-all duration-200"
                 [class.bg-primary]="value <= activeStep()"
                 [class.text-primary-contrast]="value <= activeStep()"
@@ -35,7 +35,7 @@
               >
                 <i class="pi pi-users text-lg"></i>
               </span>
-              <span 
+              <span
                 class="text-sm font-medium transition-colors"
                 [class.text-surface-900]="value <= activeStep()"
                 [class.text-surface-500]="value > activeStep()"
@@ -46,12 +46,12 @@
 
         <p-step [value]="2" class="flex flex-row flex-auto gap-2">
           <ng-template #content let-activateCallback="activateCallback" let-value="value">
-            <button 
+            <button
               class="bg-transparent border-0 inline-flex flex-col items-center gap-2 cursor-pointer p-2"
               (click)="activateCallback()"
               [attr.aria-label]="'Krok 2: Serwujący'"
             >
-              <span 
+              <span
                 class="rounded-full border-2 w-12 h-12 inline-flex items-center justify-center transition-all duration-200"
                 [class.bg-primary]="value <= activeStep()"
                 [class.text-primary-contrast]="value <= activeStep()"
@@ -61,7 +61,7 @@
               >
                 <i class="pi pi-flag text-lg"></i>
               </span>
-              <span 
+              <span
                 class="text-sm font-medium transition-colors"
                 [class.text-surface-900]="value <= activeStep()"
                 [class.text-surface-500]="value > activeStep()"
@@ -72,12 +72,12 @@
 
         <p-step [value]="3" class="flex flex-row flex-auto gap-2">
           <ng-template #content let-activateCallback="activateCallback" let-value="value">
-            <button 
+            <button
               class="bg-transparent border-0 inline-flex flex-col items-center gap-2 cursor-pointer p-2"
               (click)="activateCallback()"
               [attr.aria-label]="'Krok 3: Opcje'"
             >
-              <span 
+              <span
                 class="rounded-full border-2 w-12 h-12 inline-flex items-center justify-center transition-all duration-200"
                 [class.bg-primary]="value <= activeStep()"
                 [class.text-primary-contrast]="value <= activeStep()"
@@ -87,7 +87,7 @@
               >
                 <i class="pi pi-cog text-lg"></i>
               </span>
-              <span 
+              <span
                 class="text-sm font-medium transition-colors"
                 [class.text-surface-900]="value <= activeStep()"
                 [class.text-surface-500]="value > activeStep()"
@@ -269,7 +269,7 @@
                     <div class="flex items-center justify-between gap-4">
                       <div class="flex flex-col gap-0.5">
                         <label for="golden_set" class="font-medium text-surface-900">Złoty set</label>
-                        <span class="text-xs text-surface-500">Dodatkowy set przy remisie</span>
+                        <span class="text-xs text-surface-500">Ostatni set rozgrywa się do 6 wygranych punktów</span>
                       </div>
                       <p-toggleswitch
                         inputId="golden_set"
