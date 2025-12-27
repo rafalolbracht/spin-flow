@@ -3,8 +3,6 @@
  * Klient HTTP dla komunikacji z API OpenRouter
  */
 
-import axios from 'axios';
-import type { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import type {
   OpenRouterConfig,
   OpenRouterCompletionRequest,
@@ -36,11 +34,42 @@ interface HttpMetrics {
 }
 
 /**
+ * Custom error types for fetch-based HTTP client
+ */
+class FetchError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public statusText: string,
+    public response?: Response,
+    public data?: unknown,
+  ) {
+    super(message);
+    this.name = 'FetchError';
+  }
+}
+
+/**
+ * HTTP response wrapper for fetch API
+ */
+interface FetchResponse<T = unknown> {
+  data: T;
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  config: {
+    url: string;
+    method: string;
+    timeout: number;
+    headers: Record<string, string>;
+  };
+}
+
+/**
  * HTTP Client for OpenRouter API
  * Zarządza połączeniami HTTP z pełną obsługą błędów i retry logic
  */
 export class HttpClient {
-  private client!: AxiosInstance;
   private config: OpenRouterConfig;
   private logger: Logger;
   private metrics: HttpMetrics;
@@ -58,102 +87,176 @@ export class HttpClient {
       totalResponseTime: 0,
       averageResponseTime: 0,
     };
-
-    this.initializeClient();
-    this.setupInterceptors();
   }
 
   /**
-   * Inicjalizuje klienta axios z podstawową konfiguracją
+   * Wykonuje żądanie HTTP używając fetch
    */
-  private initializeClient(): void {
-    this.client = axios.create({
-      baseURL: this.config.baseUrl,
-      timeout: this.config.timeout.completion,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.apiKey}`,
-        'HTTP-Referer': 'https://spin-flow.vercel.app', // Dla OpenRouter analytics
-        'X-Title': 'Spin Flow - Table Tennis AI Coach', // Dla OpenRouter analytics
-      },
+  private async makeRequest<T>(
+    method: string,
+    endpoint: string,
+    data?: unknown,
+    timeout?: number,
+  ): Promise<FetchResponse<T>> {
+    const url = `${this.config.baseUrl}${endpoint}`;
+    const requestTimeout = timeout || this.config.timeout.completion;
+
+    this.metrics.requestCount++;
+    this.metrics.lastRequestTime = Date.now();
+
+    // Prepare headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.config.apiKey}`,
+      'HTTP-Referer': 'https://spin-flow.vercel.app', // Dla OpenRouter analytics
+      'X-Title': 'Spin Flow - Table Tennis AI Coach', // Dla OpenRouter analytics
+    };
+
+    this.logger.debug('Outgoing request', {
+      url,
+      method,
+      timeout: requestTimeout,
+      sanitizedHeaders: sanitizeForLogging(headers),
     });
-  }
 
-  /**
-   * Konfiguruje interceptory dla request/response logging
-   */
-  private setupInterceptors(): void {
-    // Request interceptor - logging wychodzących żądań
-    this.client.interceptors.request.use(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (config: any) => {
-        this.metrics.requestCount++;
-        this.metrics.lastRequestTime = Date.now();
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeout);
 
-        this.logger.debug('Outgoing request', {
-          url: config.url,
-          method: config.method,
-          timeout: config.timeout,
-          sanitizedHeaders: sanitizeForLogging(config.headers),
-        });
+    try {
+      const requestOptions: RequestInit = {
+        method,
+        headers,
+        signal: controller.signal,
+      };
 
-        return config;
-      },
-      (error: AxiosError) => {
-        this.logger.error('Request interceptor error', {
-          error: error.message,
-          stack: error.stack,
-        });
-        return Promise.reject(error);
-      },
-    );
+      if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        requestOptions.body = JSON.stringify(data);
+      }
 
-    // Response interceptor - logging odpowiedzi i metryk
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        const responseTime = Date.now() - (this.metrics.lastRequestTime || 0);
-        this.metrics.successCount++;
-        this.metrics.totalResponseTime += responseTime;
-        this.metrics.averageResponseTime = this.metrics.totalResponseTime / this.metrics.requestCount;
+      const response = await fetch(url, requestOptions);
+      clearTimeout(timeoutId);
 
-        this.logger.debug('Response received', {
-          status: response.status,
-          responseTime,
-          usage: response.data?.usage,
-          model: response.data?.model,
-        });
+      const responseTime = Date.now() - (this.metrics.lastRequestTime || 0);
+      const responseHeaders: Record<string, string> = {};
 
-        return response;
-      },
-      (error: AxiosError) => {
-        const responseTime = Date.now() - (this.metrics.lastRequestTime || 0);
-        this.metrics.errorCount++;
-        this.metrics.totalResponseTime += responseTime;
-        this.metrics.averageResponseTime = this.metrics.totalResponseTime / this.metrics.requestCount;
+      // Convert Headers to plain object
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
 
-        // Mapuj błąd na OpenRouterError
+      let responseData: T;
+
+      if (!response.ok) {
+        // Try to parse error response
+        try {
+          responseData = await response.json() as T;
+        } catch {
+          responseData = {} as T;
+        }
+
+        throw new FetchError(
+          `HTTP ${response.status}: ${response.statusText}`,
+          response.status,
+          response.statusText,
+          response,
+          responseData,
+        );
+      }
+
+      // Parse successful response
+      try {
+        responseData = await response.json() as T;
+      } catch {
+        responseData = {} as T;
+      }
+
+      // Update success metrics
+      this.metrics.successCount++;
+      this.metrics.totalResponseTime += responseTime;
+      this.metrics.averageResponseTime = this.metrics.totalResponseTime / this.metrics.requestCount;
+
+      this.logger.debug('Response received', {
+        status: response.status,
+        responseTime,
+        usage: (responseData as Record<string, unknown>)?.usage,
+        model: (responseData as Record<string, unknown>)?.model,
+      });
+
+      return {
+        data: responseData,
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+        config: {
+          url,
+          method,
+          timeout: requestTimeout,
+          headers,
+        },
+      };
+
+    } catch (error) {
+      clearTimeout(timeoutId);
+      const responseTime = Date.now() - (this.metrics.lastRequestTime || 0);
+      this.metrics.errorCount++;
+      this.metrics.totalResponseTime += responseTime;
+      this.metrics.averageResponseTime = this.metrics.totalResponseTime / this.metrics.requestCount;
+
+      // Handle different types of errors
+      if (error instanceof FetchError) {
         const openRouterError = mapApiError(error);
 
         this.logger.error('Response error', {
-          statusCode: error.response?.status,
+          statusCode: error.status,
           responseTime,
           errorCode: openRouterError.code,
           errorMessage: openRouterError.message,
           retryable: openRouterError.retryable,
-          sanitizedResponse: sanitizeForLogging(error.response?.data),
+          sanitizedResponse: sanitizeForLogging(error.data),
         });
 
-        return Promise.reject(openRouterError);
-      },
-    );
+        throw openRouterError;
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new FetchError(
+          `Request timeout after ${requestTimeout}ms`,
+          408,
+          'Request Timeout',
+        );
+        const openRouterError = mapApiError(timeoutError);
+
+        this.logger.error('Request timeout', {
+          timeout: requestTimeout,
+          errorMessage: openRouterError.message,
+        });
+
+        throw openRouterError;
+      }
+
+      // Generic error
+      const genericError = new FetchError(
+        error instanceof Error ? error.message : 'Unknown error',
+        0,
+        'Unknown Error',
+      );
+      const openRouterError = mapApiError(genericError);
+
+      this.logger.error('Request error', {
+        errorMessage: openRouterError.message,
+      });
+
+      throw openRouterError;
+    }
   }
 
   /**
    * Wykonuje żądanie do API z retry logic
    */
   async executeWithRetry<T>(
-    requestFn: () => Promise<AxiosResponse<T>>,
-  ): Promise<AxiosResponse<T>> {
+    requestFn: () => Promise<FetchResponse<T>>,
+  ): Promise<FetchResponse<T>> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.config.retry.maxAttempts; attempt++) {
@@ -191,12 +294,15 @@ export class HttpClient {
     request: OpenRouterCompletionRequest,
   ): Promise<OpenRouterCompletionResponse> {
     const response = await this.executeWithRetry(() =>
-      this.client.post<OpenRouterCompletionResponse>('/chat/completions', request, {
-        timeout: request.stream ? this.config.timeout.streaming : this.config.timeout.completion,
-      }),
+      this.makeRequest<OpenRouterCompletionResponse>(
+        'POST',
+        '/chat/completions',
+        request,
+        request.stream ? this.config.timeout.streaming : this.config.timeout.completion,
+      ),
     );
 
-    return response.data as OpenRouterCompletionResponse;
+    return response.data;
   }
 
   /**
@@ -204,10 +310,10 @@ export class HttpClient {
    */
   async getModels(): Promise<Record<string, unknown>> {
     const response = await this.executeWithRetry(() =>
-      this.client.get('/models'),
+      this.makeRequest<Record<string, unknown>>('GET', '/models'),
     );
 
-    return response.data as Record<string, unknown>;
+    return response.data;
   }
 
   /**
@@ -216,10 +322,10 @@ export class HttpClient {
   async getUsage(): Promise<Record<string, unknown> | null> {
     try {
       const response = await this.executeWithRetry(() =>
-        this.client.get('/auth/key'),
+        this.makeRequest<Record<string, unknown>>('GET', '/auth/key'),
       );
 
-      return response.data as Record<string, unknown>;
+      return response.data;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
       this.logger.warn('Could not fetch usage information', { error: errorObj.message });
@@ -232,7 +338,7 @@ export class HttpClient {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      await this.client.get('/models', { timeout: 5000 });
+      await this.makeRequest('GET', '/models', undefined, 5000);
       return true;
     } catch (error) {
       const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -273,16 +379,6 @@ export class HttpClient {
    */
   updateConfig(newConfig: Partial<OpenRouterConfig>): void {
     this.config = { ...this.config, ...newConfig };
-
-    // Aktualizuj headers jeśli zmienił się API key
-    if (newConfig.apiKey) {
-      this.client.defaults.headers.common['Authorization'] = `Bearer ${newConfig.apiKey}`;
-    }
-
-    // Aktualizuj baseURL jeśli się zmienił
-    if (newConfig.baseUrl) {
-      this.client.defaults.baseURL = newConfig.baseUrl;
-    }
 
     this.logger.info('HTTP client configuration updated', {
       hasNewApiKey: !!newConfig.apiKey,

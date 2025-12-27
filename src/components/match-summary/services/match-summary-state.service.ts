@@ -200,19 +200,22 @@ export class MatchSummaryStateService {
 
   /**
    * Odświeża raport AI
+   * @param silent - czy pominąć powiadomienia użytkownikowi (domyślnie false)
    */
-  async refreshAiReport(): Promise<void> {
+  async refreshAiReport(silent = false): Promise<void> {
     const matchId = this._matchId();
     if (!matchId) return;
 
     // Zapobiegaj wielokrotnym równoległym wywołaniom
     if (this._isRefreshingAi()) {
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Odświeżanie w toku',
-        detail: 'Poczekaj na zakończenie aktualnego odświeżania',
-        life: 2000,
-      });
+      if (!silent) {
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Odświeżanie w toku',
+          detail: 'Poczekaj na zakończenie aktualnego odświeżania',
+          life: 2000,
+        });
+      }
       return;
     }
 
@@ -222,19 +225,23 @@ export class MatchSummaryStateService {
       const response = await firstValueFrom(this.api.refreshAiReport(matchId));
       this._aiReport.set(response.data);
 
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Odświeżono',
-        detail: 'Raport AI został zaktualizowany',
-        life: 3000,
-      });
+      if (!silent) {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Odświeżono',
+          detail: 'Raport AI został zaktualizowany',
+          life: 3000,
+        });
+      }
     } catch {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Błąd',
-        detail: 'Nie udało się odświeżyć raportu AI',
-        life: 3000,
-      });
+      if (!silent) {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Błąd',
+          detail: 'Nie udało się odświeżyć raportu AI',
+          life: 3000,
+        });
+      }
     } finally {
       this._isRefreshingAi.set(false);
     }

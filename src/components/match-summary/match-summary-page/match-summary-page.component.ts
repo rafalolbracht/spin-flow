@@ -106,7 +106,7 @@ export class MatchSummaryPageComponent implements OnInit, OnDestroy {
     }
 
     // Sprawdź uwagi do setów
-    return this.store.sets().some(set => 
+    return this.store.sets().some(set =>
       set.coach_notes && set.coach_notes.trim() !== '',
     );
   }
@@ -120,6 +120,13 @@ export class MatchSummaryPageComponent implements OnInit, OnDestroy {
    */
   onRefreshAiClicked(): void {
     this.store.refreshAiReport();
+  }
+
+  /**
+   * Obsługa automatycznego odświeżenia raportu AI (bez powiadomień)
+   */
+  onAutoRefreshAiClicked(): void {
+    this.store.refreshAiReport(true);
   }
 
   /**

@@ -16,18 +16,11 @@ export default defineConfig({
     plugins: [tailwindcss()],
     build: {
       rollupOptions: {
-        external: ["axios"],
+        // No external dependencies needed - using native fetch for Cloudflare Workers compatibility
       },
     },
   },
-  adapter: cloudflare({
-    runtime: {
-      mode: "local",
-    },
-    platformProxy: {
-      enabled: true,
-    },
-  }),
+  adapter: cloudflare(),
   devToolbar: {
     enabled: false,
   },

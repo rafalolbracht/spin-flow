@@ -17,7 +17,7 @@
               [loading]="isRefreshing()"
               [disabled]="isRefreshing()"
               (onClick)="refreshClicked.emit()"
-              [pTooltip]="aiReportState() === 'error' ? 'Spróbuj ponownie' : 'Sprawdź status'"
+              [pTooltip]="aiReportState() === 'error' ? 'Spróbuj ponownie' : 'Odśwież'"
               tooltipPosition="left"
             />
           }

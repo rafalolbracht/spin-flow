@@ -89,12 +89,12 @@ export class LiveMatchStoreService {
     if (!current || current.is_finished) {
       return this.setsWonPlayer();
     }
-    
+
     // Jeśli bieżący set nie jest remisowy, oblicz przewidywany wynik
     if (current.set_score_player > current.set_score_opponent) {
       return this.setsWonPlayer() + 1;
     }
-    
+
     return this.setsWonPlayer();
   });
 
@@ -107,12 +107,12 @@ export class LiveMatchStoreService {
     if (!current || current.is_finished) {
       return this.setsWonOpponent();
     }
-    
+
     // Jeśli bieżący set nie jest remisowy, oblicz przewidywany wynik
     if (current.set_score_opponent > current.set_score_player) {
       return this.setsWonOpponent() + 1;
     }
-    
+
     return this.setsWonOpponent();
   });
 
@@ -159,7 +159,7 @@ export class LiveMatchStoreService {
   toggleTag(tagId: number): void {
     const current = this._selectedTagIds();
     const index = current.indexOf(tagId);
-    
+
     if (index === -1) {
       // Dodaj tag
       this._selectedTagIds.set([...current, tagId]);
@@ -213,10 +213,10 @@ export class LiveMatchStoreService {
             can_finish_set: result.set_state.can_finish_set,
             can_finish_match: result.set_state.can_finish_match,
           };
-          
+
           // Aktualizuj tablicę sets - zastąp bieżący set nowym obiektem z aktualnymi danymi
-          const updatedSets = matchData.sets?.map(s => 
-            s.id === current.id 
+          const updatedSets = matchData.sets?.map(s =>
+            s.id === current.id
               ? {
                   ...s,
                   set_score_player: result.set_state.set_score_player,
@@ -225,7 +225,7 @@ export class LiveMatchStoreService {
                 }
               : s,
           ) ?? [];
-          
+
           // Ustaw nowy obiekt matchData z nowymi referencjami
           this._matchData.set({
             ...matchData,
@@ -233,7 +233,7 @@ export class LiveMatchStoreService {
             sets: updatedSets,
           });
         }
-        
+
         // Wyczyść zaznaczone tagi
         this.clearSelectedTags();
         this._isLoading.set(false);
@@ -270,10 +270,10 @@ export class LiveMatchStoreService {
             can_finish_set: result.set_state.can_finish_set,
             can_finish_match: result.set_state.can_finish_match,
           };
-          
+
           // Aktualizuj tablicę sets - zastąp bieżący set nowym obiektem z aktualnymi danymi
-          const updatedSets = matchData.sets?.map(s => 
-            s.id === current.id 
+          const updatedSets = matchData.sets?.map(s =>
+            s.id === current.id
               ? {
                   ...s,
                   set_score_player: result.set_state.set_score_player,
@@ -282,7 +282,7 @@ export class LiveMatchStoreService {
                 }
               : s,
           ) ?? [];
-          
+
           // Ustaw nowy obiekt matchData z nowymi referencjami
           this._matchData.set({
             ...matchData,
@@ -290,7 +290,7 @@ export class LiveMatchStoreService {
             sets: updatedSets,
           });
         }
-        
+
         this._isLoading.set(false);
       },
       error: (err) => {
@@ -336,7 +336,7 @@ export class LiveMatchStoreService {
           if (!matchData.sets) {
             matchData.sets = [];
           }
-          
+
           const finishedSetDetail: SetDetailDto = {
             id: result.finished_set.id,
             match_id: matchData.id,
@@ -350,28 +350,28 @@ export class LiveMatchStoreService {
             created_at: new Date().toISOString(),
             finished_at: result.finished_set.finished_at,
           };
-          
+
           // Usuń lub zaktualizuj istniejący set o tym samym ID (jeśli był w tablicy jako niezakończony)
           // i dodaj zakończony set
           const updatedSets = matchData.sets
             .filter(s => s.id !== current.id)
             .concat(finishedSetDetail);
-          
+
           matchData.sets = updatedSets;
-          
+
           // Zaktualizuj wynik setowy
           if (result.finished_set.winner === 'player') {
             matchData.sets_won_player++;
           } else {
             matchData.sets_won_opponent++;
           }
-          
+
           // Ustaw nowy current_set
           matchData.current_set = result.next_set;
-          
+
           this._matchData.set({ ...matchData });
         }
-        
+
         this.closeFinishSetDialog();
         this._isLoading.set(false);
       },
@@ -399,7 +399,7 @@ export class LiveMatchStoreService {
   /**
    * Kończy mecz z uwagami trenera
    * Po sukcesie wywołuje callback dla nawigacji (z komponentu głównego)
-   * 
+   *
    * Backend automatycznie zamyka bieżący set przed zakończeniem meczu.
    */
   finishMatch(coachNotes: string | null, onSuccess: (matchId: number) => void): void {

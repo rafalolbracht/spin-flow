@@ -117,29 +117,38 @@ export class CircuitBreaker {
 
 /**
  * Mapuje błędy API OpenRouter na specyficzne błędy aplikacji
- * @param error - błąd z axios lub innego klienta HTTP
+ * @param error - błąd z fetch lub innego klienta HTTP
  * @returns OpenRouterError z odpowiednim kodem i komunikatem
  */
 export function mapApiError(error: unknown): OpenRouterError {
-  // Type guard to check if error has axios-like structure
-  const isAxiosError = (err: unknown): err is {
-    response?: { status?: number; data?: unknown };
+  // Type guard to check if error has fetch-like structure
+  const isFetchError = (err: unknown): err is {
+    status?: number;
+    statusText?: string;
+    data?: unknown;
     message?: string;
     stack?: string;
-    code?: string;
+    name?: string;
   } => {
-    return typeof err === 'object' && err !== null;
+    return typeof err === 'object' && err !== null && 'status' in err;
   };
 
-  const statusCode = isAxiosError(error) ? error.response?.status : undefined;
-  const responseData = isAxiosError(error) ? error.response?.data : undefined;
+  // Only handle fetch errors now
+  let statusCode: number | undefined;
+  let responseData: unknown;
+
+  if (isFetchError(error)) {
+    statusCode = error.status;
+    responseData = error.data;
+  }
 
   // Type guard for response data with error structure
   const hasErrorMessage = (data: unknown): data is { error?: { message?: string } } => {
     return typeof data === 'object' && data !== null && 'error' in data;
   };
-  const errorMessage = isAxiosError(error) && error.message ? error.message : 'Unknown error';
-  const stack = isAxiosError(error) && error.stack ? error.stack : undefined;
+
+  const errorMessage = isFetchError(error) && error.message ? error.message : 'Unknown error';
+  const stack = isFetchError(error) && error.stack ? error.stack : undefined;
 
   // Logowanie błędu dla diagnostyki
   defaultLogger.error('API Error mapping', {
@@ -189,7 +198,7 @@ export function mapApiError(error: unknown): OpenRouterError {
 
     default:
       // Błędy sieciowe i inne
-      if (isAxiosError(error) && (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT')) {
+      if (isFetchError(error) && (error.name === 'AbortError' || error.status === 408)) {
         return new OpenRouterError(
           OpenRouterErrorCode.NETWORK_ERROR,
           'Network connection failed',
