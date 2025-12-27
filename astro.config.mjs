@@ -14,8 +14,20 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        external: ["axios"],
+      },
+    },
   },
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    runtime: {
+      mode: "local",
+    },
+    platformProxy: {
+      enabled: true,
+    },
+  }),
   devToolbar: {
     enabled: false,
   },

@@ -9,6 +9,8 @@ import type {
 } from "../../types";
 import { DatabaseError } from "../utils/api-errors";
 import { logError } from "../utils/logger";
+import { OpenRouterService, createOpenRouterConfig } from "./openrouter";
+import type { MatchAnalysisRequest } from "./openrouter";
 
 /**
  * Create a new AI report record for a match
@@ -59,15 +61,21 @@ export async function generateAiReport(
       throw new Error(`Match ${matchId} not found`);
     }
 
-    // TODO: Call OpenRouter API to generate AI report
-    // For now, this is a placeholder that simulates AI generation
-    const aiReport = await generateAIReportPlaceholder(matchData);
+    // Initialize OpenRouter service
+    const openRouterConfig = createOpenRouterConfig();
+    const openRouterService = new OpenRouterService(openRouterConfig);
 
-    // Update with success
+    // Convert match data to OpenRouter format
+    const analysisRequest = convertMatchDataToAnalysisRequest(matchData);
+
+    // Generate AI analysis using OpenRouter
+    const analysisResponse = await openRouterService.analyzeMatch(analysisRequest);
+
+    // Update with success - używamy nowego formatu odpowiedzi
     const successUpdate: MatchAiReportUpdate = {
       ai_status: "success",
-      ai_summary: aiReport.summary,
-      ai_recommendations: aiReport.recommendations,
+      ai_summary: analysisResponse.opisMeczu,           // Sekcja "Opis meczu"
+      ai_recommendations: analysisResponse.zaleceniaTreningowe, // Sekcja "Zalecenia treningowe"
       ai_generated_at: new Date().toISOString(),
     };
 
@@ -235,29 +243,27 @@ async function getMatchDataForAI(
 }
 
 /**
- * Placeholder AI report generation
- * TODO: Replace with actual OpenRouter API call
+ * Konwertuje dane meczu z Supabase na format MatchAnalysisRequest dla OpenRouter
  */
-async function generateAIReportPlaceholder(matchData: { match: Match; sets: SetDetailDto[] }): Promise<{
-  summary: string;
-  recommendations: string;
-}> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 100));
-
+function convertMatchDataToAnalysisRequest(matchData: { match: Match; sets: SetDetailDto[] }): MatchAnalysisRequest {
   const { match, sets } = matchData;
-  const totalPoints = sets.reduce((sum, set) => sum + (set.points?.length || 0), 0);
-  const playerWins = sets.filter(set => set.winner === 'player').length;
-  const opponentWins = sets.filter(set => set.winner === 'opponent').length;
 
-  const summary = `Match between ${match.player_name} and ${match.opponent_name}. ` +
-    `Final score: ${playerWins}-${opponentWins}. ` +
-    `Total points played: ${totalPoints}. ` +
-    `Match duration: ${sets.length} sets.`;
-
-  const recommendations = `Focus on improving serve consistency. ` +
-    `Work on transition game from defense to attack. ` +
-    `Practice point construction with proper placement.`;
-
-  return { summary, recommendations };
+  return {
+    matchId: match.id,
+    playerName: match.player_name,
+    opponentName: match.opponent_name,
+    coachNotes: match.coach_notes || undefined,
+    sets: sets.map((set) => ({
+      sequenceInMatch: set.sequence_in_match,
+      scorePlayer: set.set_score_player,
+      scoreOpponent: set.set_score_opponent,
+      isGolden: set.is_golden,
+      coachNotes: set.coach_notes || undefined,
+      points: set.points?.map(point => ({
+        sequenceInSet: point.sequence_in_set,
+        scoredBy: point.scored_by === 'player' ? 'player' : 'opponent',
+        tags: point.tags,
+      })) || [],
+    })),
+  };
 }

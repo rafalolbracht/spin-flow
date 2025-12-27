@@ -205,6 +205,17 @@ export class MatchSummaryStateService {
     const matchId = this._matchId();
     if (!matchId) return;
 
+    // Zapobiegaj wielokrotnym równoległym wywołaniom
+    if (this._isRefreshingAi()) {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Odświeżanie w toku',
+        detail: 'Poczekaj na zakończenie aktualnego odświeżania',
+        life: 2000,
+      });
+      return;
+    }
+
     this._isRefreshingAi.set(true);
 
     try {
