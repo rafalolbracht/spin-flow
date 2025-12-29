@@ -6,7 +6,7 @@
 
 export const prerender = false;
 
-import { supabaseClient } from "../../../db/supabase.client";
+import { createSupabaseServiceClient } from "../../../db/supabase.client";
 import { parseRequestBody } from "../../../lib/utils/zod-helpers";
 import { createAnalyticsEventCommandSchema } from "../../../lib/schemas/analytics.schemas";
 import { createAnalyticsEvent } from "../../../lib/services/analytics.service";
@@ -20,8 +20,8 @@ import { DatabaseError } from "../../../lib/utils/api-errors";
 import type { APIContext } from "astro";
 
 export async function POST(context: APIContext) {
-  // 1. Supabase client
-  const supabase = supabaseClient;
+  // 1. Supabase service client (bypasses RLS)
+  const supabase = createSupabaseServiceClient();
 
   // 2. Walidacja body
   const result = await parseRequestBody(context.request, createAnalyticsEventCommandSchema);

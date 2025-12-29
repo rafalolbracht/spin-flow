@@ -17,5 +17,7 @@
   },
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+  "postman.settings.dotenv-detection-notification-visibility": false,
+  "angular.enable-strict-mode-prompt": false
 }

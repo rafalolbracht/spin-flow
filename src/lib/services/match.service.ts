@@ -15,6 +15,7 @@ import type {
   SetDetailDto,
   AiReportDto,
   PaginationDto,
+  SideEnum,
 } from "../../types";
 import { DatabaseError, ApiError } from "../utils/api-errors";
 import { createFirstSet, calculateActionFlags } from "./set.service";
@@ -195,12 +196,12 @@ export async function getMatchById(
     const unfinishedSet = sets.find(set => !set.is_finished);
     if (unfinishedSet) {
       // Calculate action flags for the unfinished set
-      const actionFlags = calculateActionFlags(unfinishedSet, {
+      const actionFlags = calculateActionFlags({ ...unfinishedSet, user_id: match.user_id }, {
         max_sets: match.max_sets,
         sets_won_player: match.sets_won_player,
         sets_won_opponent: match.sets_won_opponent,
       });
-      
+
       // Calculate current server for unfinished set
       currentSet = {
         id: unfinishedSet.id,
@@ -301,8 +302,8 @@ export async function finishMatch(
     }
 
     // Determine winner of current set
-    const setWinner: SideEnum = match.current_set.set_score_player > match.current_set.set_score_opponent 
-      ? 'player' 
+    const setWinner: SideEnum = match.current_set.set_score_player > match.current_set.set_score_opponent
+      ? 'player'
       : 'opponent';
 
     // Update current set as finished
