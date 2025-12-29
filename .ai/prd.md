@@ -20,7 +20,7 @@ Produkt w wersji MVP:
 
 Technicznie MVP zakłada:
 
-\* logowanie przez Google (Supabase Auth),
+\* logowanie przez Google i Facebook (Supabase Auth),
 
 \* backend w Astro,
 
@@ -76,7 +76,7 @@ Spin Flow rozwiązuje ten problem, zapewniając:
 
 1\. System obsługuje jedno konto trenera (brak kont zespołowych).
 
-2\. Logowanie odbywa się wyłącznie przez Google za pośrednictwem Supabase Auth.
+2\. Logowanie odbywa się wyłącznie przez Google lub Facebook za pośrednictwem Supabase Auth.
 
 3\. Brak edycji profilu użytkownika i brak funkcji usuwania konta w MVP.
 
@@ -90,7 +90,7 @@ Spin Flow rozwiązuje ten problem, zapewniając:
 
   \* krótkie wyjaśnienie wartości produktu (rejestracja meczu na żywo + analiza AI),
 
-  \* przyciski logowania (Google),
+  \* przyciski logowania (Google, Facebook),
 
   \* odnośnik do listy meczów po zalogowaniu.
 
@@ -474,7 +474,7 @@ Edycja meczu „Zakończony”:
 
   \* jedno konto trenera,
 
-  \* logowanie przez Google (Supabase),
+  \* logowanie przez Google i Facebook (Supabase),
 
   \* brak edycji profilu i usuwania konta.
 
@@ -602,25 +602,35 @@ Zgodnie z opisem:
 
 ## 5. Historyjki użytkowników
 
-### US-001 – Logowanie przez Google
+### US-001 – Logowanie przez Google i Facebook
 
 \* ID: US-001
 
-\* Tytuł: Logowanie do aplikacji przez konto Google
+\* Tytuł: Logowanie do aplikacji przez konto Google i Facebook
 
 \* Opis:
 
-  Jako trener chcę zalogować się do aplikacji za pomocą mojego konta Google, aby szybko uzyskać dostęp do moich meczów bez zakładania kolejnego konta.
+  Jako trener chcę zalogować się do aplikacji za pomocą mojego konta Google lub Facebook, aby szybko uzyskać dostęp do moich meczów bez zakładania kolejnego konta.
 
 \* Kryteria akceptacji:
 
-  1. Na stronie startowej widoczny jest przycisk logowania Google.
+  1. Na stronie startowej widoczny jest przycisk logowania "Zaloguj", który umożliwia przejście na stronę logowania i wybranie metody logowania: Google lub Facebook.
 
-  2. Po kliknięciu przycisku użytkownik przechodzi standardowy flow logowania Google (Supabase).
+  2. Po kliknięciu przycisku Google lub Facebook użytkownik przechodzi standardowy flow logowania Google lub Facebook (Supabase).
 
   3. Po pomyślnym logowaniu użytkownik trafia na listę swoich meczów.
 
   4. Po wylogowaniu próba wejścia na listę meczów lub widok meczu przekierowuje na stronę logowania.
+
+5. Jeśli trener jest zalogowany i wejdzie na adres strony startowej, to nadal widzi przycisk "Zaloguj", ale tym razem jego użycie automatycznie przenosi go do listy swoich meczów (bo już jest zalogowany), a nie na stronę logowania.
+
+6. Jeśli trener jest zalogowany i wejdzie na adres strony logowania, to zostanie przeniesiony na stronę swoich meczów.
+
+7. Wszystkie strony inne niż strona startowa, strona logowania oraz strony /public/... wymagają zalogowania, czyli w przypadku próby ich otwarcia bez zalogowania trener zostanie przeniesiony na stronę startową.
+
+8. W aplikacji nie ma funkcjonalności rejestrowania konta trenera. Logowanie jest przewidziane tylko za pomocą Google lub Facebook (Oauth).
+
+9. Na wszystkich stronach wymagających zalogowania dostępny jest przycisk "Wyloguj", który powoduje zamknięcie sesji użytkownika oraz przekierowanie na stronę logowania.
 
 ---
 
@@ -662,7 +672,7 @@ Zgodnie z opisem:
 
   2. Po wylogowaniu sesja użytkownika jest unieważniana.
 
-  3. Po wylogowaniu użytkownik trafia na stronę startową lub ekran logowania.
+  3. Po wylogowaniu użytkownik trafia na stronę startową.
 
   4. Ponowna próba wejścia na listę lub widok meczu po wylogowaniu wymaga ponownego logowania.
 
@@ -682,7 +692,7 @@ Zgodnie z opisem:
 
   1. Strona startowa opisuje krótko główny problem i wartość (rejestracja meczu + analiza AI).
 
-  2. Na stronie widoczny jest przycisk logowania Google.
+  2. Na stronie widoczny jest przycisk "Zaloguj", który umożliwia przejście do wyboru logowania Google lub Facebook.
 
   3. Po zalogowaniu użytkownik nie jest ponownie kierowany na stronę startową, tylko na listę meczów.
 
