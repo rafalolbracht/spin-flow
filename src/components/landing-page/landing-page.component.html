@@ -17,7 +17,7 @@
           (onClick)="toggleTheme()"
           [attr.aria-label]="themeService.isDarkMode() ? 'Przełącz na tryb jasny' : 'Przełącz na tryb ciemny'"
         ></p-button>
-        <p-button label="Zaloguj" [rounded]="false" (onClick)="onTopbarLoginClick()"></p-button>
+        <p-button [label]="loginButtonLabel()" [rounded]="false" (onClick)="onTopbarLoginClick()"></p-button>
       </div>
     </div>
   </div>
@@ -25,6 +25,13 @@
   <!-- Hero Section -->
   <div class="bg-linear-to-t from-primary-500/10 from-10% to-transparent overflow-hidden">
     <div class="max-w-screen-xl mx-auto p-12 lg:p-20 pb-0! text-center flex flex-col items-center">
+      @if (showLoginRequired()) {
+        <p-message
+          severity="info"
+          text="Zaloguj się, aby uzyskać dostęp do tej funkcji."
+          class="mb-6"
+        />
+      }
       <div class="bg-primary-100 text-primary-700 p-2 mx-auto mb-6 rounded-full border border-primary-200 px-4 backdrop-blur-sm">
         🏓 {{ heroConfig().badge }}
       </div>
@@ -35,9 +42,9 @@
       <p-button type="button" [label]="heroConfig().ctaLabel" [outlined]="true" (onClick)="onHeroLoginClick()"></p-button>
 
       <div class="w-full grow flex items-start justify-center rounded-t-3xl mt-12">
-        <div class="overflow-hidden w-full aspect-720/295 max-w-[720px] rounded-t-3xl shadow-2xl">
+        <div class="overflow-hidden w-full aspect-720/295 sm:aspect-720/295 max-w-[400px] sm:max-w-[720px] rounded-t-3xl shadow-2xl">
           <img
-            [src]="heroConfig().appScreenshotUrl"
+            [src]="screenshotUrl()"
             [alt]="heroConfig().appScreenshotAlt"
             class="block w-full h-full object-cover object-top rounded-t-3xl"
           />

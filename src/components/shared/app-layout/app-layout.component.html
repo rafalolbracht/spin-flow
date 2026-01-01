@@ -63,10 +63,12 @@
           [attr.aria-haspopup]="true"
         >
           <p-avatar
-            [label]="userInitials() || undefined"
-            [icon]="!userInitials() ? 'pi pi-user' : undefined"
+            [image]="effectiveAvatarUrl() || undefined"
+            [label]="effectiveAvatarUrl() ? undefined : (userInitials() || undefined)"
+            [icon]="!effectiveAvatarUrl() && !userInitials() ? 'pi pi-user' : undefined"
             shape="circle"
-            styleClass="bg-primary text-primary-contrast"
+            [styleClass]="avatarStyleClass()"
+            (onImageError)="onAvatarImageError()"
           />
           @if (userName()) {
             <span class="text-surface-800 font-medium">
@@ -91,7 +93,9 @@
               [class.text-green-600]="item.label === 'Wyloguj się'"
               (click)="item.command ? item.command($event) : null"
             >
-              <span *ngIf="item.icon" class="p-menuitem-icon pi mr-2" [class]="item.icon"></span>
+              @if (item.icon) {
+                <span class="p-menuitem-icon pi mr-2" [class]="item.icon"></span>
+              }
               <span class="p-menuitem-text" [class.text-green-600]="item.label === 'Wyloguj się'">{{ item.label }}</span>
             </a>
           </ng-template>
@@ -137,10 +141,12 @@
           <!-- User info -->
           <div class="flex items-center gap-3">
             <p-avatar
-              [label]="userInitials() || undefined"
-              [icon]="!userInitials() ? 'pi pi-user' : undefined"
+              [image]="effectiveAvatarUrl() || undefined"
+              [label]="effectiveAvatarUrl() ? undefined : (userInitials() || undefined)"
+              [icon]="!effectiveAvatarUrl() && !userInitials() ? 'pi pi-user' : undefined"
               shape="circle"
-              styleClass="bg-primary text-primary-contrast"
+              [styleClass]="avatarStyleClass()"
+              (onImageError)="onAvatarImageError()"
             />
             @if (userName()) {
               <span class="text-surface-800 font-medium">

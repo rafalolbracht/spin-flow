@@ -8,7 +8,7 @@ import { MatchSummaryPageComponent, type MatchSummaryPageComponentProps } from '
  * Prezentuje pełne podsumowanie meczu, w tym wyniki setów, uwagi trenera oraz raport AI.
  *
  * Route: /matches/:id/summary
- * Access: Chroniony - wymaga autentykacji (TODO: dodać middleware auth)
+ * Access: Chroniony - wymaga autentykacji (middleware sprawdza automatycznie)
  * Validation: Weryfikacja ownership meczu + redirect do live jeśli in_progress
  */
 
@@ -21,14 +21,31 @@ if (!id || isNaN(Number(id))) {
 
 const matchId = Number(id);
 
-// TODO: Dodać weryfikację autentykacji i ownership meczu
-// TODO: Sprawdzić czy mecz jest w statusie 'finished' (redirect do /matches/{id}/live jeśli in_progress)
-// Uwaga: Weryfikacja statusu meczu jest również wykonywana w komponencie Angular (MatchSummaryStateService.loadMatch)
+// Middleware już sprawdza autentykację automatycznie
+// Tutaj tylko pobieramy dane użytkownika dla UI
+
+const supabase = Astro.locals.supabase;
+const { data: { user } } = await supabase.auth.getUser();
+
+// Pobranie danych użytkownika dla layoutu
+const userName = user?.user_metadata?.full_name || user?.email || 'Trener';
+const userEmail = user?.email || '';
+const userInitials = userName
+  .split(' ')
+  .map(n => n[0])
+  .join('')
+  .toUpperCase()
+  .slice(0, 2);
 
 export const prerender = false;
 
 // Props dla komponentu Angular
-const props: MatchSummaryPageComponentProps = { matchId };
+const props: MatchSummaryPageComponentProps = {
+  matchId,
+  userName,
+  userEmail,
+  userInitials,
+};
 ---
 
 <Layout title="Podsumowanie meczu - Spin Flow">

@@ -1,19 +1,25 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, effect, HostListener } from '@angular/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { NgClass } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 import { PrimeNGThemeInitService } from '../../lib/config/primeng-theme-init.service';
+import { httpProviders } from '../../lib/config/http-providers';
 import type { HeroConfig, FeatureCardData } from './landing-page.types';
 import { ThemeService } from '../../lib/services/theme.service';
+import { AuthService } from '../../lib/services/auth.service';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [NgClass, ButtonModule],
+  imports: [NgClass, ButtonModule, MessageModule],
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.css',
 })
 export class LandingPageComponent {
+  static clientProviders = [provideAnimations(), httpProviders];
   readonly themeService = inject(ThemeService);
+  readonly authService = inject(AuthService);
   private readonly _themeInit = inject(PrimeNGThemeInitService);
 
   readonly logoPath = computed(() =>
@@ -24,6 +30,13 @@ export class LandingPageComponent {
     this.themeService.isDarkMode() ? '/logo.svg' : '/logo-dark.svg',
   );
 
+  readonly loginButtonLabel = computed(() =>
+    this.authService.isAuthenticated() ? 'Moje mecze' : 'Zaloguj',
+  );
+
+  readonly showLoginRequired = signal<boolean>(false);
+  readonly windowWidth = signal<number>(0);
+
   heroConfig = signal<HeroConfig>({
     badge: 'Rejestracja meczów tenisa stołowego',
     headline: 'Analizuj mecze',
@@ -32,6 +45,14 @@ export class LandingPageComponent {
     miniFeatures: [],
     appScreenshotUrl: '/app-screenshot2.png',
     appScreenshotAlt: 'Zrzut ekranu aplikacji Spin Flow pokazujący interfejs rejestracji meczu',
+  });
+
+  readonly screenshotUrl = computed(() => {
+    // Na małych ekranach używamy innego obrazka
+    if (this.windowWidth() < 640) {
+      return '/app-screenshot-mobile.png';
+    }
+    return '/app-screenshot2.png';
   });
 
   features = signal<FeatureCardData[]>([
@@ -79,17 +100,48 @@ export class LandingPageComponent {
     },
   ]);
 
+  constructor() {
+    // Inicjalizacja szerokości okna
+    if (typeof window !== 'undefined') {
+      this.windowWidth.set(window.innerWidth);
+
+      // Sprawdzenie parametru URL po inicjalizacji
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('login_required') === 'true') {
+        this.showLoginRequired.set(true);
+        // Usunięcie parametru z URL bez przeładowania strony
+        window.history.replaceState({}, '', '/');
+      }
+    }
+
+    // Effect do śledzenia zmian szerokości okna
+    effect(() => {
+      // Ten effect będzie reagował na zmiany windowWidth
+      this.screenshotUrl();
+    });
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    if (typeof window !== 'undefined') {
+      this.windowWidth.set(window.innerWidth);
+    }
+  }
+
   toggleTheme(): void {
     this.themeService.toggleDarkMode();
   }
 
   onTopbarLoginClick(): void {
-    console.log('Topbar login clicked - placeholder for future OAuth integration');
-    // TODO: Implement OAuth flow with Supabase Auth
+    // Jeśli użytkownik jest zalogowany, przekieruj do listy meczów
+    if (this.authService.isAuthenticated()) {
+      window.location.href = '/matches';
+    } else {
+      window.location.href = '/auth/login';
+    }
   }
 
   onHeroLoginClick(): void {
-    console.log('Hero CTA login clicked - placeholder for future OAuth integration');
-    // TODO: Implement OAuth flow with Supabase Auth
+    window.location.href = '/auth/login';
   }
 }

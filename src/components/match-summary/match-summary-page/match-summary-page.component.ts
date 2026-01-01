@@ -1,4 +1,4 @@
-import { Component, inject, input, type OnInit, type OnDestroy } from '@angular/core';
+import { Component, inject, input, computed, type OnInit, type OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -21,6 +21,7 @@ import { ShareDialogComponent } from '../dialogs/share-dialog.component';
 import { MatchSummaryStateService } from '../services/match-summary-state.service';
 import { ThemeService } from '@/lib/services/theme.service';
 import { PrimeNGThemeInitService } from '@/lib/config/primeng-theme-init.service';
+import { AuthService } from '@/lib/services/auth.service';
 
 /**
  * Props dla MatchSummaryPageComponent (dla Astro)
@@ -71,13 +72,35 @@ export class MatchSummaryPageComponent implements OnInit, OnDestroy {
   private readonly _themeInit = inject(PrimeNGThemeInitService);
   readonly store = inject(MatchSummaryStateService);
   private readonly messageService = inject(MessageService);
+  private readonly authService = inject(AuthService);
 
   // Input z Astro
   readonly matchId = input.required<number>();
 
-  // Dane użytkownika (TODO: w przyszłości z AuthService)
-  readonly userName = 'Jan Kowalski';
-  readonly userInitials = 'JK';
+  // Dane użytkownika z AuthService
+  readonly userName = computed(() => {
+    const user = this.authService.user();
+    return user?.full_name || user?.email || 'Użytkownik';
+  });
+
+  readonly userInitials = computed(() => {
+    const user = this.authService.user();
+    if (user?.full_name) {
+      const names = user.full_name.split(' ');
+      return names.length >= 2
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0].substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'UŻ';
+  });
+
+  readonly userAvatarUrl = computed(() => {
+    const user = this.authService.user();
+    return user?.avatar_url || undefined;
+  });
 
   ngOnInit(): void {
     this.initializeMatch();

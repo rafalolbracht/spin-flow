@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -16,6 +16,9 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 
 // Shared Components
 import { AppLayoutComponent } from '@/components/shared/app-layout/app-layout.component';
+
+// Services
+import { AuthService } from '@/lib/services/auth.service';
 
 // Types
 import type {
@@ -71,10 +74,32 @@ export class CreateMatchWizardPageComponent {
 
   // Injected Services
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
 
-  // Dane użytkownika (w przyszłości z AuthService)
-  readonly userName = signal<string | undefined>('Jan Kowalski');
-  readonly userInitials = signal<string | undefined>('JK');
+  // Dane użytkownika z AuthService
+  readonly userName = computed(() => {
+    const user = this.authService.user();
+    return user?.full_name || user?.email || 'Użytkownik';
+  });
+
+  readonly userInitials = computed(() => {
+    const user = this.authService.user();
+    if (user?.full_name) {
+      const names = user.full_name.split(' ');
+      return names.length >= 2
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0].substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'UŻ';
+  });
+
+  readonly userAvatarUrl = computed(() => {
+    const user = this.authService.user();
+    return user?.avatar_url || undefined;
+  });
 
   // Stan wizarda
   readonly activeStep = signal<number>(1);

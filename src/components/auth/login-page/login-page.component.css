@@ -1,0 +1,10 @@
+/* LoginPageComponent specific styles */
+
+/* Ensure proper spacing and alignment */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}

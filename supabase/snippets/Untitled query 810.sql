@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS matches_public_access ON matches;

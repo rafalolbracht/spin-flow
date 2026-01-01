@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { supabaseClient, DEFAULT_USER_ID } from "../../../../db/supabase.client";
+import { requireAuth, requireOwnership } from "../../../../lib/utils/auth-helpers";
 import { updateMatchCommandSchema } from "../../../../lib/schemas/match.schemas";
 import { idParamSchema } from "../../../../lib/schemas/common.schemas";
 import { updateMatch } from "../../../../lib/services/match.service";
@@ -17,11 +17,16 @@ import { NotFoundError, DatabaseError } from "../../../../lib/utils/api-errors";
 export const prerender = false;
 
 export async function PATCH(context: APIContext) {
-  // 1. Supabase client + userId
-  const supabase = supabaseClient;
-  const userId = DEFAULT_USER_ID;
+  // 1. Sprawdzenie autentykacji
+  const userId = await requireAuth(context);
+  if (userId instanceof Response) {
+    return userId; // Zwróć błąd 401
+  }
 
-  // 2. Walidacja id
+  // 2. Supabase client
+  const supabase = context.locals.supabase;
+
+  // 3. Walidacja id
   const paramResult = idParamSchema.safeParse({ id: context.params.id });
   if (!paramResult.success) {
     return createValidationErrorResponse(paramResult.error);
@@ -42,7 +47,13 @@ export async function PATCH(context: APIContext) {
 
   const command = bodyResult.data;
 
-  // 4. Aktualizacja meczu
+  // 4. Sprawdzenie ownership
+  const ownershipCheck = await requireOwnership(context, userId);
+  if (ownershipCheck instanceof Response) {
+    return ownershipCheck; // Zwróć błąd 403
+  }
+
+  // 5. Aktualizacja meczu
   try {
     const result = await updateMatch(supabase, userId, matchId, command);
 

@@ -1,6 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { LandingPageComponent } from "@/components/landing-page/landing-page.component";
+
+// Strona główna jest publiczna - autentykacja sprawdzana po stronie klienta
+export const prerender = false;
 ---
 
 <Layout title="Spin Flow - Rejestracja meczów tenisa stołowego na żywo">

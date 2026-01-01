@@ -7,7 +7,7 @@ import { LiveMatchPageComponent, type LiveMatchPageComponentProps } from '@/comp
  * Służy do rejestracji przebiegu meczu tenisa stołowego na żywo.
  *
  * Route: /matches/:id/live
- * Access: Chroniony - wymaga autentykacji (TODO: dodać middleware auth)
+ * Access: Chroniony - wymaga autentykacji (middleware sprawdza automatycznie)
  * Validation: Weryfikacja ownership meczu + redirect do summary jeśli zakończony
  */
 
@@ -20,13 +20,31 @@ if (!id || isNaN(Number(id))) {
 
 const matchId = Number(id);
 
-// TODO: Dodać weryfikację autentykacji i ownership meczu
-// TODO: Sprawdzić czy mecz nie jest zakończony (redirect do /matches/{id}/summary)
+// Middleware już sprawdza autentykację automatycznie
+// Tutaj tylko pobieramy dane użytkownika dla UI
+
+const supabase = Astro.locals.supabase;
+const { data: { user } } = await supabase.auth.getUser();
+
+// Pobranie danych użytkownika dla layoutu
+const userName = user?.user_metadata?.full_name || user?.email || 'Trener';
+const userEmail = user?.email || '';
+const userInitials = userName
+  .split(' ')
+  .map(n => n[0])
+  .join('')
+  .toUpperCase()
+  .slice(0, 2);
 
 export const prerender = false;
 
 // Props dla komponentu Angular
-const props: LiveMatchPageComponentProps = { matchId };
+const props: LiveMatchPageComponentProps = {
+  matchId,
+  userName,
+  userEmail,
+  userInitials,
+};
 ---
 
 <Layout title="Mecz - Spin Flow">

@@ -8,7 +8,7 @@
  */
 
 import type { APIContext } from "astro";
-import { supabaseClient, DEFAULT_USER_ID } from "../../../../db/supabase.client";
+import { requireAuth } from "../../../../lib/utils/auth-helpers";
 import { finishMatchCommandSchema } from "../../../../lib/schemas/match.schemas";
 import { idParamSchema } from "../../../../lib/schemas/common.schemas";
 import { finishMatch } from "../../../../lib/services/match.service";
@@ -26,9 +26,14 @@ import { NotFoundError, ApiError, DatabaseError } from "../../../../lib/utils/ap
 export const prerender = false;
 
 export async function POST(context: APIContext) {
-  // 1. Supabase client + userId
-  const supabase = supabaseClient;
-  const userId = DEFAULT_USER_ID;
+  // 1. Sprawdzenie autentykacji
+  const userId = await requireAuth(context);
+  if (userId instanceof Response) {
+    return userId; // Zwróć błąd 401
+  }
+
+  // 2. Supabase client
+  const supabase = context.locals.supabase;
 
   // 2. Walidacja id
   const paramResult = idParamSchema.safeParse({ id: context.params.id });

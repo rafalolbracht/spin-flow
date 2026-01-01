@@ -1308,7 +1308,7 @@ Create an analytics event (internal API, called by backend logic).
 **Request Headers:**
 
 ```
-Authorization: Bearer {supabase_service_role_key}
+Authorization: Bearer {SUPABASE_SERVICE_KEY}
 Content-Type: application/json
 ```
 

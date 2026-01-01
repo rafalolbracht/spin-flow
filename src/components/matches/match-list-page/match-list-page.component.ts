@@ -42,6 +42,9 @@ import {
   ROWS_PER_PAGE_OPTIONS,
 } from './match-list.types';
 
+// Services
+import { AuthService } from '@/lib/services/auth.service';
+
 /**
  * Komponent strony listy meczów
  *
@@ -83,6 +86,7 @@ export class MatchListPageComponent implements OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  private readonly authService = inject(AuthService);
 
   // Lifecycle
   private readonly destroy$ = new Subject<void>();
@@ -91,9 +95,30 @@ export class MatchListPageComponent implements OnDestroy {
   private readonly playerNameFilter$ = new Subject<string>();
   private readonly opponentNameFilter$ = new Subject<string>();
 
-  // Dane użytkownika (w przyszłości z AuthService)
-  readonly userName = signal<string | undefined>('Jan Kowalski');
-  readonly userInitials = signal<string | undefined>('JK');
+  // Dane użytkownika z AuthService
+  readonly userName = computed(() => {
+    const user = this.authService.user();
+    return user?.full_name || user?.email || 'Użytkownik';
+  });
+
+  readonly userInitials = computed(() => {
+    const user = this.authService.user();
+    if (user?.full_name) {
+      const names = user.full_name.split(' ');
+      return names.length >= 2
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0].substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'UŻ';
+  });
+
+  readonly userAvatarUrl = computed(() => {
+    const user = this.authService.user();
+    return user?.avatar_url || undefined;
+  });
 
   // Stan widoku - podstawowe signals
   readonly matches = signal<MatchListItemDto[]>([]);

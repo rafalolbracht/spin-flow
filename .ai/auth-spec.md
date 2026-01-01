@@ -584,11 +584,9 @@ export const createSupabaseServerInstance = (context: {
 export function createSupabaseServiceClient(): ReturnType<
   typeof createClient<Database>
 > {
-  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_KEY;
   if (!serviceRoleKey) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY environment variable is not set"
-    );
+    throw new Error("SUPABASE_SERVICE_KEY environment variable is not set");
   }
 
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
@@ -1825,7 +1823,7 @@ readonly errorMessage = computed(() => {
 # Supabase
 SUPABASE_URL=https://xxxxx.supabase.co
 SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... # Tylko dla service endpoints
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... # Tylko dla service endpoints
 
 # OAuth (opcjonalne, jeśli Supabase wymaga konfiguracji)
 # Google OAuth Client ID i Secret są konfigurowane w panelu Supabase

@@ -1183,7 +1183,7 @@ export function createSupabaseServiceClient(): ReturnType<
 > {
   return createClient<Database>(
     import.meta.env.SUPABASE_URL,
-    import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+    import.meta.env.SUPABASE_SERVICE_KEY,
     {
       auth: {
         autoRefreshToken: false,

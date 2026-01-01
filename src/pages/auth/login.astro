@@ -1,0 +1,33 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { LoginPageComponent } from "@/components/auth/login-page/login-page.component";
+
+// Jeśli użytkownik jest już zalogowany, przekieruj do listy meczów
+const session = await Astro.locals.getSession();
+if (session) {
+  return Astro.redirect('/matches');
+}
+
+// Odczytanie parametrów query (błędy, redirectUrl)
+const errorCode = Astro.url.searchParams.get('error') || undefined;
+const errorDetails = Astro.url.searchParams.get('error_message') || undefined;
+const redirectUrl = Astro.url.searchParams.get('redirect') || '/matches';
+
+// Props dla komponentu LoginPageComponent
+interface LoginPageProps {
+  errorCode: string | undefined;
+  errorDetails: string | undefined;
+  redirectUrl: string;
+}
+
+const props: LoginPageProps = { errorCode, errorDetails, redirectUrl };
+
+export const prerender = false;
+---
+
+<Layout title="Logowanie - Spin Flow">
+  <LoginPageComponent
+    client:only="angular"
+    {...props}
+  />
+</Layout>

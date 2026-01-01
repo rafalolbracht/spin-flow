@@ -1,4 +1,4 @@
-import { Component, inject, input, type OnInit, type OnDestroy, effect } from '@angular/core';
+import { Component, inject, input, computed, type OnInit, type OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { BlockUIModule } from 'primeng/blockui';
@@ -21,6 +21,7 @@ import { FinishMatchDialogComponent } from '../finish-match-dialog/finish-match-
 import { LiveMatchStoreService } from '../services/live-match-store.service';
 import { ThemeService } from '@/lib/services/theme.service';
 import { PrimeNGThemeInitService } from '@/lib/config/primeng-theme-init.service';
+import { AuthService } from '@/lib/services/auth.service';
 
 import type { SideEnum } from '@/types';
 
@@ -75,13 +76,35 @@ export class LiveMatchPageComponent implements OnInit, OnDestroy {
   private readonly _themeInit = inject(PrimeNGThemeInitService);
   readonly store = inject(LiveMatchStoreService);
   private readonly messageService = inject(MessageService);
+  private readonly authService = inject(AuthService);
 
   // Input z Astro
   readonly matchId = input.required<number>();
 
-  // Dane użytkownika (TODO: w przyszłości z AuthService)
-  readonly userName = 'Jan Kowalski';
-  readonly userInitials = 'JK';
+  // Dane użytkownika z AuthService
+  readonly userName = computed(() => {
+    const user = this.authService.user();
+    return user?.full_name || user?.email || 'Użytkownik';
+  });
+
+  readonly userInitials = computed(() => {
+    const user = this.authService.user();
+    if (user?.full_name) {
+      const names = user.full_name.split(' ');
+      return names.length >= 2
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0].substring(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'UŻ';
+  });
+
+  readonly userAvatarUrl = computed(() => {
+    const user = this.authService.user();
+    return user?.avatar_url || undefined;
+  });
 
   constructor() {
     // Effect do sprawdzania statusu meczu i przekierowania

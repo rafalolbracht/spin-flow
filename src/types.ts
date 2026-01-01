@@ -600,3 +600,58 @@ export interface DictionaryQueryDto {
  * ✅ CORRECT: Always use predefined Response types
  *    type GoodResponse = MatchDetailResponse
  */
+
+// =============================================================================
+// AUTHENTICATION DTOs
+// =============================================================================
+
+/**
+ * User DTO for authentication
+ * Simplified user information from Supabase Auth
+ */
+export interface UserDto {
+  id: string;
+  email: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Session DTO for authentication
+ */
+export interface SessionDto {
+  user: UserDto;
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+}
+
+/**
+ * Login request DTO
+ */
+export interface LoginRequestDto {
+  provider: "google" | "facebook"; // Google lub Facebook
+  redirectUrl?: string;
+}
+
+/**
+ * Login response DTO
+ */
+export interface LoginResponseDto {
+  url: string; // OAuth URL do przekierowania
+}
+
+// --- Auth API Response Types ---
+
+/** POST /api/auth/login */
+export type LoginResponse = SingleItemResponseDto<LoginResponseDto>;
+
+/** GET /api/auth/session */
+export interface SessionResponse {
+  data: {
+    user: UserDto | null;
+  };
+}

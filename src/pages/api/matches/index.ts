@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { supabaseClient, DEFAULT_USER_ID } from "../../../db/supabase.client";
+import { requireAuth } from "../../../lib/utils/auth-helpers";
 import { matchListQuerySchema } from "../../../lib/schemas/match.schemas";
 import { getMatchesPaginated } from "../../../lib/services/match.service";
 import { parseQueryParams } from "../../../lib/utils/zod-helpers";
@@ -14,9 +14,14 @@ import { DatabaseError } from "../../../lib/utils/api-errors";
 export const prerender = false;
 
 export async function GET(context: APIContext) {
-  // 1. Supabase client + userId
-  const supabase = supabaseClient;
-  const userId = DEFAULT_USER_ID;
+  // 1. Sprawdzenie autentykacji
+  const userId = await requireAuth(context);
+  if (userId instanceof Response) {
+    return userId; // Zwróć błąd 401
+  }
+
+  // 2. Supabase client
+  const supabase = context.locals.supabase;
 
   // 2. Walidacja query params
   const queryResult = parseQueryParams(context.url.searchParams, matchListQuerySchema);

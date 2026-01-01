@@ -72,7 +72,7 @@ To set up and run the project locally:
      # Supabase Configuration
      SUPABASE_URL=https://your-project.supabase.co
      SUPABASE_KEY=your-anon-key-here
-     SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+     SUPABASE_SERVICE_KEY=your-service-role-key-here
 
      # OpenRouter API (for AI features)
      OPENROUTER_API_KEY=your-openrouter-api-key-here

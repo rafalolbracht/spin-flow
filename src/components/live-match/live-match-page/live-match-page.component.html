@@ -1,7 +1,8 @@
 <!-- App Layout (nawigacja) -->
 <app-layout
-  [userName]="userName"
-  [userInitials]="userInitials"
+  [userName]="userName()"
+  [userInitials]="userInitials()"
+  [userAvatarUrl]="userAvatarUrl()"
   [activeMenuIndex]="0"
 >
   <!-- Toast notifications -->

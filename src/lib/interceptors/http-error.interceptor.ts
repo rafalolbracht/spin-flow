@@ -96,9 +96,9 @@ function handleUnauthorizedError(messageService: MessageService): void {
     life: 5000,
   });
 
-  // Przekierowanie do strony głównej (używamy window.location, bo routing obsługuje Astro)
+  // Przekierowanie do strony logowania (zgodnie z PRD US-003, kryterium 4)
   if (typeof window !== 'undefined') {
-    window.location.href = '/';
+    window.location.href = '/auth/login?error=session_expired';
   }
 }
 
