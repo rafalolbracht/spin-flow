@@ -6,6 +6,15 @@ import type { Database } from "../db/database.types.ts";
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 
+// Validate required environment variables
+if (!supabaseUrl) {
+  throw new Error('SUPABASE_URL environment variable is not set. Please check your environment configuration.');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('SUPABASE_KEY environment variable is not set. Please check your environment configuration.');
+}
+
 // Client instance (for client-side components)
 export const supabaseClient = createClient<Database>(
   supabaseUrl,
@@ -23,6 +32,22 @@ export const cookieOptions: CookieOptionsWithName = {
   httpOnly: true,
   sameSite: "lax",
 };
+
+// Validate required environment variables for service client
+function validateServiceEnvironment() {
+  const serviceKey = import.meta.env.SUPABASE_SERVICE_KEY;
+  const url = import.meta.env.SUPABASE_URL;
+
+  if (!url) {
+    throw new Error('SUPABASE_URL environment variable is not set. Please check your environment configuration.');
+  }
+
+  if (!serviceKey) {
+    throw new Error('SUPABASE_SERVICE_KEY environment variable is not set. Please check your environment configuration.');
+  }
+
+  return { url, serviceKey };
+}
 
 // Helper function to parse cookie header
 function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
@@ -72,14 +97,11 @@ export const createSupabaseServerInstance = (context: {
 export function createSupabaseServiceClient(): ReturnType<
   typeof createClient<Database>
 > {
-  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_KEY environment variable is not set");
-  }
+  const { url, serviceKey } = validateServiceEnvironment();
 
   return createClient<Database>(
-    supabaseUrl,
-    serviceRoleKey,
+    url,
+    serviceKey,
     {
       auth: {
         autoRefreshToken: false,
