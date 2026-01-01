@@ -6,10 +6,3 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 [observability]
 enabled = true
-
-[observability.logs]
-level = "debug"
-
-[assets]
-binding = "ASSETS"
-directory = "./dist"
