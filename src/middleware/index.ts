@@ -41,7 +41,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isPublicPath =
     PUBLIC_PATHS.includes(context.url.pathname) ||
     context.url.pathname.startsWith("/public/") ||
-    context.url.pathname.startsWith("/api/auth/");
+    context.url.pathname.startsWith("/api/auth/") ||
+    // Statyczne zasoby (CSS, JS, obrazy, fonty)
+    context.url.pathname.startsWith("/_astro/") ||
+    context.url.pathname.startsWith("/_image/") ||
+    context.url.pathname.match(/\.(css|js|ico|svg|png|jpg|jpeg|webp|gif|woff|woff2|ttf|eot)$/);
 
   if (isPublicPath) {
     return next();

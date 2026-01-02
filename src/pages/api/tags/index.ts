@@ -1,5 +1,4 @@
 import type { APIContext } from "astro";
-import { createSupabaseClient } from "../../../db/supabase.client";
 import { createListResponse, createInternalErrorResponse } from "../../../lib/utils/api-response";
 import { logError } from "../../../lib/utils/logger";
 import type { TagDto } from "../../../types";
@@ -9,17 +8,15 @@ import type { TagDto } from "../../../types";
  *
  * Pobieranie wszystkich dostępnych tagów w systemie
  * Tagi są zasobem globalnym, współdzielonym między wszystkimi użytkownikami
+ * Wymaga autentykacji (RLS policy wymaga auth.role() = 'authenticated')
  *
  * @see .ai/api-implementation/get-tags-implementation-plan.md
  */
 export const prerender = false;
 
 export async function GET(context: APIContext) {
-  // Get runtime environment variables
-  const runtimeEnv = context.locals.runtime?.env;
-  
-  // 1. Supabase client (bez userId - endpoint publiczny)
-  const supabase = createSupabaseClient(runtimeEnv);
+  // 1. Supabase client z middleware (zawiera kontekst użytkownika)
+  const supabase = context.locals.supabase;
 
   // 2. Query do bazy danych
   try {

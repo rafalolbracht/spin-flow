@@ -6,51 +6,39 @@ export const prerender = false;
 export async function GET(context: APIContext) {
   const supabase = context.locals.supabase;
 
-  // Pobranie sesji użytkownika
+  // Pobranie użytkownika z weryfikacją JWT
+  // getUser() sprawdza czy token JWT jest ważny i czy użytkownik istnieje
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  // Jeśli jest sesja, sprawdź czy użytkownik nadal istnieje w bazie danych
-  // (potrzebne po resetowaniu bazy, gdy JWT nadal jest ważny ale użytkownik został usunięty)
-  if (session?.user) {
-    try {
-      const { data: userData, error } = await supabase.auth.admin.getUserById(session.user.id);
+  // Jeśli jest błąd (np. token wygasł, użytkownik został usunięty), zwróć null
+  if (error || !user) {
+    // Opcjonalnie: wyczyść ciasteczka sesji jeśli są
+    if (error) {
+      const cookieHeader = context.request.headers.get("cookie") ?? "";
+      const cookieNames = cookieHeader
+        .split(";")
+        .map((c) => c.trim().split("=")[0])
+        .filter((name) => name && name.startsWith("sb-"));
 
-      // Jeśli użytkownik nie istnieje lub jest błąd, wyczyść sesję
-      if (error || !userData.user) {
-        // Wyczyść ciasteczka sesji
-        const cookieHeader = context.request.headers.get("cookie") ?? "";
-        const cookieNames = cookieHeader
-          .split(";")
-          .map((c) => c.trim().split("=")[0])
-          .filter((name) => name && name.startsWith("sb-"));
-
-        for (const name of cookieNames) {
-          context.cookies.delete(name, { path: "/" });
-        }
-
-        return createSuccessResponse(
-          {
-            user: null,
-          },
-          200,
-        );
+      for (const name of cookieNames) {
+        context.cookies.delete(name, { path: "/" });
       }
-    } catch {
-      // W przypadku błędu zakładamy że sesja jest nieważna
-      return createSuccessResponse(
-        {
-          user: null,
-        },
-          200,
-      );
     }
+
+    return createSuccessResponse(
+      {
+        user: null,
+      },
+      200,
+    );
   }
 
   return createSuccessResponse(
     {
-      user: session?.user || null,
+      user,
     },
     200,
   );
