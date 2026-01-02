@@ -1,8 +1,14 @@
 # Cloudflare Pages Configuration for Spin Flow
 name = "spin-flow"
 pages_build_output_dir = "dist"
-compatibility_date = "2025-11-23"
-compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 [observability]
 enabled = true
+
+[env.production]
+name = "spin-flow"
+
+[env.preview]
+name = "spin-flow-preview"

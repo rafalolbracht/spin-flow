@@ -8,6 +8,7 @@ import sitemap from "@astrojs/sitemap";
 // https://astro.build/config
 export default defineConfig({
   output: "server",
+  site: "https://spin-flow.app",
   integrations: [analogjsangular(), sitemap()],
   server: {
     port: 4300,
@@ -19,8 +20,16 @@ export default defineConfig({
         // No external dependencies needed - using native fetch for Cloudflare Workers compatibility
       },
     },
+    ssr: {
+      external: ["node:async_hooks"],
+    },
   },
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    mode: "advanced",
+    platformProxy: {
+      enabled: true,
+    },
+  }),
   devToolbar: {
     enabled: false,
   },
