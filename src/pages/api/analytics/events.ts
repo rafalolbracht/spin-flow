@@ -20,8 +20,11 @@ import { DatabaseError } from "../../../lib/utils/api-errors";
 import type { APIContext } from "astro";
 
 export async function POST(context: APIContext) {
+  // Get runtime environment variables
+  const runtimeEnv = context.locals.runtime?.env;
+  
   // 1. Supabase service client (bypasses RLS)
-  const supabase = createSupabaseServiceClient();
+  const supabase = createSupabaseServiceClient(runtimeEnv);
 
   // 2. Walidacja body
   const result = await parseRequestBody(context.request, createAnalyticsEventCommandSchema);

@@ -12,6 +12,9 @@ import { logError } from "../utils/logger";
 import { OpenRouterService, createOpenRouterConfig } from "./openrouter";
 import type { MatchAnalysisRequest } from "./openrouter";
 
+// Type for Cloudflare runtime environment variables
+type RuntimeEnv = Record<string, string | undefined>;
+
 /**
  * Create a new AI report record for a match
  * @param supabase - Supabase client
@@ -48,10 +51,12 @@ export async function createAiReportRecord(
  * This function should be called without await to avoid blocking
  * @param supabase - Supabase client
  * @param matchId - Match ID
+ * @param runtimeEnv - Cloudflare runtime environment variables (optional)
  */
 export async function generateAiReport(
   supabase: SupabaseClient,
   matchId: number,
+  runtimeEnv?: RuntimeEnv,
 ): Promise<void> {
   try {
     // Get match data with sets and points
@@ -62,7 +67,7 @@ export async function generateAiReport(
     }
 
     // Initialize OpenRouter service
-    const openRouterConfig = createOpenRouterConfig();
+    const openRouterConfig = createOpenRouterConfig(runtimeEnv);
     const openRouterService = new OpenRouterService(openRouterConfig);
 
     // Convert match data to OpenRouter format

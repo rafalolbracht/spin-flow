@@ -16,10 +16,14 @@ const PUBLIC_PATHS = [
 ];
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Get runtime environment variables (Cloudflare Workers runtime)
+  const runtimeEnv = context.locals.runtime?.env;
+
   // Utworzenie instancji Supabase dla tego requestu
   const supabase = createSupabaseServerInstance({
     cookies: context.cookies,
     headers: context.request.headers,
+    runtimeEnv,
   });
 
   // Dodanie klienta do context.locals

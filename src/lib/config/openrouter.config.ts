@@ -5,11 +5,15 @@
 
 import type { OpenRouterConfig } from '../services/openrouter/openrouter.types';
 
+// Type for Cloudflare runtime environment variables
+type RuntimeEnv = Record<string, string | undefined>;
+
 /**
  * Tworzy konfigurację OpenRouter z environment variables
+ * @param runtimeEnv - Cloudflare runtime environment variables (optional)
  */
-export function createOpenRouterConfig(): OpenRouterConfig {
-  const apiKey = import.meta.env.OPENROUTER_API_KEY;
+export function createOpenRouterConfig(runtimeEnv?: RuntimeEnv): OpenRouterConfig {
+  const apiKey = runtimeEnv?.OPENROUTER_API_KEY || import.meta.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
     throw new Error(
@@ -37,5 +41,13 @@ export function createOpenRouterConfig(): OpenRouterConfig {
 /**
  * Globalna instancja konfiguracji OpenRouter
  * Używana przez aplikację do inicjalizacji usługi
+ * Note: For Cloudflare runtime, use createOpenRouterConfig(runtimeEnv) instead
  */
-export const openRouterConfig = createOpenRouterConfig();
+export const openRouterConfig = (() => {
+  try {
+    return createOpenRouterConfig();
+  } catch {
+    // During build, this might fail - that's ok, we'll create it at runtime
+    return null as unknown as OpenRouterConfig;
+  }
+})();

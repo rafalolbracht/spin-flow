@@ -35,6 +35,9 @@ export async function POST(context: APIContext) {
   // 2. Supabase client
   const supabase = context.locals.supabase;
 
+  // Get runtime environment variables
+  const runtimeEnv = context.locals.runtime?.env;
+
   // 2. Walidacja id
   const paramResult = idParamSchema.safeParse({ id: context.params.id });
   if (!paramResult.success) {
@@ -58,7 +61,7 @@ export async function POST(context: APIContext) {
 
   // 4. Zakończenie meczu
   try {
-    const result = await finishMatch(supabase, userId, matchId, command);
+    const result = await finishMatch(supabase, userId, matchId, command, runtimeEnv);
 
     return createSuccessResponse(result);
   } catch (error) {

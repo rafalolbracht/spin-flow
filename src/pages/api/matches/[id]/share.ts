@@ -33,6 +33,9 @@ export async function POST(context: APIContext) {
   // 2. Supabase client
   const supabase = context.locals.supabase;
 
+  // Get runtime environment variables
+  const runtimeEnv = context.locals.runtime?.env;
+
   // 2. Walidacja matchId
   const paramResult = idParamSchema.safeParse({ id: context.params.id });
   if (!paramResult.success) {
@@ -43,7 +46,7 @@ export async function POST(context: APIContext) {
 
   // 3. Utworzenie lub pobranie linku udostępniania
   try {
-    const result = await createOrGetPublicShare(supabase, userId, matchId);
+    const result = await createOrGetPublicShare(supabase, userId, matchId, runtimeEnv);
 
     const statusCode = result.isNew ? 201 : 200;
     return createSuccessResponse(result.dto, statusCode);

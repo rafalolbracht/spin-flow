@@ -7,17 +7,22 @@ import type {
 } from "../../types";
 import { DatabaseError, ApiError } from "../utils/api-errors";
 
+// Type for Cloudflare runtime environment variables
+type RuntimeEnv = Record<string, string | undefined>;
+
 /**
  * Create or get existing public share link for a match
  * @param supabase - Supabase client
  * @param userId - User ID (DEFAULT_USER_ID in development)
  * @param matchId - Match ID
+ * @param runtimeEnv - Cloudflare runtime environment variables (optional)
  * @returns Public share DTO and whether it was newly created
  */
 export async function createOrGetPublicShare(
   supabase: SupabaseClient,
   userId: string,
   matchId: number,
+  runtimeEnv?: RuntimeEnv,
 ): Promise<{ dto: PublicShareDto; isNew: boolean }> {
   // Verify match ownership and status (must be finished)
   await verifyMatchOwnershipAndStatus(supabase, userId, matchId);
@@ -26,7 +31,7 @@ export async function createOrGetPublicShare(
   const existingShare = await getExistingPublicShare(supabase, userId, matchId);
   if (existingShare) {
     return {
-      dto: mapToPublicShareDto(existingShare),
+      dto: mapToPublicShareDto(existingShare, runtimeEnv),
       isNew: false,
     };
   }
@@ -34,7 +39,7 @@ export async function createOrGetPublicShare(
   // Create new public share
   const newShare = await createPublicShare(supabase, userId, matchId);
   return {
-    dto: mapToPublicShareDto(newShare),
+    dto: mapToPublicShareDto(newShare, runtimeEnv),
     isNew: true,
   };
 }
@@ -139,10 +144,12 @@ function generateSecureToken(): string {
 
 /**
  * Map MatchPublicShare to PublicShareDto
+ * @param share - Match public share data
+ * @param runtimeEnv - Cloudflare runtime environment variables (optional)
  */
-function mapToPublicShareDto(share: MatchPublicShare): PublicShareDto {
+function mapToPublicShareDto(share: MatchPublicShare, runtimeEnv?: RuntimeEnv): PublicShareDto {
   // Get base URL from environment variable or fallback to localhost for development
-  const baseUrl = import.meta.env.SITE_URL || "http://localhost:4300";
+  const baseUrl = runtimeEnv?.SITE_URL || import.meta.env.SITE_URL || "http://localhost:4300";
 
   return {
     id: share.id,

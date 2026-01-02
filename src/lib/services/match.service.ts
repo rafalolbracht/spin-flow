@@ -21,6 +21,9 @@ import { DatabaseError, ApiError } from "../utils/api-errors";
 import { createFirstSet, calculateActionFlags } from "./set.service";
 import { getSetsByMatchId } from "./set.service";
 import { trackEvent } from "./analytics.service";
+
+// Type for Cloudflare runtime environment variables
+type RuntimeEnv = Record<string, string | undefined>;
 import { createAiReportRecord, getAiReportByMatchId } from "./ai.service";
 
 /**
@@ -276,6 +279,7 @@ export async function updateMatch(
  * @param userId - User ID (DEFAULT_USER_ID in development)
  * @param matchId - Match ID
  * @param command - Finish match command
+ * @param runtimeEnv - Cloudflare runtime environment variables (optional)
  * @returns Finished match DTO
  */
 export async function finishMatch(
@@ -283,6 +287,7 @@ export async function finishMatch(
   userId: string,
   matchId: number,
   command: FinishMatchCommandDto,
+  runtimeEnv?: RuntimeEnv,
 ): Promise<FinishMatchDto> {
   // Get match with current set
   const match = await getMatchById(supabase, userId, matchId, "sets");
@@ -372,7 +377,7 @@ export async function finishMatch(
     await createAiReportRecord(supabase, matchId, userId);
     // Generate AI report asynchronously
     Promise.resolve().then(() => import("./ai.service").then(({ generateAiReport }) =>
-      generateAiReport(supabase, matchId),
+      generateAiReport(supabase, matchId, runtimeEnv),
     ));
   }
 
