@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import { supabaseClient } from "../../../db/supabase.client";
+import { createSupabaseClient } from "../../../db/supabase.client";
 import { dictionaryQuerySchema } from "../../../lib/schemas/dictionary.schemas";
 import { getDictionaryLabels } from "../../../lib/services/dictionary.service";
 import { parseQueryParams } from "../../../lib/utils/zod-helpers";
@@ -21,8 +21,11 @@ import { DatabaseError } from "../../../lib/utils/api-errors";
 export const prerender = false;
 
 export async function GET(context: APIContext) {
+  // Get runtime environment variables
+  const runtimeEnv = context.locals.runtime?.env;
+  
   // 1. Supabase client (bez userId - endpoint publiczny)
-  const supabase = supabaseClient;
+  const supabase = createSupabaseClient(runtimeEnv);
 
   // 2. Walidacja query params
   const result = parseQueryParams(context.url.searchParams, dictionaryQuerySchema);

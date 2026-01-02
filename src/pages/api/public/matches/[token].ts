@@ -5,7 +5,7 @@
  */
 
 import type { APIContext } from "astro";
-import { supabaseClient } from "../../../../db/supabase.client";
+import { createSupabaseClient } from "../../../../db/supabase.client";
 import { tokenParamSchema } from "../../../../lib/schemas/common.schemas";
 import { getPublicMatchByToken } from "../../../../lib/services/public-match.service";
 import {
@@ -19,8 +19,11 @@ import { NotFoundError } from "../../../../lib/utils/api-errors";
 export const prerender = false;
 
 export async function GET(context: APIContext) {
+  // Get runtime environment variables
+  const runtimeEnv = context.locals.runtime?.env;
+  
   // 1. Supabase client (bez userId - endpoint publiczny)
-  const supabase = supabaseClient;
+  const supabase = createSupabaseClient(runtimeEnv);
 
   // 2. Walidacja tokenu (path param)
   const tokenResult = tokenParamSchema.safeParse({ token: context.params.token });

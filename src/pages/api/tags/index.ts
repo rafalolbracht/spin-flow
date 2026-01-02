@@ -1,4 +1,5 @@
-import { supabaseClient } from "../../../db/supabase.client";
+import type { APIContext } from "astro";
+import { createSupabaseClient } from "../../../db/supabase.client";
 import { createListResponse, createInternalErrorResponse } from "../../../lib/utils/api-response";
 import { logError } from "../../../lib/utils/logger";
 import type { TagDto } from "../../../types";
@@ -13,9 +14,12 @@ import type { TagDto } from "../../../types";
  */
 export const prerender = false;
 
-export async function GET() {
+export async function GET(context: APIContext) {
+  // Get runtime environment variables
+  const runtimeEnv = context.locals.runtime?.env;
+  
   // 1. Supabase client (bez userId - endpoint publiczny)
-  const supabase = supabaseClient;
+  const supabase = createSupabaseClient(runtimeEnv);
 
   // 2. Query do bazy danych
   try {

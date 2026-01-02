@@ -33,10 +33,10 @@ const buildTimeEnv = (() => {
     return validateEnvVariables();
   } catch {
     // During build on Cloudflare, these might not be available
-    // We'll use placeholder values that will be replaced at runtime
+    // We'll use valid placeholder URLs that won't cause validation errors
     return {
-      supabaseUrl: 'placeholder',
-      supabaseAnonKey: 'placeholder',
+      supabaseUrl: 'https://placeholder.supabase.co',
+      supabaseAnonKey: 'placeholder-key-will-be-replaced-at-runtime',
     };
   }
 })();
@@ -46,6 +46,15 @@ export const supabaseClient = createClient<Database>(
   buildTimeEnv.supabaseUrl,
   buildTimeEnv.supabaseAnonKey,
 );
+
+/**
+ * Create a simple Supabase client for public endpoints (no auth)
+ * @param runtimeEnv - Cloudflare runtime environment variables (optional)
+ */
+export function createSupabaseClient(runtimeEnv?: RuntimeEnv): ReturnType<typeof createClient<Database>> {
+  const { supabaseUrl, supabaseAnonKey } = validateEnvVariables(runtimeEnv);
+  return createClient<Database>(supabaseUrl, supabaseAnonKey);
+}
 
 export type SupabaseClient = typeof supabaseClient;
 
@@ -81,7 +90,7 @@ export const createSupabaseServerInstance = (context: {
   runtimeEnv?: RuntimeEnv;
 }) => {
   const { supabaseUrl, supabaseAnonKey } = validateEnvVariables(context.runtimeEnv);
-  
+
   const supabase = createServerClient<Database>(
     supabaseUrl,
     supabaseAnonKey,
