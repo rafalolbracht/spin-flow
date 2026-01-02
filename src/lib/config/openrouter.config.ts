@@ -28,11 +28,11 @@ export function createOpenRouterConfig(runtimeEnv?: RuntimeEnv): OpenRouterConfi
     defaultModel: 'x-ai/grok-4.1-fast',
     fallbackModel: 'openai/gpt-4o-mini',
     timeout: {
-      completion: 30000,    // 30 sekund na completion
+      completion: 20000,    // 20 sekund na completion (musi zmieścić się w limicie Cloudflare Pages 30s)
       streaming: 300000,     // 5 minut na streaming (jeśli będzie używane)
     },
     retry: {
-      maxAttempts: 3,       // Maksymalnie 3 próby
+      maxAttempts: 2,       // Maksymalnie 2 próby (zmniejszone z powodu limitu czasu Cloudflare)
       baseDelay: 1000,       // Bazowy delay 1 sekunda z exponential backoff
     },
   };

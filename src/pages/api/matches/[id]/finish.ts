@@ -61,7 +61,13 @@ export async function POST(context: APIContext) {
 
   // 4. Zakończenie meczu
   try {
-    const result = await finishMatch(supabase, userId, matchId, command, runtimeEnv);
+    const { result, waitUntilPromise } = await finishMatch(supabase, userId, matchId, command, runtimeEnv);
+
+    // Use Cloudflare's waitUntil to run AI generation in background
+    // This ensures the Promise isn't terminated when the response is returned
+    if (waitUntilPromise && context.locals.runtime?.ctx?.waitUntil) {
+      context.locals.runtime.ctx.waitUntil(waitUntilPromise);
+    }
 
     return createSuccessResponse(result);
   } catch (error) {

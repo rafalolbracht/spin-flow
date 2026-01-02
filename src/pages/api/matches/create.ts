@@ -39,7 +39,13 @@ export async function POST(context: APIContext) {
 
   // 3. Utworzenie meczu
   try {
-    const result = await createMatch(supabase, userId, command);
+    const { result, waitUntilPromise } = await createMatch(supabase, userId, command);
+    
+    // Use Cloudflare's waitUntil for background analytics tracking
+    if (waitUntilPromise && context.locals.runtime?.ctx?.waitUntil) {
+      context.locals.runtime.ctx.waitUntil(waitUntilPromise);
+    }
+    
     return createSuccessResponse(result, 201);
   } catch (error) {
     if (error instanceof DatabaseError) {

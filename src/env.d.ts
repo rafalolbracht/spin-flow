@@ -4,12 +4,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Session } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types.ts";
 
+// Type for Cloudflare runtime context
+type CloudflareRuntime = {
+  env: Record<string, string | undefined>;
+  ctx: {
+    waitUntil: (promise: Promise<unknown>) => void;
+    passThroughOnException: () => void;
+  };
+};
+
 declare global {
   namespace App {
     interface Locals {
       supabase: SupabaseClient<Database>;
       getSession: () => Promise<Session | null>;
       getUserId: () => Promise<string | null>;
+      runtime?: CloudflareRuntime;
     }
   }
 }

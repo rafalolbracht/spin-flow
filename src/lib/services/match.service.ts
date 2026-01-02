@@ -18,6 +18,7 @@ import type {
   SideEnum,
 } from "../../types";
 import { DatabaseError, ApiError } from "../utils/api-errors";
+import { logError } from "../utils/logger";
 import { createFirstSet, calculateActionFlags } from "./set.service";
 import { getSetsByMatchId } from "./set.service";
 import { trackEvent } from "./analytics.service";
@@ -106,7 +107,7 @@ export async function createMatch(
   supabase: SupabaseClient,
   userId: string,
   command: CreateMatchCommandDto,
-): Promise<CreateMatchDto> {
+): Promise<{ result: CreateMatchDto; waitUntilPromise?: Promise<void> }> {
   // Insert match
   const matchData: MatchInsert = {
     player_name: command.player_name,
@@ -147,10 +148,12 @@ export async function createMatch(
     isFirstSetGolden,
   );
 
-  // Track analytics event (fire-and-forget)
-  trackEvent(supabase, userId, "match_created", newMatch.id);
+  const result = mapMatchToCreateMatchDto(newMatch, currentSet);
 
-  return mapMatchToCreateMatchDto(newMatch, currentSet);
+  // Track analytics event in background (fire-and-forget with waitUntil)
+  const waitUntilPromise = trackEvent(supabase, userId, "match_created", newMatch.id);
+
+  return { result, waitUntilPromise };
 }
 
 /**
@@ -290,7 +293,7 @@ export async function finishMatch(
   matchId: number,
   command: FinishMatchCommandDto,
   runtimeEnv?: RuntimeEnv,
-): Promise<FinishMatchDto> {
+): Promise<{ result: FinishMatchDto; waitUntilPromise?: Promise<void> }> {
   // Get match with current set
   const match = await getMatchById(supabase, userId, matchId, "sets");
   if (!match) {
@@ -373,26 +376,44 @@ export async function finishMatch(
     throw new DatabaseError();
   }
 
-  // Fire-and-forget operations
-  if (match.generate_ai_summary) {
-    // Create AI report record and trigger generation
-    await createAiReportRecord(supabase, matchId, userId);
-    // Generate AI report asynchronously
-    Promise.resolve().then(() => import("./ai.service").then(({ generateAiReport }) =>
-      generateAiReport(supabase, matchId, runtimeEnv),
-    ));
-  }
-
-  // Track analytics event
-  trackEvent(supabase, userId, "match_finished", matchId);
-
   // Get updated match data
   const finishedMatch = await getMatchById(supabase, userId, matchId, undefined);
   if (!finishedMatch) {
     throw new DatabaseError();
   }
 
-  return mapMatchToFinishMatchDto(finishedMatch);
+  const result = mapMatchToFinishMatchDto(finishedMatch);
+
+  // Prepare background operations (to be used with context.waitUntil)
+  const backgroundPromises: Promise<void>[] = [];
+
+  // Track analytics event
+  backgroundPromises.push(trackEvent(supabase, userId, "match_finished", matchId));
+
+  // AI generation if enabled
+  if (match.generate_ai_summary) {
+    backgroundPromises.push((async () => {
+      try {
+        await createAiReportRecord(supabase, matchId, userId);
+        // Import and execute AI report generation
+        const { generateAiReport } = await import("./ai.service");
+        await generateAiReport(supabase, matchId, runtimeEnv);
+      } catch (error) {
+        // Log error but don't throw - this is fire-and-forget
+        logError(
+          "match.service.finishMatch",
+          error instanceof Error ? error : new Error(String(error)),
+          { matchId },
+        );
+      }
+    })());
+  }
+
+  const waitUntilPromise = backgroundPromises.length > 0
+    ? Promise.all(backgroundPromises).then(() => undefined)
+    : undefined;
+
+  return { result, waitUntilPromise };
 }
 
 /**
