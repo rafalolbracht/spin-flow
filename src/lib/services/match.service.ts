@@ -136,13 +136,15 @@ export async function createMatch(
   }
 
   // Create first set
+  // First set is golden only if max_sets is 1 and golden_set_enabled is true
+  const isFirstSetGolden = command.golden_set_enabled && command.max_sets === 1;
   const currentSet = await createFirstSet(
     supabase,
     newMatch.id,
     userId,
     command.first_server_first_set,
     command.max_sets,
-    false, // Not golden for first set
+    isFirstSetGolden,
   );
 
   // Track analytics event (fire-and-forget)
