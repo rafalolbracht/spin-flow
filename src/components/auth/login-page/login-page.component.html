@@ -53,11 +53,10 @@
 
       <!-- Facebook Login -->
       <p-button
-        label="Zaloguj przez Facebook"
+        label="Zaloguj przez Facebook (wkrótce)"
         icon="pi pi-facebook"
-        [loading]="isLoading()"
-        (onClick)="onFacebookLogin()"
-        styleClass="w-full bg-blue-600 hover:bg-blue-700 border-blue-600 hover:border-blue-700 text-white"
+        [disabled]="true"
+        styleClass="w-full"
       />
     </div>
 
