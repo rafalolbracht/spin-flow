@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import type { SupabaseClient } from "../../db/supabase.client";
 import type {
   MatchPublicShare,
@@ -132,11 +131,25 @@ async function createPublicShare(
  * Generate cryptographically secure token for public sharing
  * Uses 256 bits of entropy (32 bytes) encoded as base64url
  * Result: 43 characters, URL-safe, no padding
+ * Compatible with both Node.js and Cloudflare Workers (Web Crypto API)
  */
 function generateSecureToken(): string {
-  const bytes = randomBytes(32); // 256 bits of entropy
-  return bytes
-    .toString("base64")
+  // Use Web Crypto API (available in both Node.js 15+ and Cloudflare Workers)
+  const bytes = crypto.getRandomValues(new Uint8Array(32)); // 256 bits of entropy
+  
+  // Convert to base64
+  let base64 = "";
+  if (typeof Buffer !== "undefined") {
+    // Node.js environment
+    base64 = Buffer.from(bytes).toString("base64");
+  } else {
+    // Cloudflare Workers environment
+    const binary = String.fromCharCode(...bytes);
+    base64 = btoa(binary);
+  }
+  
+  // Convert to base64url format
+  return base64
     .replace(/\+/g, "-") // URL-safe
     .replace(/\//g, "_") // URL-safe
     .replace(/=/g, ""); // Remove padding
