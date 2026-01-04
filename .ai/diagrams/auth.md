@@ -18,8 +18,10 @@ sequenceDiagram
         Auth->>Browser: Autoryzacja użytkownika
         Browser->>API: Przekierowanie do /api/auth/callback
         activate API
-        API->>Auth: Wymiana kodu na tokeny
+        API->>Auth: Wymiana kodu na tokeny (exchangeCodeForSession)
         Auth-->>API: Access token + refresh token
+        API->>DB: Rejestracja zdarzenia logowania (analytics_events)
+        DB-->>API: Zdarzenie zapisane
         API->>Browser: Przekierowanie do /matches
         deactivate API
     end

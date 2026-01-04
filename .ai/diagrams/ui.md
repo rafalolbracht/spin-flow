@@ -2,8 +2,8 @@
 flowchart TD
     %% Komponenty publiczne
     subgraph "Moduł Publiczny"
-        A["LandingPageComponent<br/>Strona główna z przyciskami logowania<br/>[ISTNIEJĄCY - MODYFIKACJA]"]
-        B["LoginPageComponent<br/>Wybór metody logowania<br/>Google/Facebook<br/>[DO UTWORZENIA]"]
+        A["LandingPageComponent<br/>Strona główna z przyciskami logowania<br/>[ISTNIEJĄCY]"]
+        B["LoginPageComponent<br/>Wybór metody logowania<br/>Google/Facebook<br/>[ISTNIEJĄCY]"]
         C["PublicMatchContainerComponent<br/>Publiczny widok meczu<br/>[ISTNIEJĄCY]"]
     end
 
@@ -17,30 +17,30 @@ flowchart TD
 
     %% Komponenty współdzielone
     subgraph "Komponenty Współdzielone"
-        H["AppLayoutComponent<br/>Layout z przyciskiem wylogowania<br/>[ISTNIEJĄCY - MODYFIKACJA]"]
+        H["AppLayoutComponent<br/>Layout z przyciskiem wylogowania<br/>[ISTNIEJĄCY]"]
     end
 
     %% Serwisy i API
     subgraph "Warstwa Logiki Biznesowej"
-        I["AuthService<br/>Zarządzanie stanem autentykacji<br/>OAuth flow, sesja<br/>[DO UTWORZENIA]"]
-        J["Middleware Astro<br/>Sprawdzenie sesji<br/>Ochrona tras<br/>[DO MODYFIKACJI]"]
+        I["AuthService<br/>Zarządzanie stanem autentykacji<br/>OAuth flow, sesja<br/>[ISTNIEJĄCY]"]
+        J["Middleware Astro<br/>Sprawdzenie sesji<br/>Ochrona tras<br/>[ISTNIEJĄCY]"]
     end
 
-    subgraph "API Endpoints [DO UTWORZENIA]"
+    subgraph "API Endpoints [ISTNIEJĄCE]"
         K["POST /api/auth/login<br/>Inicjacja OAuth flow"]
-        L["GET/POST /api/auth/callback<br/>Wymiana tokenu na sesję"]
+        L["GET/POST /api/auth/callback<br/>Wymiana tokenu na sesję + analityka"]
         M["POST /api/auth/logout<br/>Niszczenie sesji"]
         N["GET /api/auth/session<br/>Pobranie danych sesji"]
     end
 
     %% Strony Astro
     subgraph "Strony Astro"
-        O["index.astro<br/>Strona główna<br/>[MODYFIKACJA]"]
-        P["auth/login.astro<br/>Strona logowania<br/>[DO UTWORZENIA]"]
-        Q["matches/index.astro<br/>Lista meczów<br/>[MODYFIKACJA]"]
-        R["matches/new.astro<br/>Nowy mecz<br/>[MODYFIKACJA]"]
-        S["matches/[id]/live.astro<br/>Mecz na żywo<br/>[MODYFIKACJA]"]
-        T["matches/[id]/summary.astro<br/>Podsumowanie<br/>[MODYFIKACJA]"]
+        O["index.astro<br/>Strona główna<br/>[ISTNIEJĄCY]"]
+        P["auth/login.astro<br/>Strona logowania<br/>[ISTNIEJĄCY]"]
+        Q["matches/index.astro<br/>Lista meczów<br/>[ISTNIEJĄCY]"]
+        R["matches/new.astro<br/>Nowy mecz<br/>[ISTNIEJĄCY]"]
+        S["matches/[id]/live.astro<br/>Mecz na żywo<br/>[ISTNIEJĄCY]"]
+        T["matches/[id]/summary.astro<br/>Podsumowanie<br/>[ISTNIEJĄCY]"]
     end
 
     %% Przepływ danych - niezalogowany użytkownik
@@ -92,16 +92,12 @@ flowchart TD
     %% Komponent publicznego meczu - niezależny
     C -.->|"no auth required"| J
 
-    %% Stylizacja dla wyróżnienia komponentów do utworzenia
-    classDef toCreate fill:#1976d2,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    classDef toModify fill:#f57c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    %% Stylizacja dla wyróżnienia komponentów
     classDef existing fill:#388e3c,stroke:#ffffff,stroke-width:2px,color:#ffffff
     classDef api fill:#7b1fa2,stroke:#ffffff,stroke-width:2px,color:#ffffff
     classDef astro fill:#c2185b,stroke:#ffffff,stroke-width:2px,color:#ffffff
 
-    class B,I,K,L,M,N toCreate
-    class A,H,J,O,P,Q,R,S,T toModify
-    class C,D,E,F,G existing
+    class A,B,C,D,E,F,G,H,I,J existing
     class K,L,M,N api
     class O,P,Q,R,S,T astro
 ```
