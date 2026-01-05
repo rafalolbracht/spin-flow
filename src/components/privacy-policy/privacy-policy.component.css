@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+/* Sticky topbar */
+.bg-surface-0.border-b.border-surface-200 {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Custom prose styles dla lepszej czytelności */
+.prose-custom h2 {
+  scroll-margin-top: 100px;
+}
+
+.prose-custom a {
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.prose-custom a:hover {
+  text-decoration: underline;
+}
+
+.prose-custom ul {
+  margin-top: 0.5rem;
+}
+
+.prose-custom section {
+  scroll-margin-top: 100px;
+}

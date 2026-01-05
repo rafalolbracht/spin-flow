@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { PrivacyPolicyComponent } from "@/components/privacy-policy/privacy-policy.component";
+
+export const prerender = false;
+---
+
+<Layout title="Polityka prywatności - Spin Flow">
+  <PrivacyPolicyComponent client:only="angular" />
+</Layout>
