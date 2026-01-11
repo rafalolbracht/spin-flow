@@ -37,6 +37,12 @@ The application addresses challenges in remembering match details during tournam
   - Husky + lint-staged (pre-commit hooks)
   - Node.js 22.21.1
 
+- **Testing:**
+  - Vitest 3.0+ (unit and component tests)
+  - Angular TestBed (Angular component testing)
+  - Playwright 1.40+ (end-to-end tests)
+  - Vitest coverage (code coverage reporting)
+
 This stack enables rapid development, scalability, and cost efficiency while maintaining security through managed services.
 
 ## Getting Started Locally
@@ -107,6 +113,15 @@ In the project directory, you can run:
 - `npm run lint:fix`: Lints and auto-fixes issues.
 - `npm run format`: Formats code using Prettier.
 - `npm run prepare`: Installs Husky for git hooks.
+
+**Testing:**
+
+- `npm test`: Runs unit tests in watch mode (Vitest).
+- `npm run test:unit`: Runs unit tests with coverage.
+- `npm run test:e2e`: Runs end-to-end tests (Playwright).
+- `npm run test:e2e:ui`: Runs E2E tests with UI mode.
+- `npm run test:watch`: Runs tests in watch mode.
+- `npm run test:ci`: Runs all tests (unit and E2E) for CI/CD.
 
 Lint-staged is configured to run ESLint and Prettier on staged files before commits.
 

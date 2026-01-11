@@ -31,6 +31,14 @@ Dokument opisuje docelowy stack technologiczny aplikacji **Spin Flow** w ujęciu
 - Cloudflare Pages
 - GitHub Actions
 
+**Testy:**
+
+- Vitest 3.0+ (testy jednostkowe i integracyjne)
+- Playwright 1.40+ (testy E2E)
+- Angular TestBed (testy komponentów)
+- MSW 2+ (Mock Service Worker)
+- Testcontainers (izolowane środowiska testowe)
+
 ---
 
 ## 2. Frontend
@@ -82,7 +90,45 @@ Supabase łączy funkcje bazy danych, autoryzacji i polityk bezpieczeństwa, dzi
 
 ---
 
-## 7. Bezpieczeństwo
+## 7. Testy – Vitest + Playwright + Angular TestBed
+
+- **Vitest**:
+  - framework testowy kompatybilny z Vite/Astro,
+  - testy jednostkowe serwisów biznesowych, utils i walidacji,
+  - testy integracyjne z rzeczywistą bazą danych,
+  - built-in code coverage (c8/istanbul),
+  - szybkie wykonywanie testów z ESM support.
+- **Playwright**:
+  - testy end-to-end pełnych scenariuszy użytkownika,
+  - multi-browser support (Chrome, Firefox, Safari),
+  - auto-wait i network interception,
+  - parallel execution dla szybszego testowania.
+- **Angular TestBed**:
+  - testowanie komponentów Angular,
+  - wbudowane narzędzie Angular do testów,
+  - pełna kompatybilność z Angular 20.
+- **MSW (Mock Service Worker)**:
+  - mockowanie API requests w testach,
+  - działa zarówno w Node.js jak i przeglądarce,
+  - type-safe mocking dla OpenRouter i innych zewnętrznych API.
+- **Testcontainers**:
+  - izolowane środowiska testowe (PostgreSQL),
+  - automatyczne czyszczenie po testach,
+  - pełna kompatybilność z Supabase dla testów integracyjnych.
+
+**Strategia testowania:**
+
+- Piramida testów: 60% unit, 30% integration, 10% E2E
+- Testy jednostkowe: serwisy, komponenty, utils, walidacja (Zod schemas)
+- Testy integracyjne: API endpoints, RLS policies, współpraca z bazą danych
+- Testy E2E: krytyczne scenariusze użytkownika (flow meczu, autoryzacja, udostępnianie)
+- Code coverage ≥ 80%
+- Automatyzacja w GitHub Actions z merge gates
+- Priorytetyzacja testów według krytyczności funkcji (P0-P3)
+
+---
+
+## 8. Bezpieczeństwo
 
 - Dane zabezpieczone przez:
   - autoryzację użytkowników w Supabase,
@@ -92,7 +138,7 @@ Supabase łączy funkcje bazy danych, autoryzacji i polityk bezpieczeństwa, dzi
 
 ---
 
-## 8. Uzasadnienie wyboru
+## 9. Uzasadnienie wyboru
 
 - **Szybki start** – gotowe komponenty UI + BaaS (Supabase) ograniczają ilość kodu, który trzeba napisać od zera.
 - **Skalowalność** – serverless (Cloudflare + Astro) i zarządzany Postgres w Supabase dobrze radzą sobie z rosnącym obciążeniem.

@@ -1,0 +1,8 @@
+# Component tests
+# 
+# Do testowania komponentów Angular używamy:
+# - Angular TestBed (wbudowane narzędzie)
+# - Vitest + jsdom
+#
+# Przykład: tests/unit/components/my-component.spec.ts
+
