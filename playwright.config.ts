@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+
+// Załaduj zmienne z .env dla testów E2E
+dotenv.config();
 
 /**
  * Konfiguracja Playwright dla testów E2E
@@ -56,9 +60,22 @@ export default defineConfig({
 
   // Konfiguracja projektu - tylko Chromium/Desktop Chrome zgodnie z wytycznymi
   projects: [
+    // Setup - uruchamia się przed testami, czyści bazę
+    {
+      name: 'setup',
+      testMatch: /global\.setup\.ts/,
+      teardown: 'cleanup',
+    },
+    // Cleanup - uruchamia się po testach (teardown dla setup)
+    {
+      name: 'cleanup',
+      testMatch: /global\.teardown\.ts/,
+    },
+    // Główny projekt z testami E2E
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
     },
   ],
 

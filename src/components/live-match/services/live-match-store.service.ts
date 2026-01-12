@@ -414,7 +414,19 @@ export class LiveMatchStoreService {
     };
 
     this.apiService.finishMatch(matchId, command).subscribe({
-      next: () => {
+      next: (result) => {
+        // Zaktualizuj status meczu w store
+        const matchData = this._matchData();
+        if (matchData) {
+          this._matchData.set({
+            ...matchData,
+            status: result.status, // 'finished'
+            sets_won_player: result.sets_won_player,
+            sets_won_opponent: result.sets_won_opponent,
+            ended_at: result.ended_at,
+          });
+        }
+
         this.closeFinishMatchDialog();
         this._isLoading.set(false);
         onSuccess(matchId);

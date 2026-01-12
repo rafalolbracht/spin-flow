@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { createSupabaseServerInstance } from "../db/supabase.client";
+import { createSupabaseServerInstance, createSupabaseServiceClient } from "../db/supabase.client";
 
 // Public paths - Auth API endpoints & Server-Rendered Astro Pages
 const PUBLIC_PATHS = [
@@ -20,12 +20,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Get runtime environment variables (Cloudflare Workers runtime)
   const runtimeEnv = context.locals.runtime?.env;
 
-  // Utworzenie instancji Supabase dla tego requestu
-  const supabase = createSupabaseServerInstance({
-    cookies: context.cookies,
-    headers: context.request.headers,
-    runtimeEnv,
-  });
+  // Sprawdzenie czy jesteśmy w trybie testowym (PRZED utworzeniem klienta)
+  const isTestMode = runtimeEnv?.NODE_ENV === 'test' ||
+                    context.url.searchParams.get('test_mode') === 'true' ||
+                    context.request.headers.get('x-test-mode') === 'true';
+
+  // W trybie testowym używamy service role client (bypass RLS)
+  const supabase = isTestMode
+    ? createSupabaseServiceClient(runtimeEnv)
+    : createSupabaseServerInstance({
+        cookies: context.cookies,
+        headers: context.request.headers,
+        runtimeEnv,
+      });
 
   // Dodanie klienta do context.locals
   context.locals.supabase = supabase;
@@ -48,7 +55,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.url.pathname.startsWith("/_image/") ||
     context.url.pathname.match(/\.(css|js|ico|svg|png|jpg|jpeg|webp|gif|woff|woff2|ttf|eot)$/);
 
-  if (isPublicPath) {
+  // Debug logging for test mode
+  if (isTestMode) {
+    // eslint-disable-next-line no-console
+    console.log('🔧 Test mode detected, using service role client');
+  }
+
+  if (isPublicPath || isTestMode) {
+    // W trybie testowym ustaw testowego użytkownika (prawdziwy UUID z bazy)
+    if (isTestMode) {
+      const testUserId = runtimeEnv?.TEST_USER_ID || import.meta.env.TEST_USER_ID;
+      if (!testUserId) {
+        // eslint-disable-next-line no-console
+        console.error('❌ TEST_USER_ID not found in environment variables');
+        throw new Error('TEST_USER_ID is required for test mode');
+      }
+      context.locals.getUserId = async () => testUserId;
+      // eslint-disable-next-line no-console
+      console.log(`🔧 Test mode: Using test user ID: ${testUserId}`);
+    }
     return next();
   }
 

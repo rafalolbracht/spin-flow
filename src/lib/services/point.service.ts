@@ -410,7 +410,7 @@ async function getTagNamesByIds(
  * @param totalPointsInSet - Total number of points played in the set so far
  * @returns SideEnum indicating who should serve
  */
-function calculateServedBy(
+export function calculateServedBy(
   match: Match,
   set: Set,
   totalPointsInSet: number,
