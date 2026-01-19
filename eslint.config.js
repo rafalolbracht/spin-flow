@@ -14,6 +14,8 @@ const __dirname = path.dirname(__filename);
 const gitignorePath = path.resolve(__dirname, ".gitignore");
 
 const baseConfig = tseslint.config({
+  files: ["**/*.ts", "**/*.js", "**/*.mjs", "**/*.astro"],
+  ignores: ["**/*.html"], // Exclude HTML files from TypeScript rules
   extends: [eslint.configs.recommended, tseslint.configs.strict],
   rules: {
     "no-console": "warn",
@@ -60,6 +62,8 @@ const angularTemplateConfig = tseslint.config({
   },
   rules: {
     ...angularEslintTemplate.configs.recommended.rules,
+    // Allow ngIf/ngFor for now - can migrate to control flow later
+    "@angular-eslint/template/prefer-control-flow": "off",
   },
 });
 
