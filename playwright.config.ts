@@ -79,8 +79,8 @@ export default defineConfig({
     },
   ],
 
-  // Web Server - uruchom dev server przed testami
-  webServer: {
+  // Uruchom webServer TYLKO jeśli BASE_URL nie jest ustawiony
+  webServer: process.env.BASE_URL ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:4300',
     reuseExistingServer: !process.env.CI,
