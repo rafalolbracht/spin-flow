@@ -55,7 +55,7 @@ lint
 - **Ważne:** Testuje produkcyjny build, podczas gdy E2E używa dev server
 - Waliduje obecność katalogu `dist/`
 - **Nie wymaga zmiennych środowiskowych** - używa wbudowanych fallbacks
-- Rzeczywiste wartości są wstrzykiwane w runtime przez Cloudflare Workers
+- Rzeczywiste wartości są wstrzykiwane w runtime przez Cloudflare
 
 #### `status-comment`
 
