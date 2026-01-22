@@ -104,7 +104,7 @@ TEST_USER_ID         = [test user UUID]
 ```
 SUPABASE_URL         = https://[project-ref].supabase.co
 SUPABASE_PROJECT_REF = [project-ref-fix]
-SITE_URL             = https://fix.spin-flow.pages.dev
+SITE_URL             = https://spin-flow-fix.pages.dev
 GOOGLE_CLIENT_ID     = [Google OAuth client ID]
 FACEBOOK_APP_ID      = [Facebook app ID]
 TEST_USER_EMAIL      = [test user email]
@@ -155,7 +155,7 @@ Root directory: /
 
 **Preview branches:**
 
-- fix → https://fix.spin-flow.pages.dev
+- fix → https://spin-flow-fix.pages.dev
 
 **Environment variables (Production - w Cloudflare):**
 
@@ -172,7 +172,7 @@ FACEBOOK_APP_ID      = [z PROD]
 ```
 SUPABASE_URL         = [z FIX]
 SUPABASE_KEY         = [z FIX]
-SITE_URL             = https://fix.spin-flow.pages.dev
+SITE_URL             = https://spin-flow-fix.pages.dev
 GOOGLE_CLIENT_ID     = [z FIX]
 FACEBOOK_APP_ID      = [z FIX]
 ```
@@ -372,7 +372,7 @@ git checkout fix
 git merge develop
 git push origin fix
 
-# Sprawdź: https://fix.spin-flow.pages.dev
+# Sprawdź: https://spin-flow-fix.pages.dev
 ```
 
 ### Test PROD deployment

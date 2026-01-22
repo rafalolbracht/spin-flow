@@ -184,7 +184,7 @@ lint
 
 - Pobiera artefakt build z poprzedniego joba
 - Deploy do Cloudflare Pages jako preview: `--project-name=spin-flow --branch=fix`
-- URL: `https://fix.spin-flow.pages.dev`
+- URL: `https://spin-flow-fix.pages.dev`
 
 ### Wymagane sekrety i zmienne
 
@@ -395,7 +395,7 @@ supabase db push --project-ref $SUPABASE_PROJECT_REF
 ### FIX (Preview)
 
 - **Projekt Cloudflare**: `spin-flow` (branch: fix)
-- **URL**: https://fix.spin-flow.pages.dev
+- **URL**: https://spin-flow-fix.pages.dev
 - **Trigger**: automatyczny push do `fix`
 
 ### PROD
