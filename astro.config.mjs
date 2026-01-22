@@ -9,7 +9,15 @@ import sitemap from "@astrojs/sitemap";
 export default defineConfig({
   output: "server",
   site: "https://spin-flow.app",
-  integrations: [analogjsangular(), sitemap()],
+  integrations: [
+    analogjsangular({
+      vite: {
+        tsconfig: "./tsconfig.app.json",
+        jit: false,
+      },
+    }),
+    sitemap(),
+  ],
   server: {
     port: 4300,
   },
