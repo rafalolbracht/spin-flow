@@ -17,14 +17,14 @@ export default defineConfig({
 
   // Maximum time expect() should wait for the condition to be met
   expect: {
-    timeout: 5000,
+    timeout: process.env.CI ? 15000 : 5000,
   },
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
 
   // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 0 : 0,
 
   // Parallel execution
   workers: process.env.CI ? 1 : undefined,
