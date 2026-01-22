@@ -41,9 +41,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const nodeEnv = getRuntimeEnvVariable("NODE_ENV", runtimeEnv);
 
   const isTestMode =
-    nodeEnv === "test" ||
-    context.url.searchParams.get("test_mode") === "true" ||
-    context.request.headers.get("x-test-mode") === "true";
+    nodeEnv !== "production" &&
+    (
+      nodeEnv === "test" ||
+      context.request.headers.get("x-test-mode") === "true"
+    );
 
   const supabase = isTestMode
     ? createSupabaseServiceClient(runtimeEnv)

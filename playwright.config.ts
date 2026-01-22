@@ -41,6 +41,11 @@ export default defineConfig({
     // Base URL to use in actions like `await page.goto('/')`
     baseURL: process.env.BASE_URL || 'http://localhost:4300',
 
+    // Add x-test-mode header to all requests
+    extraHTTPHeaders: {
+      'x-test-mode': 'true',
+    },
+
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
 
