@@ -21,7 +21,7 @@ export default defineConfig({
   server: {
     port: 4300,
   },
-  vite: {
+  vite: /** @type {any} */ ({
     plugins: [tailwindcss()],
     build: {
       rollupOptions: {
@@ -31,7 +31,7 @@ export default defineConfig({
     ssr: {
       external: ["node:async_hooks"],
     },
-  },
+  }),
   adapter: cloudflare({
     mode: "advanced",
     platformProxy: {
