@@ -22,27 +22,8 @@ export class AuthPage {
    * Nawiguje do strony autoryzacji
    */
   async goto() {
-    // logi z przeglądarki do outputu testu (w CI bardzo pomaga)
-    // eslint-disable-next-line no-console
-    this.page.on("pageerror", (err) => console.error("PAGEERROR:", err));
-    // eslint-disable-next-line no-console
-    this.page.on("console", (msg) => console.log("BROWSER:", msg.type(), msg.text()));
-
-    // nie czekamy na networkidle (w SPA potrafi nigdy nie zajść)
-    await this.page.goto("/auth/login", { waitUntil: "domcontentloaded" });
-
-    // krótka pauza na mount Angular/PrimeNG
-    await this.page.waitForTimeout(500);
-
-    // jeśli element nadal nie istnieje, wypisz fragment HTML (żeby wiedzieć co jest renderowane)
-    const count = await this.googleLoginButton.count();
-    if (count === 0) {
-      const html = await this.page.content();
-      // eslint-disable-next-line no-console
-      console.log("URL:", this.page.url());
-      // eslint-disable-next-line no-console
-      console.log("HTML_SNIPPET:", html.slice(0, 4000));
-    }
+    await this.page.goto('/auth/login');
+    await this.page.waitForLoadState('networkidle');
   }
 
   /**
