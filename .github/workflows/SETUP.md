@@ -55,6 +55,7 @@ Repository → Settings → Environments → [Environment] → Add secret
 SUPABASE_KEY                    = [Supabase anon key - DEV]
 SUPABASE_SERVICE_KEY            = [Supabase service role key - DEV]
 SUPABASE_ACCESS_TOKEN_ACCOUNT   = [Supabase access token - Konto B]
+SUPABASE_DB_PASSWORD            = [Postgres DB password - DEV]
 GOOGLE_CLIENT_SECRET            = [Google OAuth secret]
 FACEBOOK_APP_SECRET             = [Facebook OAuth secret]
 CLOUDFLARE_API_TOKEN            = [Cloudflare API token]
@@ -67,6 +68,7 @@ CLOUDFLARE_ACCOUNT_ID           = [Cloudflare account ID]
 SUPABASE_KEY                    = [Supabase anon key - FIX]
 SUPABASE_SERVICE_KEY            = [Supabase service role key - FIX]
 SUPABASE_ACCESS_TOKEN_ACCOUNT   = [Supabase access token - Konto A]
+SUPABASE_DB_PASSWORD            = [Postgres DB password - FIX]
 GOOGLE_CLIENT_SECRET            = [Google OAuth secret]
 FACEBOOK_APP_SECRET             = [Facebook OAuth secret]
 CLOUDFLARE_API_TOKEN            = [Cloudflare API token]
@@ -78,6 +80,7 @@ CLOUDFLARE_ACCOUNT_ID           = [Cloudflare account ID]
 ```
 SUPABASE_KEY                    = [Supabase anon key - PROD]
 SUPABASE_ACCESS_TOKEN_ACCOUNT   = [Supabase access token - Konto A]
+SUPABASE_DB_PASSWORD            = [Postgres DB password - PROD]
 CLOUDFLARE_DEPLOY_HOOK_URL      = [Cloudflare Deploy Hook URL]
 ```
 

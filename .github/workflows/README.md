@@ -373,7 +373,8 @@ Instalacja przeglądarek: `npm run playwright:install` (tylko Chromium zgodnie z
 ### Automatyczne (DEV i FIX)
 
 ```bash
-supabase db push --project-ref $SUPABASE_PROJECT_REF
+supabase link --project-ref $SUPABASE_PROJECT_REF --password $SUPABASE_DB_PASSWORD
+supabase db push
 ```
 
 ### Manualne (PROD)
