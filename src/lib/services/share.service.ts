@@ -9,20 +9,32 @@ import { DatabaseError, ApiError } from "../utils/api-errors";
 // Type for Cloudflare runtime environment variables
 type RuntimeEnv = Record<string, string | undefined>;
 
+type CreateOrGetPublicShareOptions = {
+  runtimeEnv?: RuntimeEnv;
+  /**
+   * Optional base URL override to use when generating `public_url`.
+   * Useful for tests/CI where the app runs on a local origin but runtime SITE_URL points to a deployed host.
+   */
+  baseUrlOverride?: string;
+};
+
 /**
  * Create or get existing public share link for a match
  * @param supabase - Supabase client
  * @param userId - User ID (DEFAULT_USER_ID in development)
  * @param matchId - Match ID
- * @param runtimeEnv - Cloudflare runtime environment variables (optional)
+ * @param options - optional runtime env and base URL override
  * @returns Public share DTO and whether it was newly created
  */
 export async function createOrGetPublicShare(
   supabase: SupabaseClient,
   userId: string,
   matchId: number,
-  runtimeEnv?: RuntimeEnv,
+  options?: CreateOrGetPublicShareOptions,
 ): Promise<{ dto: PublicShareDto; isNew: boolean }> {
+  const runtimeEnv = options?.runtimeEnv;
+  const baseUrlOverride = options?.baseUrlOverride;
+
   // Verify match ownership and status (must be finished)
   await verifyMatchOwnershipAndStatus(supabase, userId, matchId);
 
@@ -30,7 +42,7 @@ export async function createOrGetPublicShare(
   const existingShare = await getExistingPublicShare(supabase, userId, matchId);
   if (existingShare) {
     return {
-      dto: mapToPublicShareDto(existingShare, runtimeEnv),
+      dto: mapToPublicShareDto(existingShare, runtimeEnv, baseUrlOverride),
       isNew: false,
     };
   }
@@ -38,7 +50,7 @@ export async function createOrGetPublicShare(
   // Create new public share
   const newShare = await createPublicShare(supabase, userId, matchId);
   return {
-    dto: mapToPublicShareDto(newShare, runtimeEnv),
+    dto: mapToPublicShareDto(newShare, runtimeEnv, baseUrlOverride),
     isNew: true,
   };
 }
@@ -159,13 +171,21 @@ function generateSecureToken(): string {
  * Map MatchPublicShare to PublicShareDto
  * @param share - Match public share data
  * @param runtimeEnv - Cloudflare runtime environment variables (optional)
+ * @param baseUrlOverride - optional base URL override
  */
-function mapToPublicShareDto(share: MatchPublicShare, runtimeEnv?: RuntimeEnv): PublicShareDto {
+function mapToPublicShareDto(
+  share: MatchPublicShare,
+  runtimeEnv?: RuntimeEnv,
+  baseUrlOverride?: string,
+): PublicShareDto {
   // Get base URL from environment variable or fallback to localhost for development.
   // NOTE: In CI/Cloud environments SITE_URL is sometimes set as a bare host (e.g. "spin-flow.pages.dev")
   // which would produce a relative URL and break navigation (both app and E2E tests).
   const baseUrlRaw =
-    runtimeEnv?.SITE_URL || import.meta.env.SITE_URL || "http://localhost:4300";
+    baseUrlOverride ||
+    runtimeEnv?.SITE_URL ||
+    import.meta.env.SITE_URL ||
+    "http://localhost:4300";
   const baseUrl = normalizeBaseUrl(baseUrlRaw);
 
   return {

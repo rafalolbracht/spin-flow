@@ -35,6 +35,8 @@ export async function POST(context: APIContext) {
 
   // Get runtime environment variables
   const runtimeEnv = context.locals.runtime?.env;
+  const isTestMode = context.request.headers.get("x-test-mode") === "true";
+  const requestOrigin = new URL(context.request.url).origin;
 
   // 2. Walidacja matchId
   const paramResult = idParamSchema.safeParse({ id: context.params.id });
@@ -46,7 +48,12 @@ export async function POST(context: APIContext) {
 
   // 3. Utworzenie lub pobranie linku udostępniania
   try {
-    const result = await createOrGetPublicShare(supabase, userId, matchId, runtimeEnv);
+    const result = await createOrGetPublicShare(supabase, userId, matchId, {
+      runtimeEnv,
+      // W test mode (Playwright/CI) musimy zwracać link do tej samej instancji aplikacji,
+      // bo dane testowe istnieją w lokalnym środowisku, nie na domenie wdrożenia.
+      baseUrlOverride: isTestMode ? requestOrigin : undefined,
+    });
 
     const statusCode = result.isNew ? 201 : 200;
     return createSuccessResponse(result.dto, statusCode);
