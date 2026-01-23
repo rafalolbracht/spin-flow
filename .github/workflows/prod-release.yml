@@ -32,6 +32,7 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
     needs: validate
     steps:
       - name: Checkout code
@@ -52,6 +53,7 @@ jobs:
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
     needs: lint
     env:
       NODE_ENV: test
@@ -69,19 +71,12 @@ jobs:
         run: npm ci
 
       - name: Run unit tests with coverage
-        run: npm run test:unit:coverage
-
-      - name: Upload unit test coverage
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-unit-prod
-          path: coverage/
-          retention-days: 30
+        run: npm run test:unit
 
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
     needs: unit-test
     steps:
       - name: Checkout code
@@ -109,6 +104,7 @@ jobs:
   migrate:
     name: Database Migration (PROD)
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
     needs: build
     environment: PROD
     env:
@@ -137,6 +133,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
     needs: migrate
     environment: PROD
     steps:
