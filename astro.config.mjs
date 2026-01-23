@@ -33,7 +33,6 @@ export default defineConfig({
     },
   }),
   adapter: cloudflare({
-    mode: "advanced",
     platformProxy: {
       enabled: true,
     },
