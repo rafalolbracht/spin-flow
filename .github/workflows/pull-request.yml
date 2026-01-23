@@ -62,7 +62,6 @@ jobs:
     needs: lint
     environment: ${{ github.base_ref == 'fix' && 'FIX' || 'DEV' }}
     env:
-      NODE_ENV: test
       SUPABASE_URL: ${{ vars.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

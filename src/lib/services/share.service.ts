@@ -9,20 +9,32 @@ import { DatabaseError, ApiError } from "../utils/api-errors";
 // Type for Cloudflare runtime environment variables
 type RuntimeEnv = Record<string, string | undefined>;
 
+type CreateOrGetPublicShareOptions = {
+  runtimeEnv?: RuntimeEnv;
+  /**
+   * Optional base URL override to use when generating `public_url`.
+   * Useful for tests/CI where the app runs on a local origin but runtime SITE_URL points to a deployed host.
+   */
+  baseUrlOverride?: string;
+};
+
 /**
  * Create or get existing public share link for a match
  * @param supabase - Supabase client
  * @param userId - User ID (DEFAULT_USER_ID in development)
  * @param matchId - Match ID
- * @param runtimeEnv - Cloudflare runtime environment variables (optional)
+ * @param options - optional runtime env and base URL override
  * @returns Public share DTO and whether it was newly created
  */
 export async function createOrGetPublicShare(
   supabase: SupabaseClient,
   userId: string,
   matchId: number,
-  runtimeEnv?: RuntimeEnv,
+  options?: CreateOrGetPublicShareOptions,
 ): Promise<{ dto: PublicShareDto; isNew: boolean }> {
+  const runtimeEnv = options?.runtimeEnv;
+  const baseUrlOverride = options?.baseUrlOverride;
+
   // Verify match ownership and status (must be finished)
   await verifyMatchOwnershipAndStatus(supabase, userId, matchId);
 
@@ -30,7 +42,7 @@ export async function createOrGetPublicShare(
   const existingShare = await getExistingPublicShare(supabase, userId, matchId);
   if (existingShare) {
     return {
-      dto: mapToPublicShareDto(existingShare, runtimeEnv),
+      dto: mapToPublicShareDto(existingShare, runtimeEnv, baseUrlOverride),
       isNew: false,
     };
   }
@@ -38,7 +50,7 @@ export async function createOrGetPublicShare(
   // Create new public share
   const newShare = await createPublicShare(supabase, userId, matchId);
   return {
-    dto: mapToPublicShareDto(newShare, runtimeEnv),
+    dto: mapToPublicShareDto(newShare, runtimeEnv, baseUrlOverride),
     isNew: true,
   };
 }
@@ -136,7 +148,7 @@ async function createPublicShare(
 function generateSecureToken(): string {
   // Use Web Crypto API (available in both Node.js 15+ and Cloudflare Workers)
   const bytes = crypto.getRandomValues(new Uint8Array(32)); // 256 bits of entropy
-  
+
   // Convert to base64
   let base64 = "";
   if (typeof Buffer !== "undefined") {
@@ -147,7 +159,7 @@ function generateSecureToken(): string {
     const binary = String.fromCharCode(...bytes);
     base64 = btoa(binary);
   }
-  
+
   // Convert to base64url format
   return base64
     .replace(/\+/g, "-") // URL-safe
@@ -159,10 +171,22 @@ function generateSecureToken(): string {
  * Map MatchPublicShare to PublicShareDto
  * @param share - Match public share data
  * @param runtimeEnv - Cloudflare runtime environment variables (optional)
+ * @param baseUrlOverride - optional base URL override
  */
-function mapToPublicShareDto(share: MatchPublicShare, runtimeEnv?: RuntimeEnv): PublicShareDto {
-  // Get base URL from environment variable or fallback to localhost for development
-  const baseUrl = runtimeEnv?.SITE_URL || import.meta.env.SITE_URL || "http://localhost:4300";
+function mapToPublicShareDto(
+  share: MatchPublicShare,
+  runtimeEnv?: RuntimeEnv,
+  baseUrlOverride?: string,
+): PublicShareDto {
+  // Get base URL from environment variable or fallback to localhost for development.
+  // NOTE: In CI/Cloud environments SITE_URL is sometimes set as a bare host (e.g. "spin-flow.pages.dev")
+  // which would produce a relative URL and break navigation (both app and E2E tests).
+  const baseUrlRaw =
+    baseUrlOverride ||
+    runtimeEnv?.SITE_URL ||
+    import.meta.env.SITE_URL ||
+    "http://localhost:4300";
+  const baseUrl = normalizeBaseUrl(baseUrlRaw);
 
   return {
     id: share.id,
@@ -171,4 +195,24 @@ function mapToPublicShareDto(share: MatchPublicShare, runtimeEnv?: RuntimeEnv): 
     token: share.token,
     created_at: share.created_at,
   };
+}
+
+function normalizeBaseUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "http://localhost:4300";
+  }
+
+  // If it's already an absolute http(s) URL, keep it.
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed.replace(/\/+$/, "");
+  }
+
+  // If it's a path (starts with "/"), treat it as localhost-relative.
+  if (trimmed.startsWith("/")) {
+    return `http://localhost:4300${trimmed.replace(/\/+$/, "")}`;
+  }
+
+  // Otherwise assume a hostname and default to https (Cloudflare Pages, custom domains, etc.).
+  return `https://${trimmed.replace(/\/+$/, "")}`;
 }

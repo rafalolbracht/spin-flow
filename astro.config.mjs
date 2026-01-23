@@ -9,11 +9,19 @@ import sitemap from "@astrojs/sitemap";
 export default defineConfig({
   output: "server",
   site: "https://spin-flow.app",
-  integrations: [analogjsangular(), sitemap()],
+  integrations: [
+    analogjsangular({
+      vite: {
+        tsconfig: "./tsconfig.app.json",
+        jit: false,
+      },
+    }),
+    sitemap(),
+  ],
   server: {
     port: 4300,
   },
-  vite: {
+  vite: /** @type {any} */ ({
     plugins: [tailwindcss()],
     build: {
       rollupOptions: {
@@ -23,9 +31,8 @@ export default defineConfig({
     ssr: {
       external: ["node:async_hooks"],
     },
-  },
+  }),
   adapter: cloudflare({
-    mode: "advanced",
     platformProxy: {
       enabled: true,
     },

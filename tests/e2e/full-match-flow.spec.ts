@@ -177,7 +177,8 @@ test.describe('Full Match Flow with AI', () => {
 
       // eslint-disable-next-line no-console
       console.log(`📂 Nawiguję do publicznego URL: ${publicLink}`);
-      await newPage.goto(publicLink);
+      const normalizedPublicLink = normalizePublicLink(publicLink, page.url());
+      await newPage.goto(normalizedPublicLink);
       await newPage.waitForLoadState('networkidle');
 
       // eslint-disable-next-line no-console
@@ -268,3 +269,23 @@ test.describe('Full Match Flow with AI', () => {
     });
   });
 });
+
+function normalizePublicLink(link: string, fallbackBaseUrl: string): string {
+  const trimmed = link.trim();
+  if (!trimmed) {
+    throw new Error('Public link is empty');
+  }
+
+  // Absolute URL - ok
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Relative path - resolve against a base URL
+  if (trimmed.startsWith('/')) {
+    return new URL(trimmed, fallbackBaseUrl).toString();
+  }
+
+  // Bare hostname (e.g. "spin-flow.pages.dev/public/...") - assume https
+  return `https://${trimmed}`;
+}

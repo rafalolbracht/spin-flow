@@ -11,7 +11,7 @@ export class AuthPage {
 
   constructor(page: Page) {
     this.page = page;
-    
+
     // Locators
     this.googleLoginButton = page.getByRole('button', { name: /google/i });
     this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');

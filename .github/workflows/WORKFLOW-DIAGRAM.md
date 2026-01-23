@@ -164,7 +164,7 @@ Auto-trigger: każdy push do develop
                    └─────┬──────┘
                          │
               ✅ FIX Environment Updated
-              🌐 https://fix.spin-flow.pages.dev
+              🌐 https://spin-flow-fix.pages.dev
 
 Environment: FIX
 Duration: ~8-12 min

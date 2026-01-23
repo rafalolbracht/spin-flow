@@ -123,7 +123,7 @@ Migracje:
 
 - branch: `fix`
 - deploy: automatyczny
-- URL: `https://fix.spin-flow.pages.dev`
+- URL: `https://spin-flow-fix.pages.dev`
 - Supabase: **FIX**
 
 ### Projekt: `spin-flow-dev`
@@ -271,6 +271,6 @@ TEST_USER_EMAIL
 
 ## 12. Filozofia
 
-> **Develop i Fix są automatyczne i testowalne.  
-> Main jest tylko punktem świadomego, ręcznego release’u.  
+> **Develop i Fix są automatyczne i testowalne.
+> Main jest tylko punktem świadomego, ręcznego release’u.
 > Produkcja nigdy nie dzieje się sama.**

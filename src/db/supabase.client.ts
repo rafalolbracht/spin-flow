@@ -6,9 +6,42 @@ import type { Database } from "../db/database.types.ts";
 // Type for Cloudflare runtime environment variables
 type RuntimeEnv = Record<string, string | undefined>;
 
-// Helper to get env variable from either import.meta.env or runtime.env
+/**
+ * Helper to get env variable from multiple sources:
+ * 1. Cloudflare runtime.env (production on Cloudflare Workers)
+ * 2. import.meta.env (Vite/Astro - localhost with .env file)
+ * 3. process.env (Node.js - CI/CD, tests)
+ */
 function getEnvVariable(key: string, runtimeEnv?: RuntimeEnv): string {
-  return runtimeEnv?.[key] || import.meta.env[key];
+  // 1. Cloudflare Workers runtime (production)
+  const runtimeValue = runtimeEnv?.[key];
+  if (runtimeValue) {
+    return runtimeValue;
+  }
+
+  // 2. Vite/Astro import.meta.env (development with .env file)
+  if (import.meta.env[key]) {
+    return import.meta.env[key];
+  }
+
+  // 3. Node.js process.env (CI/CD, tests)
+  // Check if process is available (not in browser/worker context)
+  const processValue = typeof process !== 'undefined' ? process.env?.[key] : undefined;
+  if (processValue) {
+    return processValue;
+  }
+
+  // Debug logging in test/CI environment (only for non-sensitive keys)
+  if (import.meta.env.NODE_ENV === 'test' || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) {
+    const safeKeys = ['NODE_ENV', 'SUPABASE_URL', 'SITE_URL'];
+    if (safeKeys.includes(key)) {
+      // eslint-disable-next-line no-console
+      console.warn(`⚠️ Environment variable '${key}' not found in any source (runtime.env, import.meta.env, process.env)`);
+    }
+  }
+
+  // No value found
+  return '';
 }
 
 // Helper to validate environment variables

@@ -55,7 +55,7 @@ lint
 - **Ważne:** Testuje produkcyjny build, podczas gdy E2E używa dev server
 - Waliduje obecność katalogu `dist/`
 - **Nie wymaga zmiennych środowiskowych** - używa wbudowanych fallbacks
-- Rzeczywiste wartości są wstrzykiwane w runtime przez Cloudflare Workers
+- Rzeczywiste wartości są wstrzykiwane w runtime przez Cloudflare
 
 #### `status-comment`
 
@@ -184,7 +184,7 @@ lint
 
 - Pobiera artefakt build z poprzedniego joba
 - Deploy do Cloudflare Pages jako preview: `--project-name=spin-flow --branch=fix`
-- URL: `https://fix.spin-flow.pages.dev`
+- URL: `https://spin-flow-fix.pages.dev`
 
 ### Wymagane sekrety i zmienne
 
@@ -395,7 +395,7 @@ supabase db push --project-ref $SUPABASE_PROJECT_REF
 ### FIX (Preview)
 
 - **Projekt Cloudflare**: `spin-flow` (branch: fix)
-- **URL**: https://fix.spin-flow.pages.dev
+- **URL**: https://spin-flow-fix.pages.dev
 - **Trigger**: automatyczny push do `fix`
 
 ### PROD
