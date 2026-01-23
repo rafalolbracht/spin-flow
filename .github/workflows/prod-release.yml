@@ -120,14 +120,10 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - name: Install Supabase CLI
-        run: |
-          npm install -g supabase
-
       - name: Run database migrations
         run: |
           echo "🔄 Uruchamianie migracji produkcyjnych..."
-          supabase db push --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+          npx --yes supabase@latest db push --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
           echo "✅ Migracje zakończone pomyślnie"
 
   deploy:
