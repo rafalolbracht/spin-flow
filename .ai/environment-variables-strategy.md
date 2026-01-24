@@ -57,8 +57,9 @@ SUPABASE_SERVICE_KEY=sb_secret_...
 - Zmienne są dostępne w `process.env` podczas wykonywania testów
 - Playwright uruchamia dev server, który dziedziczy `process.env`
 - Funkcja `getEnvVariable` znajduje zmienne w `process.env`
+- **Migracje bazy danych** używają dodatkowych zmiennych (np. `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`)
 
-**Przykład workflow:**
+**Przykład workflow (testy):**
 
 ```yaml
 env:
@@ -67,7 +68,16 @@ env:
   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 ```
 
-**Ważne:** Nie trzeba tworzyć pliku `.env` w CI/CD - kod automatycznie czyta z `process.env`
+**Przykład workflow (migracje):**
+
+```yaml
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_ACCOUNT }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+```
+
+**Ważne:** Nie trzeba tworzyć pliku `.env` w CI/CD - kod automatycznie czyta z `process.env`.
 
 #### 3. Cloudflare Workers (Production)
 
@@ -118,7 +128,7 @@ SUPABASE_KEY=eyJhbG...  # Anon/Public key
 SUPABASE_SERVICE_KEY=eyJhbG...  # Service role key (tylko backend!)
 ```
 
-### Opcjonalne
+### Opcjonalne / Specyficzne dla CI/CD
 
 ```env
 SITE_URL=https://spin-flow.app
@@ -126,9 +136,14 @@ GOOGLE_CLIENT_ID=xxx
 GOOGLE_CLIENT_SECRET=xxx
 FACEBOOK_APP_ID=xxx
 FACEBOOK_APP_SECRET=xxx
-TEST_USER_ID=uuid  # Tylko dla CI/CD
-TEST_USER_EMAIL=test@example.com  # Tylko dla CI/CD
+TEST_USER_ID=uuid  # Wymagane dla testów E2E
+TEST_USER_EMAIL=test@example.com  # Wymagane dla testów E2E
 OPENROUTER_API_KEY=xxx
+SUPABASE_PROJECT_REF=xxx  # Wymagane dla migracji (CI/CD)
+SUPABASE_DB_PASSWORD=xxx  # Wymagane dla migracji (CI/CD Secrets)
+SUPABASE_ACCESS_TOKEN_ACCOUNT=xxx # Wymagane dla migracji (CI/CD Secrets)
+CLOUDFLARE_API_TOKEN=xxx # Wymagane dla deploymentu PROD (CI/CD Secrets)
+CLOUDFLARE_ACCOUNT_ID=xxx # Wymagane dla deploymentu PROD (CI/CD Secrets)
 ```
 
 ## Testowanie lokalnie

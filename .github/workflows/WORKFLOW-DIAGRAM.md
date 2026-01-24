@@ -101,20 +101,12 @@ Duration: ~5-8 min
                    │    DEV     │
                    └─────┬──────┘
                          │
-                   ┌─────▼──────┐
-                   │   DEPLOY   │
-                   │ Download   │
-                   │  Artifact  │
-                   │ Cloudflare │
-                   │ spin-flow- │
-                   │    dev     │
-                   └─────┬──────┘
-                         │
-              ✅ DEV Environment Updated
+              ✅ DEV Environment Updated (DB)
               🌐 https://spin-flow-dev.pages.dev
+                 (Auto-deployed by Cloudflare)
 
 Environment: DEV
-Duration: ~8-12 min
+Duration: ~5-8 min
 Auto-trigger: każdy push do develop
 ```
 
@@ -154,20 +146,12 @@ Auto-trigger: każdy push do develop
                    │    FIX     │
                    └─────┬──────┘
                          │
-                   ┌─────▼──────┐
-                   │   DEPLOY   │
-                   │ Download   │
-                   │  Artifact  │
-                   │ Cloudflare │
-                   │  Preview   │
-                   │   (fix)    │
-                   └─────┬──────┘
-                         │
-              ✅ FIX Environment Updated
+              ✅ FIX Environment Updated (DB)
               🌐 https://spin-flow-fix.pages.dev
+                 (Auto-deployed by Cloudflare)
 
 Environment: FIX
-Duration: ~8-12 min
+Duration: ~5-8 min
 Auto-trigger: każdy push do fix
 ```
 
@@ -199,13 +183,7 @@ Auto-trigger: każdy push do fix
                    └────┬─────┘
                         │
                    ┌────▼─────┐
-                   │  BUILD   │
-                   │ + Upload │
-                   │ Artifact │
-                   └────┬─────┘
-                        │
-                   ┌────▼─────┐
-                   │ MIGRATE  │
+                   │  MIGRATE   │
                    │ Supabase │
                    │   PROD   │
                    │ (Manual  │
@@ -214,9 +192,10 @@ Auto-trigger: każdy push do fix
                         │
                    ┌────▼─────┐
                    │  DEPLOY  │
-                   │Cloudflare│
-                   │   Hook   │
-                   │  + Wait  │
+                   │  Build   │
+                   │    +     │
+                   │ Wrangler │
+                   │ Publish  │
                    └────┬─────┘
                         │
                    ┌────▼─────┐
@@ -300,10 +279,11 @@ Repository Level (Global)
 │   └── Variables (8)                     [Same as DEV]
 │
 └── PROD Environment
-    ├── Secrets (3)
+    ├── Secrets (4)
     │   ├── SUPABASE_KEY
     │   ├── SUPABASE_ACCESS_TOKEN_ACCOUNT
-    │   └── CLOUDFLARE_DEPLOY_HOOK_URL    [Unique to PROD]
+    │   ├── CLOUDFLARE_API_TOKEN          [Unique to PROD]
+    │   └── CLOUDFLARE_ACCOUNT_ID         [Unique to PROD]
     └── Variables (5)
         ├── SUPABASE_URL
         ├── SUPABASE_PROJECT_REF
@@ -345,10 +325,9 @@ unit-test | e2e-test
        build
          |
       migrate
-         |
-      deploy
-  (uses artifact)
 ```
+
+(Deployment handled by Cloudflare Git Integration)
 
 ### Production
 
@@ -359,11 +338,9 @@ unit-test | e2e-test
       |
   unit-test
       |
-    build
-      |
    migrate      [requires approval]
       |
-   deploy       [deploy hook]
+   deploy       [build & publish]
       |
    notify       [summary]
 ```
@@ -390,19 +367,17 @@ Push Develop/Fix:
 ├─ Unit Tests:    2-3 min     ██████
 ├─ E2E Tests:     3-5 min     ██████████
 ├─ Build:         2-3 min     ██████
-├─ Migrate:       1-2 min     ███
-└─ Deploy:        1 min       ███
+└─ Migrate:       1-2 min     ███
    Total:         ~9-13 min
+   (Deploy happens in parallel on Cloudflare)
 
 Production:
 ├─ Validate:      <10 sec     █
 ├─ Lint:          1-2 min     ███
 ├─ Unit Tests:    2-3 min     ██████
-├─ Build:         2-3 min     ██████
 ├─ Approval:      manual      ⏸️
 ├─ Migrate:       1-2 min     ███
-├─ Deploy:        2-3 min     ██████
-├─ Wait:          1 min       ███
+├─ Deploy:        3-5 min     ████████
 └─ Notify:        <10 sec     █
    Total:         ~10-15 min (+ approval)
 ```
@@ -434,9 +409,10 @@ Production:
     └─────────┘    │         │    └─────────┘
                    │         │
               ┌────▼────┐ ┌──▼───┐
-              │DEV auto │ │FIX   │
-              │deploy   │ │auto  │
+              │DEV migra│ │FIX   │
+              │tion only│ │migr. │
               └─────────┘ └──────┘
+              (Deploy via Cloudflare)
 ```
 
 ---
@@ -491,9 +467,10 @@ Build Artifacts:
      └─ dist/
 
 **Why build artifacts?**
-- Ensures consistency between what was tested and what is deployed
-- Saves time (build once, deploy multiple times if needed)
-- Deploy uses the exact same build that passed all tests
+- Verification of the build process in CI environment
+- Backup of the version that passed tests
+- Debugging capability (downloadable build)
+- (Cloudflare Pages deployment builds independently from the same commit)
 ```
 
 ---

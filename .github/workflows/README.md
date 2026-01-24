@@ -5,9 +5,9 @@
 Projekt wykorzystuje 4 workflow pliki GitHub Actions:
 
 1. **pull-request.yml** - CI dla Pull Requestów do `develop` i `fix`
-2. **push-develop.yml** - Automatyczny deploy do środowiska DEV
-3. **push-fix.yml** - Automatyczny deploy do środowiska FIX (preview)
-4. **prod-release.yml** - Ręczny deploy do środowiska PROD
+2. **push-develop.yml** - CI oraz migracje bazy danych dla środowiska DEV (deploy automatyczny via Cloudflare Pages Integration)
+3. **push-fix.yml** - CI oraz migracje bazy danych dla środowiska FIX (deploy automatyczny via Cloudflare Pages Integration)
+4. **prod-release.yml** - Ręczny deploy do środowiska PROD (w tym migracje)
 
 ---
 
@@ -116,17 +116,18 @@ lint
 - Upload artefaktu build (7 dni retention)
 - Build jest używany przez job `deploy`
 
+### Joby
+
 #### `migrate`
 
 - Uruchamia migracje bazy danych Supabase DEV
 - Używa Supabase CLI
 - Automatyczne po przejściu testów i buildu
 
-#### `deploy`
+#### `deploy` (obsługiwany poza Workflow)
 
-- Pobiera artefakt build z poprzedniego joba
-- Deploy do Cloudflare Pages projekt: `spin-flow-dev`
-- Używa `cloudflare/wrangler-action@v3`
+- Deployment aplikacji odbywa się **automatycznie** dzięki integracji Cloudflare Pages z repozytorium GitHub
+- Workflow jedynie przygotowuje build artifact jako backup i punkt odniesienia
 
 ### Wymagane sekrety i zmienne
 
@@ -137,10 +138,9 @@ lint
 - `SUPABASE_KEY`
 - `SUPABASE_SERVICE_KEY`
 - `SUPABASE_ACCESS_TOKEN_ACCOUNT` (do migracji)
+- `SUPABASE_DB_PASSWORD` (do linkowania projektu)
 - `GOOGLE_CLIENT_SECRET`
 - `FACEBOOK_APP_SECRET`
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
 - `OPENROUTER_API_KEY` (repository secret)
 
 **Variables**:
@@ -208,10 +208,9 @@ Identyczne jak w `push-develop.yml`, ale z wartościami dla środowiska FIX
 validate
  └─→ lint
       └─→ unit-test
-           └─→ build
-                └─→ migrate
-                     └─→ deploy
-                          └─→ notify
+           └─→ migrate
+                └─→ deploy
+                     └─→ notify
 ```
 
 ### Joby
@@ -225,12 +224,6 @@ validate
 
 - Standardowe kroki walidacji kodu
 
-#### `build`
-
-- Build aplikacji produkcyjnej
-- Upload artefaktu build
-- Używa środowiska `PROD` (wymaga approval)
-
 #### `migrate`
 
 - **Ręczne** migracje bazy danych Supabase PROD
@@ -239,9 +232,9 @@ validate
 
 #### `deploy`
 
-- Uruchamia Cloudflare Deploy Hook
-- Czeka na zakończenie deploymentu
-- Monitoruje status HTTP
+- Buduje aplikację produkcyjną w środowisku CI (`npm run build`)
+- Publikuje zbudowaną aplikację bezpośrednio do Cloudflare Pages za pomocą `wrangler-action`
+- Nie korzysta z Deploy Hooka - build następuje na GitHub Actions
 
 #### `notify`
 
@@ -257,7 +250,9 @@ validate
 
 - `SUPABASE_KEY`
 - `SUPABASE_ACCESS_TOKEN_ACCOUNT`
-- `CLOUDFLARE_DEPLOY_HOOK_URL` (unikalny dla PROD)
+- `SUPABASE_DB_PASSWORD` (do linkowania projektu)
+- `CLOUDFLARE_API_TOKEN` (Wrangler deploy)
+- `CLOUDFLARE_ACCOUNT_ID` (Wrangler deploy)
 - `OPENROUTER_API_KEY` (repository secret)
 
 **Variables**:
@@ -362,9 +357,10 @@ Instalacja przeglądarek: `npm run playwright:install` (tylko Chromium zgodnie z
 
 **Dlaczego build artifacts?**
 
-- Gwarantuje jednolitość buildu między testami a deploymentem
-- Oszczędza czas (build raz, deploy wielokrotnie)
-- Deploy używa tego samego buildu co został przetestowany
+- Weryfikacja procesu budowania w środowisku CI
+- Backup wersji, która przeszła testy
+- Możliwość pobrania i uruchomienia zbudowanej wersji lokalnie do debugowania
+- (Deployment Cloudflare Pages buduje aplikację niezależnie z tego samego commitu)
 
 ---
 
@@ -402,7 +398,7 @@ supabase db push
 ### PROD
 
 - **Domena**: https://spin-flow.app
-- **Trigger**: Deploy Hook (ręczny)
+- **Trigger**: Deploy via Wrangler (GitHub Actions)
 - **Wymaga**: potwierdzenia "PROD" + approval
 
 ---

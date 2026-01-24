@@ -129,21 +129,18 @@ Lint-staged is configured to run ESLint and Prettier on staged files before comm
 
 ### Cloudflare Pages Deployment
 
-The application is configured for deployment on Cloudflare Pages with the following setup:
+The application is hosted on Cloudflare Pages. Deployment strategy:
 
-- **Build Command**: `npm run build`
-- **Build Output Directory**: `dist`
-- **Node.js Version**: 22.21.1 (matches `.nvmrc`)
-- **Environment Variables**: Same as development (Supabase, OpenRouter, Site URL)
+- **Develop & Fix Branches**: Automatic deployment via Cloudflare Pages Git Integration. Pushing to these branches triggers a build and deploy on Cloudflare's side.
+- **Main Branch**: Manual deployment via GitHub Actions. The workflow compiles the application and deploys it directly to Cloudflare Pages using Wrangler, ensuring the production build is generated in the CI environment.
 
 ### GitHub Actions
 
-Automated CI/CD pipeline includes:
+Automated CI/CD pipeline handles code quality and database management:
 
-- **Code Quality**: ESLint and Prettier checks
-- **Type Checking**: TypeScript compilation verification
-- **Build Verification**: Production build testing
-- **Security**: Dependency vulnerability scanning
+- **Code Quality**: Linting, Unit Tests, and E2E Tests.
+- **Database Migrations**: Automatically applies migrations to Supabase (DEV/FIX) on push.
+- **Production Release**: Orchestrates the manual release process including migrations and calling the Cloudflare Deploy Hook.
 
 ### Supabase Integration
 
