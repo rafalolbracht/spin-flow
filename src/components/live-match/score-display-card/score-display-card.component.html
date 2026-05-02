@@ -2,44 +2,78 @@
   <!-- Tytuł seta -->
   <div class="set-title">Set {{ currentSetNumber() }}</div>
 
-  <!-- Główna sekcja wyniku -->
+  <!-- Zamiana stron: kolejność kolumn w DOM + wierszu punktów jak dla lewej/prawej krawędzi (badge na zewnątrz) -->
   <div class="score-display">
-    <!-- Kolumna gracza -->
-    <div class="player-column">
-      <div class="player-name">{{ playerName() }}</div>
-      <div class="score-row">
-        <!-- Liczba wygranych setów (białe kwadraciki) -->
-        <div class="sets-won-badge">{{ setsWonPlayer() }}</div>
-        <div class="score-container">
-          <div class="score-wrapper">
-            <div
-              *ngIf="isPlayerServing()"
-              class="server-indicator"
-              title="Serwuje"
-            ></div>
-            <span class="score-value">{{ setScorePlayer() }}</span>
+    @if (!sidesSwapped()) {
+      <div class="player-column">
+        <div class="player-name">{{ playerName() }}</div>
+        <div class="score-row">
+          <div class="sets-won-badge">{{ setsWonPlayer() }}</div>
+          <div class="score-container">
+            <div class="score-wrapper">
+              <div
+                *ngIf="isPlayerServing()"
+                class="server-indicator"
+                title="Serwuje"
+              ></div>
+              <span class="score-value">{{ setScorePlayer() }}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Kolumna rywala -->
-    <div class="opponent-column">
-      <div class="opponent-name">{{ opponentName() }}</div>
-      <div class="score-row">
-        <div class="score-container">
-          <div class="score-wrapper">
-            <span class="score-value">{{ setScoreOpponent() }}</span>
-            <div
-              *ngIf="isOpponentServing()"
-              class="server-indicator"
-              title="Serwuje"
-            ></div>
+      <div class="opponent-column">
+        <div class="opponent-name">{{ opponentName() }}</div>
+        <div class="score-row">
+          <div class="score-container">
+            <div class="score-wrapper">
+              <span class="score-value">{{ setScoreOpponent() }}</span>
+              <div
+                *ngIf="isOpponentServing()"
+                class="server-indicator"
+                title="Serwuje"
+              ></div>
+            </div>
+          </div>
+          <div class="sets-won-badge">{{ setsWonOpponent() }}</div>
+        </div>
+      </div>
+    } @else {
+      <!-- Lewa strona: zewnętrzny badge setów po lewej (jak kolumna gracza w trybie normalnym) -->
+      <div class="opponent-column">
+        <div class="opponent-name">{{ opponentName() }}</div>
+        <div class="score-row">
+          <div class="sets-won-badge">{{ setsWonOpponent() }}</div>
+          <div class="score-container">
+            <div class="score-wrapper">
+              <span class="score-value">{{ setScoreOpponent() }}</span>
+              <div
+                *ngIf="isOpponentServing()"
+                class="server-indicator"
+                title="Serwuje"
+              ></div>
+            </div>
           </div>
         </div>
-        <!-- Liczba wygranych setów (białe kwadraciki) -->
-        <div class="sets-won-badge">{{ setsWonOpponent() }}</div>
       </div>
-    </div>
+
+      <!-- Prawa strona: zewnętrzny badge setów po prawej (jak kolumna rywala w trybie normalnym) -->
+      <div class="player-column">
+        <div class="player-name">{{ playerName() }}</div>
+        <div class="score-row">
+          <div class="score-container">
+            <div class="score-wrapper">
+              <div
+                *ngIf="isPlayerServing()"
+                class="server-indicator"
+                title="Serwuje"
+              ></div>
+              <span class="score-value">{{ setScorePlayer() }}</span>
+            </div>
+          </div>
+          <div class="sets-won-badge">{{ setsWonPlayer() }}</div>
+        </div>
+      </div>
+    }
   </div>
 </div>

@@ -13,24 +13,43 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Wiersz gracza -->
-        <tr class="player-row">
-          @for (set of sortedSets(); track set.id) {
-            <td [class]="getPlayerScoreClass(set)">
-              {{ set.set_score_player }}
-            </td>
-          }
-          <td class="filler"></td>
-        </tr>
-        <!-- Wiersz rywala -->
-        <tr class="opponent-row">
-          @for (set of sortedSets(); track set.id) {
-            <td [class]="getOpponentScoreClass(set)">
-              {{ set.set_score_opponent }}
-            </td>
-          }
-          <td class="filler"></td>
-        </tr>
+        @if (!sidesSwapped()) {
+          <!-- Wiersz gracza -->
+          <tr class="player-row">
+            @for (set of sortedSets(); track set.id) {
+              <td [class]="getPlayerScoreClass(set)">
+                {{ set.set_score_player }}
+              </td>
+            }
+            <td class="filler"></td>
+          </tr>
+          <!-- Wiersz rywala -->
+          <tr class="opponent-row">
+            @for (set of sortedSets(); track set.id) {
+              <td [class]="getOpponentScoreClass(set)">
+                {{ set.set_score_opponent }}
+              </td>
+            }
+            <td class="filler"></td>
+          </tr>
+        } @else {
+          <tr class="opponent-row">
+            @for (set of sortedSets(); track set.id) {
+              <td [class]="getOpponentScoreClass(set)">
+                {{ set.set_score_opponent }}
+              </td>
+            }
+            <td class="filler"></td>
+          </tr>
+          <tr class="player-row">
+            @for (set of sortedSets(); track set.id) {
+              <td [class]="getPlayerScoreClass(set)">
+                {{ set.set_score_player }}
+              </td>
+            }
+            <td class="filler"></td>
+          </tr>
+        }
       </tbody>
     </table>
   }

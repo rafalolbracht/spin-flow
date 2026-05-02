@@ -1,88 +1,53 @@
-# Diagram podróży użytkownika - Moduł logowania i rejestracji
+# Diagram podróży użytkownika — logowanie, treści publiczne i aplikacja trenera
 
-## Analiza podróży użytkownika modułu autentykacji
+## Analiza podróży (stan kodu: middleware `getUser()`, Angular 20, Astro 5)
 
-### Ścieżki użytkownika wymienione w dokumentacji
+### Ścieżki użytkownika
 
-1. **Ścieżka użytkownika niezalogowanego do strony głównej**:
-   - Użytkownik wchodzi na stronę główną
-   - Widzi przycisk "Zaloguj" w topbarze i sekcji hero
-   - Po kliknięciu zostaje przekierowany do strony logowania
-   - Wybiera metodę logowania (Google lub Facebook)
-   - Następuje przekierowanie do OAuth providera
-   - Po pomyślnym logowaniu użytkownik trafia do listy swoich meczów
+1. **Niezalogowany — strona główna**
+   - Wejście na `/` (`LandingPageComponent`).
+   - Topbar: przycisk **Zaloguj** (gdy brak sesji po `/api/auth/session`) lub **Moje mecze** (gdy sesja).
+   - CTA w sekcji hero zawsze wywołuje przejście do **`/auth/login`** (niezależnie od sesji — zachowanie szablonu).
+   - Po wyborze logowania: OAuth → **`/api/auth/callback`** → przekierowanie (domyślnie **`/matches`**).
 
-2. **Ścieżka użytkownika zalogowanego do strony głównej**:
-   - Użytkownik wchodzi na stronę główną
-   - Przycisk "Zaloguj" zmienia się na "Moje mecze"
-   - Kliknięcie przycisku przekierowuje do listy meczów
+2. **Zalogowany — strona główna**
+   - Topbar: **Moje mecze** → nawigacja na **`/matches`**.
+   - Hero CTA nadal może kierować na **`/auth/login`**; strona logowania z aktywną sesją robi **`Astro.redirect('/matches')`** po stronie SSR.
 
-3. **Ścieżka użytkownika zalogowanego do strony logowania**:
-   - Użytkownik wchodzi na stronę logowania
-   - System wykrywa istniejącą sesję
-   - Następuje automatyczne przekierowanie do listy meczów
+3. **Zalogowany — wejście na `/auth/login`**
+   - SSR wykrywa sesję i od razu przekierowuje do **`/matches`**.
 
-4. **Ścieżka wylogowania**:
-   - Użytkownik klika "Wyloguj się" w menu użytkownika
-   - Następuje zniszczenie sesji
-   - Użytkownik zostaje przekierowany do strony głównej
+4. **Wylogowanie**
+   - Menu użytkownika w `AppLayoutComponent` → **`POST /api/auth/logout`** (odpowiedź **204**) → **`window.location.href = '/'`**.
 
-5. **Ścieżka próby dostępu do chronionej strony bez logowania**:
-   - Użytkownik próbuje wejść na chronioną stronę (lista meczów, widok meczu)
-   - Middleware wykrywa brak sesji
-   - Następuje przekierowanie do strony głównej z komunikatem o konieczności logowania
+5. **Dostęp do chronionej strony bez ważnej sesji (nawigacja pełnostronicowa)**
+   - Żądanie np. **`/matches`** przechodzi przez middleware: **`supabase.auth.getUser()`**.
+   - Brak użytkownika → przekierowanie na **`/?login_required=true`**.
+   - `LandingPageComponent` odczytuje query i pokazuje komunikat „Zaloguj się…”, czyści parametr z URL (**`replaceState`**).
 
-### Główne podróże i ich odpowiadające stany
+6. **Wygasła lub nieważna sesja podczas pracy w SPA (API)**
+   - Chronione endpointy zwracają **401**.
+   - **`HttpErrorInterceptor`**: toast + przekierowanie na **`/auth/login?error=session_expired`**.
 
-1. **Podróż logowania**:
-   - Stan początkowy: Strona główna (niezalogowany)
-   - Stan przejściowy: Strona logowania z wyborem providera
-   - Stan końcowy: Lista meczów (zalogowany)
+7. **Treści publiczne**
+   - **`/privacy-policy`** — polityka prywatności, ten sam główny `Layout.astro` co landing.
+   - **`/public/matches/:token`** — podgląd zakończonego meczu bez logowania (osobny dokument HTML, **`PublicMatchContainerComponent`** + **`GET /api/public/matches/:token`**).
 
-2. **Podróż użytkownika zalogowanego**:
-   - Stan początkowy: Strona główna (zalogowany)
-   - Stan przejściowy: Lista meczów
-   - Stan końcowy: Korzystanie z aplikacji
+### Podróże i stany (skrót)
 
-3. **Podróż wylogowania**:
-   - Stan początkowy: Aplikacja zalogowana
-   - Stan przejściowy: Proces wylogowania
-   - Stan końcowy: Strona główna (niezalogowany)
+| Podróż       | Start                 | Koniec                                         |
+| ------------ | --------------------- | ---------------------------------------------- |
+| Logowanie    | `/` lub `/auth/login` | `/matches`                                     |
+| Trener (hub) | `/matches`            | Live / Summary / New / public link             |
+| Wylogowanie  | Widok z layoutem      | `/`                                            |
+| Ochrona SSR  | URL chroniony         | `/` + `?login_required=true` lub render strony |
+| Sesja API    | Akcja w aplikacji     | `/auth/login?error=session_expired` przy 401   |
 
-4. **Podróż obsługi błędów**:
-   - Stan początkowy: Próba logowania lub dostępu
-   - Stan przejściowy: Błąd OAuth lub brak dostępu
-   - Stan końcowy: Strona logowania z komunikatem błędu
+### Punkty decyzyjne
 
-### Punkty decyzyjne i alternatywne ścieżki
-
-1. **Punkt decyzyjny: Czy użytkownik jest zalogowany?**
-   - Tak → Dostęp do aplikacji
-   - Nie → Strona logowania
-
-2. **Punkt decyzyjny: Wybór metody logowania**
-   - Google → OAuth Google
-   - Facebook → OAuth Facebook
-   - Anulowanie → Powrót do strony głównej
-
-3. **Punkt decyzyjny: Wynik OAuth**
-   - Powodzenie → Lista meczów
-   - Niepowodzenie → Komunikat błędu na stronie logowania
-   - Anulowanie przez użytkownika → Powrót do strony logowania
-
-4. **Punkt decyzyjny: Wygasła sesja podczas korzystania z aplikacji**
-   - Tak → Komunikat błędu i przekierowanie do strony głównej
-
-### Opis celu każdego stanu
-
-- **Strona główna (niezalogowany)**: Prezentacja wartości produktu i zachęta do logowania
-- **Strona logowania**: Wybór metody autentykacji (Google lub Facebook)
-- **OAuth provider**: Zewnętrzna autentykacja przez Google/Facebook
-- **Callback OAuth**: Weryfikacja tokenu i utworzenie sesji
-- **Lista meczów**: Główny widok aplikacji po zalogowaniu
-- **Widok meczu**: Szczegółowy widok pojedynczego meczu
-- **Stan błędu**: Komunikat o problemach z autentykacją
-- **Strona główna (zalogowany)**: Szybki dostęp do listy meczów dla zalogowanych użytkowników
+- **Middleware (SSR)**: `getUser()` → kontynuacja vs redirect na `/`.
+- **OAuth**: sukces → docelowy `redirect` z callbacku; błąd → `/auth/login` z kodem błędu.
+- **401 z API**: interceptor → login z komunikatem wygasłej sesji.
 
 ## Diagram Mermaid
 
@@ -90,65 +55,57 @@
 stateDiagram-v2
     [*] --> StronaGlowna
 
-    state "Pierwsza wizyta" as PierwszaWizyta {
-        StronaGlowna --> StronaLogowania: "Zaloguj się"
-        StronaLogowania --> if_logowanie: Wybór metody
-
-        if_logowanie --> LogowanieGoogle: Google
-        if_logowanie --> LogowanieFacebook: Facebook
-        if_logowanie --> StronaGlowna: Anulowanie
-
-        LogowanieGoogle --> ListaMeczow: Powodzenie
-        LogowanieFacebook --> ListaMeczow: Powodzenie
-
-        LogowanieGoogle --> StronaLogowania: Błąd logowania
-        LogowanieFacebook --> StronaLogowania: Błąd logowania
+    state "Logowanie i onboarding" as Logowanie {
+        StronaGlowna --> StronaLogowania: Topbar Zaloguj lub CTA hero
+        StronaLogowania --> ListaMeczow: SSR, sesja już istnieje
+        StronaLogowania --> OAuthProvider: Wybór Google / Facebook
+        OAuthProvider --> ListaMeczow: Callback OK → /matches
+        OAuthProvider --> StronaLogowania: Błąd OAuth / PKCE
+        StronaLogowania --> StronaGlowna: Anulowanie nawigacji
     }
 
-    state "Powtarzające wizyty" as PowtarzajaceWizyty {
-        StronaGlowna --> ListaMeczow: "Moje mecze" [zalogowany]
-
-        StronaLogowania --> ListaMeczow: Automatyczne przekierowanie [zalogowany]
-
-        ListaMeczow --> WidokMeczu: Wybór meczu
-        WidokMeczu --> ListaMeczow: Powrót do listy
-
+    state "Praca trenera" as Trener {
+        StronaGlowna --> ListaMeczow: Topbar Moje mecze
+        ListaMeczow --> KreatorMeczu: Nowy mecz
+        KreatorMeczu --> ListaMeczow: Zapis / rezygnacja
+        ListaMeczow --> MeczNaZywo: Mecz w toku
+        MeczNaZywo --> ListaMeczow: Powrót do listy
+        ListaMeczow --> Podsumowanie: Mecz zakończony
+        Podsumowanie --> ListaMeczow: Powrót
+        ListaMeczow --> PodgladPubliczny: Kopiowanie linku udostępnienia
         ListaMeczow --> StronaGlowna: Wylogowanie
     }
 
-    state "Ochrona dostępu" as OchronaDostepu {
-        state if_dostep <<choice>>
-
-        ChroniczonaStrona --> if_dostep: Próba dostępu
-        if_dostep --> StronaGlowna: Brak logowania
-        if_dostep --> ListaMeczow: Zalogowany
-
-        ListaMeczow --> if_sesjaWygasla <<choice>>: Akcja w aplikacji
-        if_sesjaWygasla --> StronaGlowna: Sesja wygasła
-        if_sesjaWygasla --> ListaMeczow: Sesja aktywna
+    state "Publiczne (bez konta)" as Publiczne {
+        StronaGlowna --> PolitykaPrywatnosci: /privacy-policy
+        PolitykaPrywatnosci --> StronaGlowna: Nawigacja wstecz
+        StronaGlowna --> PodgladPubliczny: Link publiczny meczu (token w ścieżce)
+        PodgladPubliczny --> StronaGlowna: Logo / zamknięcie
     }
 
+    StronaGlowna --> StronaGlowna: Middleware, brak sesji, redirect z komunikatem
+
+    ListaMeczow --> StronaLogowania: HTTP 401 → interceptor
+
     note right of StronaGlowna
-        Prezentacja wartości produktu
-        Przyciski logowania dla nowych użytkowników
-        Szybki dostęp dla zalogowanych
+        Chronione ścieżki (np. /matches/*)
+        bez sesji: redirect z middleware
+        na /?login_required=true
     end note
 
     note right of StronaLogowania
-        Wybór metody autentykacji
-        Google lub Facebook
+        auth/login.astro + LoginPageComponent
+        Błędy: query error, error_message (DEV)
     end note
 
     note right of ListaMeczow
-        Główny widok aplikacji
-        Lista meczów trenera
-        Dostęp do wszystkich funkcji
+        Hub po zalogowaniu
+        MatchListPageComponent
     end note
 
-    note right of WidokMeczu
-        Szczegółowy widok meczu
-        Rejestracja punktów na żywo
-        Analiza i raporty
+    note right of PodgladPubliczny
+        Token w URL
+        brak AppLayout trenera
     end note
 
     ListaMeczow --> [*]
@@ -156,14 +113,10 @@ stateDiagram-v2
     classDef stronaPoczatkowa fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#ffffff,font-weight:bold
     classDef stronaLogowania fill:#2196F3,stroke:#0D47A1,stroke-width:3px,color:#ffffff,font-weight:bold
     classDef stanAplikacji fill:#FF9800,stroke:#E65100,stroke-width:3px,color:#ffffff,font-weight:bold
-    classDef stanBledu fill:#F44336,stroke:#B71C1C,stroke-width:3px,color:#ffffff,font-weight:bold
-    classDef punktDecyzyjny fill:#9C27B0,stroke:#6A1B9A,stroke-width:3px,color:#ffffff,font-weight:bold
+    classDef publiczne fill:#607D8B,stroke:#37474F,stroke-width:2px,color:#ffffff,font-weight:bold
 
     class StronaGlowna stronaPoczatkowa
     class StronaLogowania stronaLogowania
-    class ListaMeczow stanAplikacji
-    class WidokMeczu stanAplikacji
-    class if_logowanie punktDecyzyjny
-    class if_dostep punktDecyzyjny
-    class if_sesjaWygasla punktDecyzyjny
+    class ListaMeczow,KreatorMeczu,MeczNaZywo,Podsumowanie stanAplikacji
+    class PolitykaPrywatnosci,PodgladPubliczny publiczne
 ```

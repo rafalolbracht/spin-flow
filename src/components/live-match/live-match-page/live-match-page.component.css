@@ -28,6 +28,58 @@
   padding: 1rem 1rem 2rem 1rem; /* Zmniejszony padding górny o połowę */
 }
 
+/* Przycisk zamiany stron (nad „Zakończ set”) */
+.swap-sides-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: var(--p-surface-50);
+  color: var(--p-surface-700);
+  border: 2px solid var(--p-surface-300);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+:host-context(.dark) .swap-sides-button {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.6);
+  color: #e2e8f0;
+}
+
+.swap-sides-button:hover:not(:disabled) {
+  background-color: var(--p-surface-100);
+  border-color: var(--p-primary-400);
+  color: var(--p-primary-600);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+:host-context(.dark) .swap-sides-button:hover:not(:disabled) {
+  background-color: rgba(51, 65, 85, 0.7);
+  border-color: rgba(71, 85, 105, 0.8);
+}
+
+.swap-sides-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.swap-sides-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.swap-sides-button i {
+  font-size: 1.25rem;
+}
+
 /* Dodatkowy odstęp dla przycisków kontrolnych */
 .live-match-content app-match-control-actions {
   margin-top: 1rem;

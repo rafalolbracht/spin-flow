@@ -1,96 +1,98 @@
-# Diagram Architektury Autentykacji - Spin Flow
+# Diagram architektury autentykacji — Spin Flow (aktualny kod)
 
 ```mermaid
 sequenceDiagram
     autonumber
 
     participant Browser as Przeglądarka
-    participant Middleware as Middleware Astro
+    participant Middleware as Middleware Astro (getUser)
     participant API as Astro API
     participant Auth as Supabase Auth
     participant DB as Supabase Database
 
-    %% Proces logowania przez OAuth
     rect rgb(100, 149, 237)
-        Note over Browser,DB: Proces logowania przez Google/Facebook
-        Browser->>Browser: Kliknięcie przycisku logowania
-        Browser->>Auth: Przekierowanie do OAuth provider
-        Auth->>Browser: Autoryzacja użytkownika
-        Browser->>API: Przekierowanie do /api/auth/callback
+        Note over Browser,DB: Logowanie OAuth (Google / Facebook)
+        Browser->>Browser: Klik Google / Facebook (LoginPageComponent)
+        Browser->>API: POST /api/auth/login { provider, redirectUrl? }
         activate API
-        API->>Auth: Wymiana kodu na tokeny (exchangeCodeForSession)
-        Auth-->>API: Access token + refresh token
-        API->>DB: Rejestracja zdarzenia logowania (analytics_events)
-        DB-->>API: Zdarzenie zapisane
-        API->>Browser: Przekierowanie do /matches
+        API->>Auth: signInWithOAuth(redirectTo=/api/auth/callback...)
+        Auth-->>API: { url }
+        API-->>Browser: 200 { data.url }
+        deactivate API
+        Browser->>Auth: window.location = url (provider)
+        Auth->>Browser: Zgoda użytkownika
+        Browser->>API: GET|POST /api/auth/callback?code=...&redirect=...
+        activate API
+        API->>Auth: exchangeCodeForSession(code)
+        Auth-->>API: Sesja + JWT (zapis cookies przez @supabase/ssr)
+        opt Sukces i user.id
+            API->>DB: INSERT analytics_events (type login)
+        end
+        API->>Browser: 302 redirect (domyślnie /matches)
         deactivate API
     end
 
-    %% Dostęp do chronionych stron
     rect rgb(184, 134, 11)
-        Note over Browser,DB: Dostęp do chronionych zasobów
-        Browser->>Middleware: Żądanie strony chronionej
+        Note over Browser,DB: Dostęp do chronionych stron SSR
+        Browser->>Middleware: GET /matches/...
         activate Middleware
-        Middleware->>Auth: Weryfikacja sesji (server-side)
-        alt Sesja ważna
-            Auth-->>Middleware: Token potwierdzony
-            Middleware->>Browser: Renderowanie strony z danymi
-        else Brak/wygaśnięta sesja
-            Auth-->>Middleware: Błąd autentykacji
-            Middleware->>Browser: Przekierowanie do /
-            Note right of Browser: ?login_required=true
+        Middleware->>Auth: supabase.auth.getUser() (weryfikacja JWT)
+        alt Użytkownik zweryfikowany
+            Auth-->>Middleware: user
+            Middleware->>Browser: next() — render strony
+        else Brak / wygasły JWT
+            Auth-->>Middleware: brak user
+            Middleware->>Browser: 302 → /?login_required=true
         end
         deactivate Middleware
     end
 
-    %% API requests z autentykacją
     rect rgb(34, 139, 34)
-        Note over Browser,DB: Żądania API z autentykacją
-        Browser->>API: Żądanie do chronionego endpointu
+        Note over Browser,DB: Inicjalizacja i sesja po stronie klienta
+        Browser->>API: GET /api/auth/session
         activate API
-        API->>Auth: Weryfikacja tokenu dostępu
-        alt Token ważny
-            Auth-->>API: Token potwierdzony
-            API->>DB: Wykonanie zapytania z RLS
-            DB-->>API: Dane użytkownika
-            API->>Browser: Odpowiedź z danymi
-        else Token wygaśnięty
-            Auth-->>API: Token expired
-            alt Refresh token dostępny
-                API->>Auth: Odświeżenie tokenu
-                Auth-->>API: Nowy access token
-                API->>DB: Ponowne wykonanie zapytania
-                DB-->>API: Dane użytkownika
-                API->>Browser: Odpowiedź z danymi
-            else Brak refresh tokenu
-                API->>Browser: 401 Unauthorized
-                Note right of Browser: Przekierowanie do / + toast "Sesja wygasła"
-            end
+        API->>Auth: getUser()
+        alt user OK
+            Auth-->>API: user
+            API-->>Browser: 200, body z user
+        else błąd / brak user
+            API->>API: opcjonalnie usuń cookies sb-*
+            API-->>Browser: 200, user null
         end
         deactivate API
     end
 
-    %% Automatyczne odświeżanie tokenu
+    rect rgb(34, 100, 34)
+        Note over Browser,DB: Chronione endpointy REST (cookies sesji)
+        Browser->>API: POST/GET /api/matches/... (HttpClient)
+        activate API
+        API->>Auth: getUser() / sesja z żądania
+        alt Użytkownik OK
+            API->>DB: Zapytania z RLS
+            DB-->>API: Dane
+            API-->>Browser: 2xx + body
+        else 401 (np. brak sesji)
+            API-->>Browser: 401 Unauthorized
+            Browser->>Browser: HttpErrorInterceptor, redirect na login session_expired
+        end
+        deactivate API
+    end
+
     rect rgb(138, 43, 226)
-        Note over Browser,Auth: Automatyczne zarządzanie sesją
-        par Supabase Client w przeglądarce
-            Auth->>Browser: Automatyczne odświeżanie tokenu
-            Note right of Browser: Co 50 minut (domyślnie)
-        and Obsługa wygaśnięcia sesji
-            Auth->>Browser: Sesja wygasła - czyszczenie
-            Browser->>Browser: Przekierowanie do /auth/login
-        end
+        Note over Browser,Auth: Odświeżanie i cookies
+        Note right of Auth: Tokeny w cookies (SSR). Supabase odświeża przy kolejnych żądaniach serwera. Angular wywołuje GET /api/auth/session i obsługuje 401.
     end
 
-    %% Proces wylogowania
     rect rgb(220, 20, 60)
-        Note over Browser,DB: Proces wylogowania
-        Browser->>API: Żądanie /api/auth/logout
+        Note over Browser,DB: Wylogowanie
+        Browser->>API: POST /api/auth/logout
         activate API
-        API->>Auth: Unieważnienie sesji
-        Auth-->>API: Sesja wyczyszczona
-        API->>Browser: Przekierowanie do /
+        API->>Auth: signOut()
+        API->>API: usuń wszystkie cookies sb-* (path /)
+        Auth-->>API: OK
+        API-->>Browser: 204 No Content (+ Set-Cookie)
         deactivate API
-        Note right of Browser: Czyszczenie localStorage
+        Browser->>Browser: AuthService._user = null
+        Browser->>Browser: window.location.href przekierowanie na /
     end
 ```

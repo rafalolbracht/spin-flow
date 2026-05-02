@@ -33,6 +33,7 @@
         [currentServer]="store.currentSet()?.current_server ?? 'player'"
         [currentSetNumber]="getCurrentSetNumber()"
         [sets]="store.sets()"
+        [sidesSwapped]="sidesSwapped()"
       />
 
       <!-- Tag Selection Panel -->
@@ -46,8 +47,22 @@
       <!-- Point Scoring Buttons - PONIŻEJ tagów! -->
       <app-point-scoring-buttons
         [disabled]="store.isLoading()"
+        [sidesSwapped]="sidesSwapped()"
         (pointScored)="onPointScored($event)"
       />
+
+      @if (store.matchStatus() === 'in_progress') {
+        <button
+          type="button"
+          class="swap-sides-button"
+          [disabled]="store.isLoading()"
+          (click)="toggleSides()"
+          aria-label="Zamień strony zawodników przy stole"
+        >
+          <i class="pi pi-arrow-right-arrow-left" aria-hidden="true"></i>
+          <span>Zamień strony</span>
+        </button>
+      }
 
       <!-- Match Control Actions -->
       <app-match-control-actions
@@ -69,6 +84,7 @@
           [currentSetId]="store.currentSet()?.id ?? null"
           [playerName]="store.playerName()"
           [opponentName]="store.opponentName()"
+          [sidesSwapped]="sidesSwapped()"
         />
       }
     </div>

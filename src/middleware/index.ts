@@ -68,6 +68,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const isPublicPath =
     PUBLIC_PATHS.includes(context.url.pathname) ||
     context.url.pathname.startsWith("/public/") ||
+    context.url.pathname.startsWith("/api/public/") ||
     context.url.pathname.startsWith("/api/auth/") ||
     // Statyczne zasoby (CSS, JS, obrazy, fonty)
     context.url.pathname.startsWith("/_astro/") ||
