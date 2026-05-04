@@ -1,4 +1,4 @@
-import { Component, inject, input, computed, type OnInit, type OnDestroy, effect } from '@angular/core';
+import { Component, inject, input, computed, signal, type OnInit, type OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastModule } from 'primeng/toast';
 import { BlockUIModule } from 'primeng/blockui';
@@ -81,6 +81,9 @@ export class LiveMatchPageComponent implements OnInit, OnDestroy {
   // Input z Astro
   readonly matchId = input.required<number>();
 
+  /** Lokalny widok: zamiana lewej/prawej strony stołu (bez zapisu w API) */
+  readonly sidesSwapped = signal(false);
+
   // Dane użytkownika z AuthService
   readonly userName = computed(() => {
     const user = this.authService.user();
@@ -148,6 +151,10 @@ export class LiveMatchPageComponent implements OnInit, OnDestroy {
    */
   onTagSelectionChange(selectedTagIds: number[]): void {
     this.store.setSelectedTags(selectedTagIds);
+  }
+
+  toggleSides(): void {
+    this.sidesSwapped.update((v) => !v);
   }
 
   /**

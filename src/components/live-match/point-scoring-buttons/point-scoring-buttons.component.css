@@ -6,6 +6,10 @@
   margin-bottom: 0; /* usunięty - odstęp kontrolowany przez gap w parent */
 }
 
+.scoring-buttons-container.sides-swapped {
+  flex-direction: row-reverse;
+}
+
 /* Duże okrągłe przyciski */
 .scoring-button {
   width: 112px; /* 7rem / 28 */

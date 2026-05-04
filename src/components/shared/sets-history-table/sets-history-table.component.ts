@@ -26,6 +26,7 @@ export class SetsHistoryTableComponent {
   readonly currentSetId = input<number | null>(null);
   readonly playerName = input.required<string>();
   readonly opponentName = input.required<string>();
+  readonly sidesSwapped = input<boolean>(false);
 
   /**
    * Sortowane sety według sequence_in_match

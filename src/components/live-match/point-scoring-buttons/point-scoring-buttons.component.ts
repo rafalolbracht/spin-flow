@@ -18,6 +18,7 @@ import type { SideEnum } from '@/types';
 export class PointScoringButtonsComponent {
   // Props
   readonly disabled = input<boolean>(false);
+  readonly sidesSwapped = input<boolean>(false);
 
   // Events
   readonly pointScored = output<SideEnum>();

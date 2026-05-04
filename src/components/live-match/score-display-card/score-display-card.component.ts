@@ -27,6 +27,7 @@ export class ScoreDisplayCardComponent {
   readonly currentServer = input.required<SideEnum>();
   readonly currentSetNumber = input.required<number>();
   readonly sets = input<SetDetailDto[]>();
+  readonly sidesSwapped = input<boolean>(false);
 
   /**
    * Sprawdza czy zawodnik aktualnie serwuje
